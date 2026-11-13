@@ -10,6 +10,7 @@ class UParticleModuleRequired : public UParticleModule
 {
 	GENERATED_BODY()
 
+
 private:
 	UMaterial* Material = nullptr;		// 출력될 Material
 	FVector EmitterLocation;			// Emiiter 위치

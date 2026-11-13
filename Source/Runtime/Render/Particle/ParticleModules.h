@@ -6,5 +6,7 @@
 #include "ParticleModuleRequired.h"
 #include "ParticleModuleSpawn.h"
 #include "ParticleModuleLifetime.h"
+#include "ParticleModuleLocation.h"
 #include "ParticleModuleVelocity.h"
 #include "ParticleModuleColor.h"
+#include "ParticleModuleSize.h"
