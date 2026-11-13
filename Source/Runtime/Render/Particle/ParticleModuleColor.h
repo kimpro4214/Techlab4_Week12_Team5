@@ -2,6 +2,7 @@
 
 #include "EnginePCH.h"
 #include "ParticleModule.h"
+#include "Math/Color.h"
 #include "ParticleModuleColor.generated.h"
 
 UCLASS()
@@ -13,6 +14,6 @@ public:
 	void Update() override;
 
 private:
-	FVector Color = FVector(0,0,0);
-	float Alpha = 1;
+	FLinearColor StartColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);	// 생성 시점 색
+	FLinearColor EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 0.0f);	// 수명 종료 시점 색 (기본: 점점 투명해짐)
 };

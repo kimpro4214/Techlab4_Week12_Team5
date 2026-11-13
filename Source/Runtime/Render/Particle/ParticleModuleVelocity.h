@@ -8,11 +8,16 @@ UCLASS()
 class UParticleModuleVelocity : public UParticleModule
 {
 	GENERATED_BODY()
+
 public:
 	void Spawn() override;
+
 private:
-	FVector MinSpeed = FVector(-10.0f, -10.0f, 50.0f);		// Particle 초기 최소 속도
-	FVector MaxSpeed = FVector(10.0f, 10.0f, 100.0f);		// Particle 초기 최대 속도
-	bool bUseWorldSpace = false;	// 주어전 Speed를 월드 기준 속도로 처리, 체크 해제시 로컬 기준 속도로 처리					
+
+	// 초기 속도(방향 + 크기 벡터). 축마다 [Min, Max]에서 랜덤으로 결정
+	FVector StartVelocityMin = FVector(-10.0f, -10.0f, 50.0f);		// Particle 초기 속도 하한
+	FVector StartVelocityMax = FVector(10.0f, 10.0f, 100.0f);		// Particle 초기 속도 상한
+
+	bool bUseWorldSpace = false;	// 주어전 Speed를 월드축 속도로 처리, 체크 해제시 로컬축 속도로 처리
 	bool bUseOwnerScale = false;	// ParticleSystemComponent의 Scale 값을 속도에 반영
 };

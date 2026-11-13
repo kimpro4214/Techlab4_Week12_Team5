@@ -9,6 +9,6 @@ class UParticleModuleSpawn : public UParticleModule
 {
 	GENERATED_BODY()
 private:
-	float Rate = 5.0;	// 생성 속도 
-	float RateScale = 4.0;	// 속도 스케일, Speed * SpeedScale => 초당 생성하는 파티클 개수
+	float Rate = 20.0;	// 생성 속도 
+	float RateScale = 1.0;	// 속도 스케일, Speed * SpeedScale => 초당 생성하는 파티클 개수
 };
