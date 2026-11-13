@@ -23,6 +23,6 @@ struct FParticleDataContainer
 	int32 MemBlockSize = 0;		// 파티클용으로 할당해놓은 전체 데이터 블럭의 크기
 	int32 ParticleDataNumBytes = 0;		//  MemBlock 안에서 ParticleData 영역이 차지한 크기
 	int32 ParticleIndicesNumShorts = 0;			// 현재 Index영역에 들어갈 수 있는 Index의 개수, Index의 Size와 곱하면  ParticleIndicesNumBytes 나옴
-	uint8* ParticleData = nullptr; // this is also the memory block we allocated
-	uint16* ParticleIndices = nullptr; // not allocated, this is at the end of the memory block
+	uint8* ParticleData = nullptr;		// 블록 전체의 시작 지점
+	uint16* ParticleIndices = nullptr;		// Index 영역 시작 지점
 };
