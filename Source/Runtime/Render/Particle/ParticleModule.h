@@ -13,5 +13,5 @@ class UParticleModule : public UObject
 public:
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* OutParticle) {}
 
-	virtual void Update(ParticleEmitterInstance* Owner, int32 Offset, float deltaTime) {}
+	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float deltaTime) {}
 };

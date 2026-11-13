@@ -11,7 +11,16 @@ class UParticleSystemComponent;
 // 파티클 메모리를 보유하고 Spawn / Update / Kill을 수행
 struct FParticleEmitterInstance
 {
+	FParticleEmitterInstance() = default;
+	~FParticleEmitterInstance();	// 할당한 파티클 메모리 블록 해제
+
+	// 메모리 블록을 소유하므로 복사 금지 (복사되면 같은 블록을 두 번 해제함)
+	FParticleEmitterInstance(const FParticleEmitterInstance&) = delete;
+	FParticleEmitterInstance& operator=(const FParticleEmitterInstance&) = delete;
+
 	bool Init(UParticleEmitter* Emitter, UParticleSystemComponent* ParticleComponent);
+
+	~FParticleEmitterInstance();
 
 	void Spawn(int32 LODIndex)
 	{
@@ -21,7 +30,7 @@ struct FParticleEmitterInstance
 
 		for (int i = 0;i < Modules.Num();i++)
 		{
-			Modules[i]->Spawn();
+
 		}
 	}
 

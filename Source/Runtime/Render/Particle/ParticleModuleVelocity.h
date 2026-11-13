@@ -10,7 +10,7 @@ class UParticleModuleVelocity : public UParticleModule
 	GENERATED_BODY()
 
 public:
-	void Spawn() override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* OutParticle) override {}
 
 private:
 	// 초기 속도(방향 + 크기 벡터). 축마다 [Min, Max]에서 랜덤으로 결정

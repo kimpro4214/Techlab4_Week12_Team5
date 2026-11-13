@@ -1,6 +1,17 @@
 #include "EnginePCH.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
 
+FParticleEmitterInstance::~FParticleEmitterInstance()
+{
+	// ParticleData가 블록 전체의 시작 주소. ParticleIndices는 같은 블록 안의 위치라 따로 해제하지 않음
+	if (ParticleDataBlock.ParticleData != nullptr)
+	{
+		FMemory::Free(ParticleDataBlock.ParticleData);
+	}
+	ParticleDataBlock.ParticleData = nullptr;
+	ParticleDataBlock.ParticleIndices = nullptr;
+}
+
 bool FParticleEmitterInstance::Init(UParticleEmitter* Emitter, UParticleSystemComponent* ParticleComponent)
 {
 	if (Emitter != nullptr)		SpriteTemplate = Emitter;	else return false;
@@ -31,4 +42,14 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* Emitter, UParticleSystemCo
 	}
 
 	return true;
+}
+
+FParticleEmitterInstance::~FParticleEmitterInstance()
+{
+	if (ParticleDataBlock.ParticleData != nullptr)
+	{
+		FMemory::Free(ParticleDataBlock.ParticleData);
+	}
+	ParticleDataBlock.ParticleData =  nullptr;
+	ParticleDataBlock.ParticleIndices = nullptr;
 }

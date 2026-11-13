@@ -9,7 +9,7 @@ class UParticleModuleLocation : public UParticleModule
 {
 	GENERATED_BODY()
 public:
-	void Spawn() override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* OutParticle) override;
 
 private:
 	FVector MinLocation = FVector(0, 0, 0);

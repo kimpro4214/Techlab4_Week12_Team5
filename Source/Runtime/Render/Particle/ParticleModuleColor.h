@@ -10,8 +10,8 @@ class UParticleModuleColor : public UParticleModule
 {
 	GENERATED_BODY()
 public:
-	void Spawn() override;
-	void Update() override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* OutParticle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float deltaTime) override;
 
 private:
 	FLinearColor StartColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);	// 생성 시점 색
