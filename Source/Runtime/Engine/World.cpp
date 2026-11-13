@@ -177,10 +177,6 @@ void UWorld::Tick(float RealDeltaTime)
 			{
 				continue;
 			}
-			if (Comp->GetParticlesForView().IsEmpty())
-			{
-				Comp->SetParticles(10);
-			}
 			Comp->TickComponent(DeltaTime);
 		}
 		// 스프링 암 컴포넌트도 에디터에서 틱이 돌아야 한다

@@ -28,12 +28,11 @@ UParticleSubUVComponent::~UParticleSubUVComponent()
 	delete TextureMaterialInstance;
 }
 
-// 파티클 에셋과 배열을 준비하고 초기 상태를 채운다
+// 게임 플레이 시작 시 입자와 방출 잔여량을 초기화한다.
 void UParticleSubUVComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Particles.Reset();
-	if (IsAutoActivate()) SetParticles(10);
+	EmitterInstance.Reset();
 }
 
 bool UParticleSubUVComponent::SetParticleTexture(const FString& Path)
@@ -60,47 +59,17 @@ void UParticleSubUVComponent::PlayOnce(float ScaleMultiplier)
 	SetSubUVSize(ColSize, RowSize);
 	SetFrameRate(FrameRate);
 	bPlayOnce = true;
-	Particles.Reset();
+	EmitterInstance.Reset();
 	FParticle Particle{};
 	Particle.Location = GetWorldLocation();
 	Particle.LifeTime = (ColSize * RowSize) / FrameRate;
 	Particle.Scale = StartScale * std::max(0.0f, ScaleMultiplier);
 	Particle.Alpha = 1.0f;
 	Particle.bAlive = true;
-	Particles.Add(Particle);
+	EmitterInstance.GetParticles().Add(Particle);
 	Activate(true);
 }
 
-void UParticleSubUVComponent::SetParticles(int32 InParticleCount)
-{
-	InParticleCount = std::max(0, InParticleCount);
-	if (ParticleCount == InParticleCount && !Particles.IsEmpty())
-	{
-		return;
-	}
-
-	ParticleCount = InParticleCount;
-	Particles.Reset();
-	SetSubUVSize(ColSize, RowSize);
-	SetFrameRate(FrameRate);
-	Particles.Reserve(ParticleCount);
-	for (int32 i = 0; i < ParticleCount; ++i)
-	{
-		FParticle Particle;
-		RespawnParticle(Particle);
-
-		Particle.Age = GetRandomNumberBetween(0.0f, Particle.LifeTime);
-		Particle.Location.Z += Particle.Velocity.Z * Particle.Age;
-
-		const float LifeRatio = Particle.Age / Particle.LifeTime;
-		Particle.Scale = Lerp(StartScale, EndScale, LifeRatio);
-
-		const float ElapsedFrames = Particle.Age * FrameRate;
-		Particle.SubUVFrame = static_cast<uint32>(ElapsedFrames) % (ColSize * RowSize);
-
-		Particles.Add(Particle);
-	}
-}
 
 FBox UParticleSubUVComponent::CalcLocalBounds() const
 {
@@ -128,6 +97,9 @@ void UParticleSubUVComponent::SetFrameRate(float InFrameRate)
 void UParticleSubUVComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
+	SetSubUVSize(ColSize, RowSize);
+	SetFrameRate(FrameRate);
+	TArray<FParticle>& Particles = EmitterInstance.GetParticles();
 	const uint32 TotalFrames = ColSize * RowSize;
 	if (bPlayOnce)
 	{
@@ -143,18 +115,10 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 		return;
 	}
 
+	EmitterInstance.UpdateParticles(DeltaTime);
+
 	for (FParticle& Particle : Particles)
 	{
-		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Age += DeltaTime;
-
-		if (Particle.Age >= Particle.LifeTime)
-		{
-			RespawnParticle(Particle);
-
-			continue;
-		}
-
 		const float LifeRatio = Particle.Age / Particle.LifeTime;
 		
 		Particle.Scale = Lerp(StartScale, EndScale, LifeRatio);
@@ -180,11 +144,21 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 			Particle.SubUVFrame %= TotalFrames;
 		}
 	}
+
+	const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(SpawnRate, DeltaTime);
+
+	for (int32 Index = 0; Index < SpawnCount; ++Index)
+	{
+		FParticle Particle{};
+		RespawnParticle(Particle);
+		Particles.Add(Particle);
+	}
 }
 
 // 뷰 기준으로 파티클 상수와 렌더 패킷을 구성
 void UParticleSubUVComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
 {
+	const TArray<FParticle>& Particles = GetParticlesForView();
 	if (!QuadMesh || !Material || Particles.IsEmpty()) return;
 	BeginViewSubmission();
 	for (int32 Index = 0; Index < Particles.Num(); ++Index)
@@ -265,6 +239,7 @@ float UParticleSubUVComponent::GedSmoothStepedRatio(float start, float end, floa
 // 프레임당 한 번 전체 인덱스 순서로 상수를 준비하며 View 제출 중 재할당하지 않는다.
 void UParticleSubUVComponent::BeginViewSubmission()
 {
+	const TArray<FParticle>& Particles = GetParticlesForView();
 	Constants.Reset();
 	Constants.Reserve(Particles.Num());
     for (const FParticle& Particle : Particles)
@@ -286,6 +261,7 @@ void UParticleSubUVComponent::SubmitParticleToRenderQueue(
 	const FMatrix& WorldMatrix,
 	const float CameraDistanceSquared)
 {
+	const TArray<FParticle>& Particles = GetParticlesForView();
 	if (ParticleIndex < 0 || ParticleIndex >= Particles.Num() || QuadMesh == nullptr || Material == nullptr)
 		return;
 

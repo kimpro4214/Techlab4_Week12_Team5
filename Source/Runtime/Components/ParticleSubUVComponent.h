@@ -1,25 +1,8 @@
 #pragma once
 
 #include "BillboardComponent.h"
+#include "Particles/ParticleEmitterInstance.h"
 #include "ParticleSubUVComponent.generated.h"
-
-struct FParticle
-{
-	// 파티클 한 개의 물리·수명·SubUV 프레임 상태를 담는다.
-	FVector Location;
-	FVector Velocity;
-	float LifeTime;
-
-	float Age;
-	float Scale;
-	uint32 SubUVFrame;
-	float FrameTimer;
-
-	float Alpha;
-
-	bool bAlive;
-};
-
 
 
 // 가장 단순한 SubUV 파티클입니다.
@@ -40,7 +23,7 @@ public:
 
 	virtual void SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext) override;
 	// ViewportLayout가 View별 거리 정렬 입력을 만들 수 있도록 현재 파티클 배열을 읽기 전용으로 제공한다.
-	const TArray<FParticle>& GetParticlesForView() const { return Particles; }
+	const TArray<FParticle>& GetParticlesForView() const { return EmitterInstance.GetParticles(); }
 	// 프레임의 첫 View 전에 파티클 인덱스별 상수를 준비하고 네 View에서 재사용한다.
 	void BeginViewSubmission();
 	// 불투명 파티클의 기존 정렬 경로를 선택한다.
@@ -53,7 +36,6 @@ public:
 	bool SetParticleTexture(const FString& Path);
 	void PlayOnce(float ScaleMultiplier = 1.0f);
 
-	void SetParticles(int32 InParticleCount = 10);
 
 private:
 	void RespawnParticle(FParticle& Particle);
@@ -66,14 +48,12 @@ private:
 private:
 	static const float MAX_NORMALIZED_VALUE;
 
-	// 방출 튜닝 값
-	int32 ParticleCount = 0;
 	bool bPlayOnce = false;
 	// 텍스처를 교체할 때만 생성하는 이 컴포넌트 전용 머티리얼.
 	UMaterial* TextureMaterialInstance = nullptr;
 
-	float MinLifeTime = 6.0f;           // 수명 최소값(초)
-	float MaxLifeTime = 8.0f;          // 수명 최대값(초)
+	float MinLifeTime = 2.0f;           // 수명 최소값(초)
+	float MaxLifeTime = 2.0f;          // 수명 최대값(초)
 
 	float MinRiseSpeed = 0.7f;          // 상승 속도 최소값
 	float MaxRiseSpeed = 0.9f;          // 상승 속도 최대값
@@ -91,7 +71,8 @@ private:
 	uint32 RowSize;
 	UPROPERTY(EditAnywhere)
 	float FrameRate;
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0))
+	float SpawnRate = 5.0f;
 
-	// Todo: Reserve particles
-	TArray<FParticle> Particles;
+	FParticleEmitterInstance EmitterInstance;
 };
