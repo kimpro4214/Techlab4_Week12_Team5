@@ -13,7 +13,6 @@ public:
 	void Spawn() override;
 
 private:
-
 	// 초기 속도(방향 + 크기 벡터). 축마다 [Min, Max]에서 랜덤으로 결정
 	FVector StartVelocityMin = FVector(-10.0f, -10.0f, 50.0f);		// Particle 초기 속도 하한
 	FVector StartVelocityMax = FVector(10.0f, 10.0f, 100.0f);		// Particle 초기 속도 상한
