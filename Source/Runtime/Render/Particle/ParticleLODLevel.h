@@ -12,6 +12,11 @@ class UParticleLODLevel : public UObject
 {
 	GENERATED_BODY()
 
+public:
+	const TArray<UParticleModule*>& GetModules() const { return Modules; }
+	UParticleModuleRequired* GetRequiredModule() const { return RequiredModule; }
+	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
+
 private:
 	int32 Level = 0;	// 현재 LOD Level
 	bool bEnabled = true;

@@ -11,31 +11,24 @@ class UParticleSystemComponent;
 // 파티클 메모리를 보유하고 Spawn / Update / Kill을 수행
 struct FParticleEmitterInstance
 {
-	bool Init(UParticleEmitter* Emitter, UParticleSystemComponent* ParticleComponent)
+	bool Init(UParticleEmitter* Emitter, UParticleSystemComponent* ParticleComponent);
+
+	void Spawn(int32 LODIndex)
 	{
-		if (Emitter != nullptr)		SpriteTemplate = Emitter;	else return false;
-		if (ParticleComponent != nullptr)		Component = ParticleComponent;	else return false;
+		const TArray<UParticleModule*> Modules = SpriteTemplate->GetLODLevels()[LODIndex]->GetModules();
+		UParticleModuleRequired* RequiredModule = SpriteTemplate->GetLODLevels()[LODIndex]->GetRequiredModule();
+		UParticleModuleTypeDataBase* TypeDataModule = SpriteTemplate->GetLODLevels()[LODIndex]->GetTypeDataModule();
 
-		if (SpriteTemplate->GetLODLevels().Num() == 0) return false;
-		else CurrentLODLevel = SpriteTemplate->GetLODLevels()[0];
-
-		ParticleSize = sizeof(FBaseParticle);
-		ParticleStride = (ParticleSize + 15) & ~15;		// ParticleSize 바탕으로 16배수로 올림
-
-		ActiveParticles = 0;
-		MaxActiveParticles = 100;
-		SpawnFraction = 0;
-
-		ParticleDataBlock.ParticleDataNumBytes = ParticleStride * MaxActiveParticles;	
-		ParticleDataBlock.ParticleIndicesNumShorts = MaxActiveParticles;
-		ParticleDataBlock.MemBlockSize = ParticleDataBlock.ParticleDataNumBytes + ParticleDataBlock.ParticleIndicesNumShorts * sizeof(uint16);	// Block 전체 Size = Particle 영역 + Index 영역
-		
-		ParticleDataBlock.ParticleData = (uint8*)FMemory::Malloc(ParticleDataBlock.MemBlockSize);	// 블럭 전체 메모리 할당
-		ParticleDataBlock.ParticleIndices = (uint16*)ParticleDataBlock.ParticleData + ParticleDataBlock.ParticleDataNumBytes;	// Indices 영역 시작지점
-
-		return true;
+		for (int i = 0;i < Modules.Num();i++)
+		{
+			Modules[i]->Spawn();
+		}
 	}
 
+	void Update()
+	{
+
+	}
 
 	UParticleEmitter* SpriteTemplate = nullptr;	// 실제 Emitter 참조로 Module 가져옴
 	UParticleSystemComponent* Component = nullptr;	// Component에 정보를 전달하기 위한 참조
