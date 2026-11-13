@@ -4,6 +4,7 @@
 #include "ParticleModule.h"
 #include "ParticleLODLevel.generated.h"
 
+class UParticleModuleSpawn;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase; // 아직 정의하지 않음. Mesh / Beam / Ribbon TypeData의 기반 클래스 자리
 
@@ -15,12 +16,14 @@ class UParticleLODLevel : public UObject
 public:
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	UParticleModuleRequired* GetRequiredModule() const { return RequiredModule; }
+	UParticleModuleSpawn* GetSpawnModule() const { return SpawnModule; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
 
 private:
 	int32 Level = 0;	// 현재 LOD Level
 	bool bEnabled = true;
 	UParticleModuleRequired* RequiredModule = nullptr;
-	TArray<UParticleModule*> Modules;
+	UParticleModuleSpawn* SpawnModule = nullptr;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
+	TArray<UParticleModule*> Modules;
 };

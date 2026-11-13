@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
+#include "ParticleModuleSpawn.h"
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -19,6 +20,10 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* Emitter, UParticleSystemCo
 
 	if (SpriteTemplate->GetLODLevels().Num() == 0) return false;
 	else CurrentLODLevel = SpriteTemplate->GetLODLevels()[0];
+
+	// Required·Spawn 모듈은 Emitter마다 필수. 없으면 설정·생성량을 알 수 없으므로 메모리 할당 전에 실패 처리
+	if (CurrentLODLevel->GetRequiredModule() == nullptr) return false;
+	if (CurrentLODLevel->GetSpawnModule() == nullptr) return false;
 
 	ParticleSize = sizeof(FBaseParticle);
 	ParticleStride = FMemory::QuantizeSize(ParticleSize, 16);		// ParticleSize 바탕으로 16배수로 맞춤
@@ -44,12 +49,20 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* Emitter, UParticleSystemCo
 	return true;
 }
 
-FParticleEmitterInstance::~FParticleEmitterInstance()
+void FParticleEmitterInstance::Spawn(float DeltaTime)
 {
-	if (ParticleDataBlock.ParticleData != nullptr)
-	{
-		FMemory::Free(ParticleDataBlock.ParticleData);
-	}
-	ParticleDataBlock.ParticleData =  nullptr;
-	ParticleDataBlock.ParticleIndices = nullptr;
+	float EmitterRate = CurrentLODLevel->GetSpawnModule()->GetRate();
+	float EmitterRateScale = CurrentLODLevel->GetSpawnModule()->GetRateScale();
+	float ParticleNum = EmitterRate * EmitterRateScale;	
+	float CurrentFrameSpawn = SpawnFraction + DeltaTime * ParticleNum;		// 이번 프레임 스폰량 계산
+	int32 CurrentCount = int32(CurrentFrameSpawn);	// 정수 부분 만큼만 파티클 개수로 렌더링
+	SpawnFraction = CurrentFrameSpawn - CurrentCount;
+
+	if (CurrentCount > 0) SpawnParticles(CurrentCount);
 }
+
+void  FParticleEmitterInstance::SpawnParticles(int32 Count)
+{
+
+}
+
