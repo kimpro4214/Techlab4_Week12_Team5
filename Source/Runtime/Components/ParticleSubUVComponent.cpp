@@ -10,6 +10,8 @@
 
 #include "Engine/World.h"
 
+#include "Particles/ParticleModuleSpawn.h"
+
 const float UParticleSubUVComponent::MAX_NORMALIZED_VALUE = 1.0f;
 
 UParticleSubUVComponent::UParticleSubUVComponent()
@@ -75,7 +77,7 @@ FBox UParticleSubUVComponent::CalcLocalBounds() const
 {
 	// 파티클은 컴포넌트 원점에서 생성되어 수명 동안 위로 이동한다.
 	// 프록시의 경계가 원점 쿼드에 고정되면 화면 안의 파티클도 컬링된다.
-	const float Extent = std::max(StartScale, EndScale) + MaxLifeTime * MaxRiseSpeed;
+	const float Extent = std::max(StartScale, EndScale) + LifetimeModule.Lifetime * MaxRiseSpeed;
 	return FBox{ FVector(-Extent, -Extent, -Extent), FVector(Extent, Extent, Extent) };
 }
 
@@ -145,7 +147,8 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 		}
 	}
 
-	const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(SpawnRate, DeltaTime);
+	const FParticleModuleSpawn SpawnModule{ SpawnRate };
+	const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(SpawnModule, DeltaTime);
 
 	for (int32 Index = 0; Index < SpawnCount; ++Index)
 	{
@@ -181,7 +184,7 @@ void UParticleSubUVComponent::RespawnParticle(FParticle& Particle)
 	Particle.Velocity.Y = 0.0f;
 	Particle.Velocity.Z = GetRandomNumberBetween(MinRiseSpeed, MaxRiseSpeed);
 
-	Particle.LifeTime = GetRandomNumberBetween(MinLifeTime, MaxLifeTime);
+	LifetimeModule.Spawn(Particle);
 	Particle.Age = 0.0f;
 	Particle.SubUVFrame = static_cast<uint32>(GetRandomNumberBetween(0.0f, static_cast<float>((ColSize * RowSize) - 1)));
 	Particle.Scale = StartScale;

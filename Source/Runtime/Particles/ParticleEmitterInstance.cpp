@@ -1,7 +1,6 @@
 #include "EnginePCH.h"
 #include "ParticleEmitterInstance.h"
-
-#include <algorithm>
+#include "Particles/ParticleModuleSpawn.h"
 
 void FParticleEmitterInstance::Reset()
 {
@@ -24,11 +23,7 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	}
 }
 
-int32 FParticleEmitterInstance::ConsumeSpawnCount(float SpawnRate, float DeltaTime)
+int32 FParticleEmitterInstance::ConsumeSpawnCount(const FParticleModuleSpawn& SpawnModule, float DeltaTime)
 {
-	SpawnRemainder += std::max(0.0f, SpawnRate) * DeltaTime;
-
-	const int32 SpawnCount = static_cast<int32>(SpawnRemainder);
-	SpawnRemainder -= static_cast<float>(SpawnCount);
-	return SpawnCount;
+	return SpawnModule.GetSpawnCount(DeltaTime, SpawnRemainder);
 }

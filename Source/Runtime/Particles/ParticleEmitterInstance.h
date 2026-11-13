@@ -3,6 +3,8 @@
 #include "Containers/Array.h"
 #include "Math/Vector.h"
 
+struct FParticleModuleSpawn;
+
 struct FParticle
 {
 	// 파티클 한 개의 물리·수명·SubUV 프레임 상태를 담는다.
@@ -25,11 +27,10 @@ class FParticleEmitterInstance
 public:
 	void Reset();
 	void UpdateParticles(float DeltaTime);
-	int32 ConsumeSpawnCount(float SpawnRate, float DeltaTime);
+	int32 ConsumeSpawnCount(const FParticleModuleSpawn& SpawnModule, float DeltaTime);
 
 	TArray<FParticle>& GetParticles() { return Particles; }
 	const TArray<FParticle>& GetParticles() const { return Particles; }
-
 
 private:
 	TArray<FParticle> Particles;

@@ -2,6 +2,7 @@
 
 #include "BillboardComponent.h"
 #include "Particles/ParticleEmitterInstance.h"
+#include "Particles/ParticleModuleLifetime.h"
 #include "ParticleSubUVComponent.generated.h"
 
 
@@ -52,8 +53,7 @@ private:
 	// 텍스처를 교체할 때만 생성하는 이 컴포넌트 전용 머티리얼.
 	UMaterial* TextureMaterialInstance = nullptr;
 
-	float MinLifeTime = 2.0f;           // 수명 최소값(초)
-	float MaxLifeTime = 2.0f;          // 수명 최대값(초)
+	FParticleModuleLifetime LifetimeModule;
 
 	float MinRiseSpeed = 0.7f;          // 상승 속도 최소값
 	float MaxRiseSpeed = 0.9f;          // 상승 속도 최대값
