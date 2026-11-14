@@ -1,6 +1,10 @@
 #include "EnginePCH.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
 #include "ParticleModuleSpawn.h"
+#include "ParticleModuleRequired.h"
+#include "Components/ParticleSystemComponent.h"
+
+
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -63,6 +67,22 @@ void FParticleEmitterInstance::Spawn(float DeltaTime)
 
 void  FParticleEmitterInstance::SpawnParticles(int32 Count)
 {
+	for (int i = 0;i < Count;i++)
+	{
+		if (ActiveParticles >= MaxActiveParticles) break;
 
+		int32 CurrentIndex = ParticleDataBlock.ParticleIndices[ActiveParticles];
+		DECLARE_PARTICLE_PTR(Particle, (ParticleDataBlock.ParticleData + ParticleStride * CurrentIndex));
+
+		FMemory::Memzero(Particle, ParticleStride);	// 기존 Particle 값 초기화
+		FVector SpawnOrigin;
+		if(CurrentLODLevel->GetRequiredModule()->IsUseLocalSpace()) SpawnOrigin = CurrentLODLevel->GetRequiredModule()->GetEmitterOrigin();
+		else SpawnOrigin = Component->GetWorldMatrix().TransformPosition(CurrentLODLevel->GetRequiredModule()->GetEmitterOrigin());	// Component 기준 로컬 좌표를 월드 좌표로 변환
+
+		for (UParticleModule* Module : CurrentLODLevel->GetModules()) Module->Spawn(this, 0, 0.0f, Particle);	// 전체 Emitter Module에 대해서 Particle Update하도록 Spawn 진행
+
+		Particle->Location = SpawnOrigin;
+		ActiveParticles++;
+	}
 }
 

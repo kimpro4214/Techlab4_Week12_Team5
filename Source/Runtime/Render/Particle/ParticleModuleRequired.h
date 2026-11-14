@@ -9,12 +9,14 @@ UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
 	GENERATED_BODY()
-
+public:
+	FVector GetEmitterOrigin() const { return EmitterOrigin; }
+	bool IsUseLocalSpace() const { return bUseLocalSpace; }
 
 private:
 	UMaterial* Material = nullptr;		// 출력될 Material
-	FVector EmitterOrigin;				// Emitter 위치
-	FRotator EmitterRotation;			// Emitter 회전값
+	FVector EmitterOrigin;				// Emitter 위치, 해당 값은 Component 기준 Local
+	FRotator EmitterRotation;			// Emitter 회전값, 해당 값은 Component 기준 Local
 	uint32 EmitterLoopCount = 0;		// Emitter 반복 횟수, 0이면 무한 반복
 
 	// 지속 시간: bEmitterDurationUseRange가 false면 EmitterDuration 고정,
@@ -27,4 +29,5 @@ private:
 	bool bKillWhenFinished = false;		// Emitter 동작 종료시 Kill 여부
 	bool bKillWhenDisabled = false;		// System 비활성화시 Kill 여부
 	bool bUseLocalSpace = false;		// Particle이 Emitter의 Local Space를 따라갈지 여부를 체크, 따라갈경우 Actor를 따라서 Particle도 같이 이동, 따라가지 않으면 Particle은 남음
+	// 다른 모듈의 이동을 월드 공간에서 반영하는지, Component의 Local 공간에서 반영하는지 여부
 };
