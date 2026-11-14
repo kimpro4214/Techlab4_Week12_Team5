@@ -46,10 +46,13 @@ inline FVector ParticleRandRange(const FVector& Min, const FVector& Max)
 // 뒤에서부터 도는 이유: 루프 중 KillParticle(swap-remove)을 해도 안전하다.
 #define BEGIN_UPDATE_LOOP \
 	{ \
-		TArray<FBaseParticle>& ParticleArray = Owner->Particles; \
-		for (int32 ParticleIdx = ParticleArray.Num() - 1; ParticleIdx >= 0; --ParticleIdx) \
+		uint8*        ParticleData    = Owner->ParticleDataBlock.ParticleData; \
+		const uint16* ParticleIndices = Owner->ParticleDataBlock.ParticleIndices; \
+		const int32   ParticleStride  = Owner->ParticleStride; \
+		for (int32 i = Owner->ActiveParticles - 1; i >= 0; --i) \
 		{ \
-			FBaseParticle& Particle = ParticleArray[ParticleIdx];
+			const int32 CurrentIndex = ParticleIndices[i]; \
+			FBaseParticle& Particle = *reinterpret_cast<FBaseParticle*>(ParticleData + CurrentIndex * ParticleStride);
 
 #define END_UPDATE_LOOP \
 		} \
