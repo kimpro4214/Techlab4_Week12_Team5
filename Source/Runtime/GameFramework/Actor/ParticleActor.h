@@ -1,10 +1,9 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Components/ParticleSubUVComponent.h"
+#include "Components/ParticleSystemComponent.h"
 #include "ParticleActor.generated.h"
 
-// Todo: subuv
 UCLASS()
 class AParticleActor : public AActor
 {
@@ -13,8 +12,7 @@ class AParticleActor : public AActor
 
 public:
 	AParticleActor();
-	//UParticleSubUVComponent* GetParticleComponent() const;
 
 private:
-	UParticleSubUVComponent* ParticleComponent;
+	UParticleSystemComponent* ParticleComponent = nullptr;
 };
