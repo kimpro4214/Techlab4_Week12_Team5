@@ -13,6 +13,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor/SkeletalMeshActor.h"
+#include "Components/ParticleSystemComponent.h"
 
 #include "Serialization/JsonArchive.h"
 
@@ -30,6 +31,7 @@ bool UEngine::Init()
 	UAudioComponent::StaticClass();   // Add Component 목록에 뜨도록 (다른 컴포넌트와 동일)
 	USkeletalMeshComponent::StaticClass();
 	ASkeletalMeshActor::StaticClass();
+	UParticleSystemComponent::StaticClass();
 
 
 	AssetManager = NewObject<UAssetManager>();
