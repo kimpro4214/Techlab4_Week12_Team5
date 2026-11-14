@@ -35,7 +35,7 @@ void FSpriteBatcher::Begin()
 	SpriteCount = 0;
 }
 
-void FSpriteBatcher::AddSprite(
+void FSpriteBatcher::AddSprite(				// Quad Sprite Vertex 생성 후 Add
 	const FVector& WorldCenter,
 	const FVector2& Size,
 	const FVector4& Color,
@@ -74,7 +74,15 @@ void FSpriteBatcher::AddSprite(
 
 void FSpriteBatcher::End()
 {
-	// TODO: RenderCommand::MapWriteDiscard / Unmap
+	if (SpriteCount == 0) return;
+	void* pData = RenderCommand::MapWriteDiscard(VertexBuffer.get());
+	if (pData == nullptr)
+	{
+		SpriteCount = 0;
+		return;
+	}
+	memcpy(pData, Vertices.GetData(), SpriteCount * 4 * sizeof(FParticleSystemVertex));
+	RenderCommand::Unmap(VertexBuffer.get());
 }
 
 FMeshGeometry FSpriteBatcher::GetGeometry() const
