@@ -110,13 +110,63 @@ void FParticleEmitterInstance::UpdateTransforms()
 	}
 }
 
+void FParticleEmitterInstance::Tick(float DeltaTime)
+{
+	if (!CurrentLODLevel || !Component)
+		return;
+
+	EmitterTime += DeltaTime;
+
+	// Age 증가
+	ResetParticleParameters(DeltaTime);
+
+	// 모듈을 Update
+	for (UParticleModule* Module : CurrentLODLevel->GetUpdateModules())
+		Module->Update(this, 0, DeltaTime);
+
+	// 수명 끝난 파티클 제거
+	KillParticles();
+
+	// 새 파티클 생성. Update 뒤에 하므로 막 태어난 파티클은 이번 프레임에 Update되지 않는다 
+	Spawn(DeltaTime);
+}
+
+void FParticleEmitterInstance::ResetParticleParameters(float DeltaTime)
+{
+	FParticleEmitterInstance* Owner = this;   // BEGIN_UPDATE_LOOP가 Owner를 찾는다
+	BEGIN_UPDATE_LOOP
+		Particle.RelativeTime += DeltaTime * Particle.LifeTime;   // 미리 나눠둔 1/수명을 곱한다
+	END_UPDATE_LOOP
+}
+
+void FParticleEmitterInstance::KillParticles()
+{
+	FParticleEmitterInstance* Owner = this;
+	BEGIN_UPDATE_LOOP
+		if (Particle.RelativeTime >= 1.0f)
+			KillParticle(i);
+	END_UPDATE_LOOP
+}
+
+void FParticleEmitterInstance::KillParticle(int32 Index)
+{
+	if (Index < 0 || Index >= ActiveParticles)
+		return;
+
+	// 죽는 인덱스를 살아있는 구간의 맨 끝과 바꾸고 구간을 하나 줄인다 → O(1), 메모리 이동 없음
+	// 다음 Spawn이 칸을 재사용할 때 PreSpawn이 Memzero한다.
+	uint16* Indices = ParticleDataBlock.ParticleIndices;
+	std::swap(Indices[Index], Indices[ActiveParticles - 1]);
+	--ActiveParticles;
+}
+
 void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation)
 {
 	// Kill은 칸을 지우지 않으므로, 재사용되는 칸에는 이전 파티클 값이 남아 있다 → 칸 전체를 0으로
 	FMemory::Memzero(Particle, ParticleStride);
 
 	Particle->Location = InitialLocation;
-	Particle->LifeTime = 1.0f;                        // 기본 수명 1초 (Lifetime 모듈이 덮어쓴다)
+	Particle->LifeTime = 1.0f;    // 기본 수명 1초 (Lifetime 모듈이 덮어쓴다)
 	Particle->Size = Particle->BaseSize = FVector(1.0f, 1.0f, 1.0f);
 	Particle->Color = Particle->BaseColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 }

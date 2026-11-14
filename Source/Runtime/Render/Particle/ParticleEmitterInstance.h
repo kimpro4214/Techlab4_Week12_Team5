@@ -28,7 +28,13 @@ struct FParticleEmitterInstance
 	void SpawnParticles(int32 Count, const FVector& InitialLocation);
 
 	// 매 Tick 시작에 갱신
-	void UpdateTransform();
+	void UpdateTransforms();
+
+	// 한 프레임 시뮬레이션: 나이 증가 → Update 모듈 → Kill → Spawn
+	virtual void Tick(float DeltaTime);
+
+	// i번째 살아있는 파티클(ParticleIndices[i])을 죽인다. 칸은 지우지 않고 인덱스만 뒤로 보낸다
+	void KillParticle(int32 Index);
 
 	FMatrix EmitterToSimulation = FMatrix::Identity;   // Emitter 로컬 → 시뮬레이션 공간, 원점이 생성 위치
 	FMatrix SimulationToWorld = FMatrix::Identity;   // 시뮬레이션 공간 → 월드, 렌더 단계에서 사용
@@ -53,6 +59,10 @@ protected:
 
 	// 새 파티클의 칸을 비우고 기본값을 채운다 (모듈이 덮어쓰지 않은 값은 이 값을 쓴다)
 	void PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation);
+
 	// 파티클이 생성될 위치. LocalSpace면 컴포넌트 로컬, 아니면 월드 좌표
 	FVector GetSpawnOrigin() const;
+
+	void ResetParticleParameters(float DeltaTime);   // Age 증가 
+	void KillParticles();                            // RelativeTime 1 이상인 파티클 제거
 };
