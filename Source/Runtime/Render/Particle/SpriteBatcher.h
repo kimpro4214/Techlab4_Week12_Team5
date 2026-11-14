@@ -5,6 +5,8 @@
 #include "Render/MeshGeometry.h"
 #include "Render/Vertex.h"
 
+class UMaterial;
+
 // Sprite Emitter 하나의 파티클들을 사각형(정점 4개)으로 펼쳐 Dynamic VB 하나에 모으는 도구.
 // Emitter Instance마다 하나씩 PSC가 소유한다. (Instance는 Batcher를 모른다)
 // 사용 순서: Init(한 번) → [매 뷰] Begin → AddSprite 반복 → End → GetGeometry로 패킷에 연결
@@ -44,6 +46,7 @@ private:
 	TArray<FParticleSystemVertex> Vertices;		// CPU 임시 정점 배열 (End에서 VB로 복사)
 	TUniquePtr<FVertexBuffer> VertexBuffer;		// Dynamic VB: MaxSprites × 4 정점
 	TUniquePtr<FIndexBuffer> IndexBuffer;		// 정적 IB: MaxSprites × 6 인덱스
+	UMaterial* Material;						// Emitter가 사용하는 Material
 
 	uint32 MaxSprites = 0;		// 버퍼 용량 (넘치면 버림)
 	uint32 SpriteCount = 0;		// 이번 뷰에 추가된 스프라이트 수

@@ -293,6 +293,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateDefaultMeshes();
 	Get().CreateBillboardMaterial();
 	Get().CreateParticleMaterial();
+	Get().CreateParticleSystemMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -539,6 +540,21 @@ void UAssetManager::CreateParticleMaterial()
 	ParticleMat->ParamLayout = EMaterialParamLayout::ParticleSubUV;
 	ParticleMat->ParamBuffer = RenderCommand::CreateConstantBuffer(256);
 	RegisterAsset("SubUVMaterial", ParticleMat);
+}
+
+// ParticleSystemComponent Sprite Emitter의 기본 재질 (Required 모듈에 재질이 없을 때 사용)
+// 셰이더는 PSOType으로 결정되므로 ParticleSystem_AlphaBlend가 ParticleSystemShader.hlsl에 연결된다
+// 파티클별 값은 정점에 담기므로 재질 파라미터(상수 버퍼)는 없다
+void UAssetManager::CreateParticleSystemMaterial()
+{
+	UMaterial* ParticleMat = NewObject<UMaterial>();
+	ParticleMat->PSOType = EPSOType::ParticleSystem_AlphaBlend;
+	ParticleMat->Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/ParticleSystemShader.hlsl");
+	ParticleMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/StarParticle.png"));
+	ParticleMat->BlendState = EBlendState::AlphaBlend;
+	ParticleMat->DepthStencilState = EDepthStencilState::ReadOnly;
+	ParticleMat->ParamLayout = EMaterialParamLayout::None;
+	RegisterAsset("ParticleMaterial", ParticleMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

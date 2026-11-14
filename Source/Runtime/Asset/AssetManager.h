@@ -63,6 +63,7 @@ public:
 	void CreateDefaultMaterial();
 	void CreateBillboardMaterial();
 	void CreateParticleMaterial();
+	void CreateParticleSystemMaterial();
 	void CreateEditorArrowMaterial();
 
 	template <typename T>

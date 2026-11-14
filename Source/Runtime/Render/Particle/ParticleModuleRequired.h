@@ -12,6 +12,7 @@ class UParticleModuleRequired : public UParticleModule
 public:
 	FVector GetEmitterOrigin() const { return EmitterOrigin; }
 	bool IsUseLocalSpace() const { return bUseLocalSpace; }
+	UMaterial* GetMaterial() const { return Material; }
 
 private:
 	UMaterial* Material = nullptr;		// 출력될 Material
