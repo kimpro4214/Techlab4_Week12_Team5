@@ -43,6 +43,85 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 	return AllocateParticleData(MaxParticles);
 }
 
+void FParticleEmitterInstance::Spawn(float DeltaTime)
+{
+	UParticleModuleSpawn* SpawnModule = CurrentLODLevel->GetSpawnModule();
+	if (!SpawnModule)
+		return;
+
+	// 초당 Rate개 → 이번 프레임 몫 = Rate × dt
+	// 예) Rate 30, dt 0.016 → 0.48개: 이번엔 0개, 다음 프레임 0.96, 그다음 1.44 → 1개 생성
+	const float SpawnRate = SpawnModule->GetRate() * SpawnModule->GetRateScale();
+	const float NewParticles = SpawnFraction + SpawnRate * DeltaTime;
+	const int32 Count = static_cast<int32>(NewParticles);
+	SpawnFraction = NewParticles - static_cast<float>(Count);
+
+	if (Count > 0)
+		SpawnParticles(Count, GetSpawnOrigin());
+}
+
+void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& InitialLocation)
+{
+	for (int32 i = 0; i < Count; ++i)
+	{
+		if (ActiveParticles >= MaxActiveParticles)
+			break;   // 블록이 가득 참
+
+		// 살아있는 인덱스 바로 뒤가 다음 빈 칸이다
+		const int32 CurrentIndex = ParticleDataBlock.ParticleIndices[ActiveParticles];
+		DECLARE_PARTICLE_PTR(Particle, ParticleDataBlock.ParticleData + ParticleStride * CurrentIndex);
+
+		PreSpawn(Particle, InitialLocation);
+
+		for (UParticleModule* Module : CurrentLODLevel->GetSpawnModules())
+			Module->Spawn(this, 0, 0.0f, Particle);
+
+		++ActiveParticles;
+		++ParticleCounter;
+	}
+}
+
+void FParticleEmitterInstance::UpdateTransforms()
+{
+	UParticleModuleRequired* Required = CurrentLODLevel->GetRequiredModule();
+	const FMatrix ComponentToWorld = Component->GetWorldMatrix();
+
+	// Emitter 로컬 오프셋 (Required의 EmitterOrigin)
+	FMatrix EmitterToComponent = FMatrix::Identity;
+	if (Required)
+	{
+		const FVector Origin = Required->GetEmitterOrigin();
+		EmitterToComponent.M[3][0] = Origin.X;
+		EmitterToComponent.M[3][1] = Origin.Y;
+		EmitterToComponent.M[3][2] = Origin.Z;
+	}
+
+	if (Required && Required->IsUseLocalSpace())
+	{
+		// 파티클을 컴포넌트 로컬에 저장 → 그릴 때 컴포넌트 행렬로 월드 변환
+		EmitterToSimulation = EmitterToComponent;
+		SimulationToWorld = ComponentToWorld;
+	}
+	else
+	{
+		// 파티클을 월드에 저장 → 그대로 그림
+		EmitterToSimulation = EmitterToComponent * ComponentToWorld;   
+		SimulationToWorld = FMatrix::Identity;
+	}
+}
+
+void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation)
+{
+	// Kill은 칸을 지우지 않으므로, 재사용되는 칸에는 이전 파티클 값이 남아 있다 → 칸 전체를 0으로
+	FMemory::Memzero(Particle, ParticleStride);
+
+	Particle->Location = InitialLocation;
+	Particle->LifeTime = 1.0f;                        // 기본 수명 1초 (Lifetime 모듈이 덮어쓴다)
+	Particle->Size = Particle->BaseSize = FVector(1.0f, 1.0f, 1.0f);
+	Particle->Color = Particle->BaseColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+
 bool FParticleEmitterInstance::AllocateParticleData(int32 MaxParticles)
 {
 	FreeParticleData();
