@@ -3,6 +3,7 @@
 #include "BillboardComponent.h"
 #include "Particles/ParticleEmitterInstance.h"
 #include "Particles/ParticleModuleLifetime.h"
+#include "Particles/ParticleModuleRequired.h"
 #include "ParticleSubUVComponent.generated.h"
 
 
@@ -73,6 +74,8 @@ private:
 	float FrameRate;
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0))
 	float SpawnRate = 5.0f;
+	UPROPERTY(EditAnywhere)
+	FParticleModuleRequired RequiredModule;
 
 	FParticleEmitterInstance EmitterInstance;
 };

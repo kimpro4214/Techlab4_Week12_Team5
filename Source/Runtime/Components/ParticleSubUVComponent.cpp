@@ -10,7 +10,7 @@
 
 #include "Engine/World.h"
 
-#include "Particles/ParticleModuleSpawn.h"
+#include "Particles/ParticleEmitter.h"
 
 const float UParticleSubUVComponent::MAX_NORMALIZED_VALUE = 1.0f;
 
@@ -147,13 +147,14 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 		}
 	}
 
-	const FParticleModuleSpawn SpawnModule{ SpawnRate };
-	const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(SpawnModule, DeltaTime);
+	const FParticleEmitter Emitter{ RequiredModule, FParticleModuleSpawn{ SpawnRate }, LifetimeModule };
+	const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(Emitter, DeltaTime);
 
 	for (int32 Index = 0; Index < SpawnCount; ++Index)
 	{
 		FParticle Particle{};
 		RespawnParticle(Particle);
+		Emitter.Lifetime.Spawn(Particle);
 		Particles.Add(Particle);
 	}
 }
@@ -184,7 +185,6 @@ void UParticleSubUVComponent::RespawnParticle(FParticle& Particle)
 	Particle.Velocity.Y = 0.0f;
 	Particle.Velocity.Z = GetRandomNumberBetween(MinRiseSpeed, MaxRiseSpeed);
 
-	LifetimeModule.Spawn(Particle);
 	Particle.Age = 0.0f;
 	Particle.SubUVFrame = static_cast<uint32>(GetRandomNumberBetween(0.0f, static_cast<float>((ColSize * RowSize) - 1)));
 	Particle.Scale = StartScale;

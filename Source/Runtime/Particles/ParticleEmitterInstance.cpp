@@ -1,11 +1,14 @@
 #include "EnginePCH.h"
 #include "ParticleEmitterInstance.h"
-#include "Particles/ParticleModuleSpawn.h"
+#include "Particles/ParticleEmitter.h"
+
+#include <algorithm>
 
 void FParticleEmitterInstance::Reset()
 {
 	Particles.Reset();
 	SpawnRemainder = 0.0f;
+	EmitterTime = 0.0f;
 }
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
@@ -23,7 +26,15 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	}
 }
 
-int32 FParticleEmitterInstance::ConsumeSpawnCount(const FParticleModuleSpawn& SpawnModule, float DeltaTime)
+int32 FParticleEmitterInstance::ConsumeSpawnCount(const FParticleEmitter& Emitter, float DeltaTime)
 {
-	return SpawnModule.GetSpawnCount(DeltaTime, SpawnRemainder);
+	float SpawnDeltaTime = DeltaTime;
+	if (Emitter.Required.Duration > 0.0f)
+	{
+		const float RemainingTime = Emitter.Required.Duration - EmitterTime;
+		SpawnDeltaTime = std::min(DeltaTime, std::max(0.0f, RemainingTime));
+	}
+
+	EmitterTime += DeltaTime;
+	return Emitter.Spawn.GetSpawnCount(SpawnDeltaTime, SpawnRemainder);
 }

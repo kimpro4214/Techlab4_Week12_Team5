@@ -3,7 +3,7 @@
 #include "Containers/Array.h"
 #include "Math/Vector.h"
 
-struct FParticleModuleSpawn;
+struct FParticleEmitter;
 
 struct FParticle
 {
@@ -27,7 +27,7 @@ class FParticleEmitterInstance
 public:
 	void Reset();
 	void UpdateParticles(float DeltaTime);
-	int32 ConsumeSpawnCount(const FParticleModuleSpawn& SpawnModule, float DeltaTime);
+	int32 ConsumeSpawnCount(const FParticleEmitter& Emitter, float DeltaTime);
 
 	TArray<FParticle>& GetParticles() { return Particles; }
 	const TArray<FParticle>& GetParticles() const { return Particles; }
@@ -35,4 +35,5 @@ public:
 private:
 	TArray<FParticle> Particles;
 	float SpawnRemainder = 0.0f;
+	float EmitterTime = 0.0f;
 };

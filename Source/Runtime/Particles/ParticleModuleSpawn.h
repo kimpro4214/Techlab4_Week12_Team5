@@ -4,8 +4,14 @@
 
 #include "Core/Types.h"
 
+#include "ParticleModuleSpawn.generated.h"
+
+USTRUCT()
 struct FParticleModuleSpawn
 {
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = 0.0))
 	float Rate = 5.0f;
 
 	int32 GetSpawnCount(float DeltaTime, float& SpawnRemainder) const
