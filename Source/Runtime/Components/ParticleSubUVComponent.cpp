@@ -68,7 +68,7 @@ void UParticleSubUVComponent::PlayOnce(float ScaleMultiplier)
 	Particle.Scale = StartScale * std::max(0.0f, ScaleMultiplier);
 	Particle.Alpha = 1.0f;
 	Particle.bAlive = true;
-	EmitterInstance.GetParticles().Add(Particle);
+	EmitterInstance.AddParticle(Particle);
 	Activate(true);
 }
 
@@ -101,26 +101,29 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 	SetSubUVSize(ColSize, RowSize);
 	SetFrameRate(FrameRate);
-	TArray<FBaseParticle>& Particles = EmitterInstance.GetParticles();
 	const uint32 TotalFrames = ColSize * RowSize;
 	if (bPlayOnce)
 	{
-		if (Particles.IsEmpty()) return;
-		FBaseParticle& Particle = Particles[0];
+		if (EmitterInstance.GetActiveParticleCount() == 0) return;
+		FBaseParticle Particle = EmitterInstance.GetParticle(0);
 		Particle.Age += DeltaTime;
 		if (Particle.Age >= Particle.LifeTime)
 		{
 			Particle.bAlive = false;
+			EmitterInstance.SetParticle(0, Particle);
 			Deactivate();
+			return;
 		}
-		else Particle.SubUVFrame = std::min(static_cast<uint32>(Particle.Age * FrameRate), TotalFrames - 1);
+		Particle.SubUVFrame = std::min(static_cast<uint32>(Particle.Age * FrameRate), TotalFrames - 1);
+		EmitterInstance.SetParticle(0, Particle);
 		return;
 	}
 
 	EmitterInstance.UpdateParticles(DeltaTime);
 
-	for (FBaseParticle& Particle : Particles)
+	for (int32 Index = 0; Index < EmitterInstance.GetActiveParticleCount(); ++Index)
 	{
+		FBaseParticle Particle = EmitterInstance.GetParticle(Index);
 		const float LifeRatio = Particle.Age / Particle.LifeTime;
 		
 		Particle.Scale = Lerp(StartScale, EndScale, LifeRatio);
@@ -145,6 +148,7 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 			++Particle.SubUVFrame;
 			Particle.SubUVFrame %= TotalFrames;
 		}
+		EmitterInstance.SetParticle(Index, Particle);
 	}
 
 	const FParticleEmitter Emitter{ RequiredModule, FParticleModuleSpawn{ SpawnRate }, LifetimeModule };
@@ -155,19 +159,19 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 		FBaseParticle Particle{};
 		RespawnParticle(Particle);
 		Emitter.Lifetime.Spawn(Particle);
-		Particles.Add(Particle);
+		EmitterInstance.AddParticle(Particle);
 	}
 }
 
 // 뷰 기준으로 파티클 상수와 렌더 패킷을 구성
 void UParticleSubUVComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
 {
-	const TArray<FBaseParticle>& Particles = GetParticlesForView();
-	if (!QuadMesh || !Material || Particles.IsEmpty()) return;
+	const int32 ParticleCount = EmitterInstance.GetActiveParticleCount();
+	if (!QuadMesh || !Material || ParticleCount == 0) return;
 	BeginViewSubmission();
-	for (int32 Index = 0; Index < Particles.Num(); ++Index)
+	for (int32 Index = 0; Index < ParticleCount; ++Index)
 	{
-		const FBaseParticle& Particle = Particles[Index];
+		const FBaseParticle Particle = EmitterInstance.GetParticle(Index);
 		if (!Particle.bAlive) continue;
 		const FMatrix WorldMatrix = ViewContext.BuildBillboardMatrix(
 			Particle.Location, Particle.Scale, Particle.Scale);
@@ -242,11 +246,12 @@ float UParticleSubUVComponent::GedSmoothStepedRatio(float start, float end, floa
 // 프레임당 한 번 전체 인덱스 순서로 상수를 준비하며 View 제출 중 재할당하지 않는다.
 void UParticleSubUVComponent::BeginViewSubmission()
 {
-	const TArray<FBaseParticle>& Particles = GetParticlesForView();
+	const int32 ParticleCount = EmitterInstance.GetActiveParticleCount();
 	Constants.Reset();
-	Constants.Reserve(Particles.Num());
-    for (const FBaseParticle& Particle : Particles)
+	Constants.Reserve(ParticleCount);
+    for (int32 Index = 0; Index < ParticleCount; ++Index)
     {
+        const FBaseParticle Particle = EmitterInstance.GetParticle(Index);
         FSubUVConstants Value{};
         Value.CurrentFrame = static_cast<float>(Particle.SubUVFrame);
         Value.AtlasColSize = static_cast<float>(ColSize);
@@ -264,15 +269,15 @@ void UParticleSubUVComponent::SubmitParticleToRenderQueue(
 	const FMatrix& WorldMatrix,
 	const float CameraDistanceSquared)
 {
-	const TArray<FBaseParticle>& Particles = GetParticlesForView();
-	if (ParticleIndex < 0 || ParticleIndex >= Particles.Num() || QuadMesh == nullptr || Material == nullptr)
+	const int32 ParticleCount = EmitterInstance.GetActiveParticleCount();
+	if (ParticleIndex < 0 || ParticleIndex >= ParticleCount || QuadMesh == nullptr || Material == nullptr)
 		return;
 
-	const FBaseParticle& Particle = Particles[ParticleIndex];
+	const FBaseParticle Particle = EmitterInstance.GetParticle(ParticleIndex);
 	if (!Particle.bAlive)
 		return;
 
-	assert(Constants.Num() == Particles.Num());
+	assert(Constants.Num() == ParticleCount);
 
 	FRenderPacket Packet;
 	Packet.Model = RenderQueue.StoreWorldMatrix(WorldMatrix);

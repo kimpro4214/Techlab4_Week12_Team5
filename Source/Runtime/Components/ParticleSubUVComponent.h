@@ -24,8 +24,6 @@ public:
 	virtual FBox CalcLocalBounds() const override;
 
 	virtual void SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext) override;
-	// ViewportLayout가 View별 거리 정렬 입력을 만들 수 있도록 현재 파티클 배열을 읽기 전용으로 제공한다.
-	const TArray<FBaseParticle>& GetParticlesForView() const { return EmitterInstance.GetParticles(); }
 	// 프레임의 첫 View 전에 파티클 인덱스별 상수를 준비하고 네 View에서 재사용한다.
 	void BeginViewSubmission();
 	// 불투명 파티클의 기존 정렬 경로를 선택한다.
