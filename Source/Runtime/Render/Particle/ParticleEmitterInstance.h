@@ -24,10 +24,9 @@ struct FParticleEmitterInstance
 	void Spawn(float DeltaTime);          // 이번 프레임 생성 개수 계산 → 남은 소수 반환
 	void SpawnParticles(int32 Count);      // Count개를 실제로 생성
 
-	void Update()
-	{
+	void Update(float DeltaTime);		// Active된 Particle에 대해서 Update 진행
 
-	}
+	void KillParticle(int32 Index);
 
 	UParticleEmitter* SpriteTemplate = nullptr;		// 실제 Emitter 참조로 Module 가져옴
 	UParticleSystemComponent* Component = nullptr;	// Component에 정보를 전달하기 위한 참조

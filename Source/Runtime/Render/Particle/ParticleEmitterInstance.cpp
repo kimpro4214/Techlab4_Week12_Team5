@@ -74,15 +74,41 @@ void  FParticleEmitterInstance::SpawnParticles(int32 Count)
 		int32 CurrentIndex = ParticleDataBlock.ParticleIndices[ActiveParticles];
 		DECLARE_PARTICLE_PTR(Particle, (ParticleDataBlock.ParticleData + ParticleStride * CurrentIndex));
 
-		FMemory::Memzero(Particle, ParticleStride);	// 기존 Particle 값 초기화
+		FMemory::Memzero(Particle, ParticleStride);	// KillParticles에서는 메모리 초기화를 하지 않음 -> 기존 Particle 값 초기화 필요
 		FVector SpawnOrigin;
 		if(CurrentLODLevel->GetRequiredModule()->IsUseLocalSpace()) SpawnOrigin = CurrentLODLevel->GetRequiredModule()->GetEmitterOrigin();
 		else SpawnOrigin = Component->GetWorldMatrix().TransformPosition(CurrentLODLevel->GetRequiredModule()->GetEmitterOrigin());	// Component 기준 로컬 좌표를 월드 좌표로 변환
+		Particle->Location = SpawnOrigin;
 
 		for (UParticleModule* Module : CurrentLODLevel->GetModules()) Module->Spawn(this, 0, 0.0f, Particle);	// 전체 Emitter Module에 대해서 Particle Update하도록 Spawn 진행
 
-		Particle->Location = SpawnOrigin;
+		
 		ActiveParticles++;
 	}
 }
 
+
+void  FParticleEmitterInstance::Update(float DeltaTime)
+{
+	FParticleEmitterInstance* Owner = this;
+	BEGIN_UPDATE_LOOP
+		Particle.RelativeTime += DeltaTime * Particle.Lifetime;   // Lifetime = 1/수명, RelativeTime 업데이트
+	if (Particle.RelativeTime >= 1.0f)		// 수명 다한 파티클은 제거
+	{
+		KillParticle(i);
+		continue;
+	}
+	END_UPDATE_LOOP
+
+	for (UParticleModule* Module : CurrentLODLevel->GetModules()) Module->Update(this, 0, DeltaTime);		// Module 업데이트 진행
+
+	BEGIN_UPDATE_LOOP
+		Particle.Location += Particle.Velocity * DeltaTime;		// 업데이트된 Velocity 바탕으로 Location 업데이트
+	END_UPDATE_LOOP
+}
+
+void FParticleEmitterInstance::KillParticle(int32 Index)
+{
+	std::swap(ParticleDataBlock.ParticleIndices[ActiveParticles-1], ParticleDataBlock.ParticleIndices[Index]);
+	ActiveParticles--;
+}
