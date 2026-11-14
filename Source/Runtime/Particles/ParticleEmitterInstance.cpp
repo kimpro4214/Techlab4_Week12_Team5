@@ -4,6 +4,31 @@
 
 #include <algorithm>
 
+void FParticleEmitterInstance::Init(const FParticleEmitter& Emitter)
+{
+	Reset();
+
+	const auto AlinUp = [](uint32 Size, uint32 Alignment)
+		{
+			return ((Size + Alignment - 1) / Alignment) * Alignment;
+		};
+
+	constexpr uint32 SlotAlignment = 16;
+	static_assert(SlotAlignment % alignof(FBaseParticle) == 0);
+	static_assert(SlotAlignment % alignof(FOrbitParticlePayload) == 0);
+
+	uint32 SlotSize = sizeof(FBaseParticle);
+	OrbitPayloadOffset = 0;
+
+	if (Emitter.Orbit.bEnabled)
+	{
+		OrbitPayloadOffset = AlinUp(SlotSize, alignof(FOrbitParticlePayload));
+		SlotSize = OrbitPayloadOffset + sizeof(FOrbitParticlePayload);
+	}
+
+	ParticleStride = AlinUp(SlotSize, SlotAlignment);
+}
+
 void FParticleEmitterInstance::Reset()
 {
 	Particles.Reset();

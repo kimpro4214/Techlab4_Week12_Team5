@@ -14,6 +14,10 @@ void UParticleSystemComponent::SetParticleSystem(const FParticleSystem& InSystem
 	ParticleSystem = InSystem;
 	EmitterInstances.Reset();
 	EmitterInstances.SetNum(ParticleSystem.Emitters.Num());
+	for (int32 Index = 0; Index < EmitterInstances.Num(); ++Index) 
+	{
+		EmitterInstances[Index].Init(ParticleSystem.Emitters[Index]);
+	}
 	ParticleRenderParams.Reset();
 	OnTransformDirty();
 }
@@ -23,6 +27,10 @@ void UParticleSystemComponent::BeginPlay()
 	Super::BeginPlay();
 	EmitterInstances.Reset();
 	EmitterInstances.SetNum(ParticleSystem.Emitters.Num());
+	for (int32 Index = 0; Index < EmitterInstances.Num(); ++Index)
+	{
+		EmitterInstances[Index].Init(ParticleSystem.Emitters[Index]);
+	}
 	ParticleRenderParams.Reset();
 }
 
