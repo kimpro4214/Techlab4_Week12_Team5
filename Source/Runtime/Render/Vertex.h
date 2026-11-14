@@ -33,3 +33,10 @@ struct FParticleVertex
 	FVector Position;
 	FVector2 UV;
 };
+
+struct FParticleSystemVertex
+{
+	FVector Position;
+	FVector2 UV;
+	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+};
