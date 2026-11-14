@@ -24,4 +24,5 @@ private:
 	FParticleSystem ParticleSystem;
 
 	TArray<FParticleEmitterInstance> EmitterInstances;
+	TArray<FSubUVConstants> ParticleRenderParams;
 };

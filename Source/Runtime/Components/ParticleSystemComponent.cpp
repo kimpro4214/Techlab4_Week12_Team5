@@ -14,6 +14,7 @@ void UParticleSystemComponent::SetParticleSystem(const FParticleSystem& InSystem
 	ParticleSystem = InSystem;
 	EmitterInstances.Reset();
 	EmitterInstances.SetNum(ParticleSystem.Emitters.Num());
+	ParticleRenderParams.Reset();
 	OnTransformDirty();
 }
 
@@ -22,6 +23,7 @@ void UParticleSystemComponent::BeginPlay()
 	Super::BeginPlay();
 	EmitterInstances.Reset();
 	EmitterInstances.SetNum(ParticleSystem.Emitters.Num());
+	ParticleRenderParams.Reset();
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
@@ -30,6 +32,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	const FVector SpawnLocation = GetWorldLocation();
 	bool bBoundsChanged = false;
+	ParticleRenderParams.Reset();
 
 	for (int32 EmitterIndex = 0; EmitterIndex < EmitterInstances.Num(); ++EmitterIndex)
 	{
@@ -41,17 +44,26 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		bBoundsChanged |= !Particles.IsEmpty() || SpawnCount > 0;
 		EmitterInstance.UpdateParticles(DeltaTime);
 
-		for (int32 Index = 0; Index < SpawnCount; ++Index) 
+		for (int32 Index = 0; Index < SpawnCount; ++Index)
 		{
 			FParticle Particle{};
-			Particle.Location = SpawnLocation;
-			Particle.Velocity = FVector(0.0f, 0.0f, 1.0f);
-			Particle.Scale = 1.0f;
-			Particle.Alpha = 1.0f;
 			Particle.bAlive = true;
 
+			Emitter.Location.Spawn(Particle, SpawnLocation);
+			Emitter.Velocity.Spawn(Particle);
+			Emitter.Size.Spawn(Particle);
+			Emitter.Color.Spawn(Particle);
 			Emitter.Lifetime.Spawn(Particle);
 			Particles.Add(Particle);
+		}
+
+		// 렌더 패킷이 참조할 상수를 제출 순서대로 준비한다.
+		for (const FParticle& Particle : Particles)
+		{
+			FSubUVConstants Params{ 0.0f, 1.0f, 1.0f, Particle.Alpha };
+			Params.Tint = FVector4(Particle.Color, 1.0f);
+			Params.DecodeSRGB = 0.0f;
+			ParticleRenderParams.Add(Params);
 		}
 	}
 
@@ -82,6 +94,7 @@ void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, co
 {
 	if (!QuadMesh || !Material) return;
 
+	int32 ParamIndex = 0;
 	for(const FParticleEmitterInstance& Instance : EmitterInstances)
 	{
 		for (const FParticle& Particle : Instance.GetParticles())
@@ -90,8 +103,10 @@ void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, co
 
 			UBillboardComponent::SubmitToRenderQueue(RenderQueue, Billboard);
 
+			FRenderPacket& Packet = RenderQueue.Last();
+			Packet.MaterialParamData = &ParticleRenderParams[ParamIndex++];
 			const FVector Delta = Particle.Location - ViewContext.CameraPosition;
-			RenderQueue.Last().CameraToParticleDistance = Delta.Dot(Delta);
+			Packet.CameraToParticleDistance = Delta.Dot(Delta);
 		}
 	}
 }

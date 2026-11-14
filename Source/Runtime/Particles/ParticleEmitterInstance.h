@@ -17,6 +17,7 @@ struct FParticle
 	uint32 SubUVFrame;
 	float FrameTimer;
 
+	FVector Color = FVector(1.0f, 1.0f, 1.0f);
 	float Alpha;
 
 	bool bAlive;
