@@ -12,7 +12,7 @@ struct FParticleModuleColor
 	UPROPERTY(EditAnywhere)
 	FLinearColor InitialColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	void Spawn(FParticle& Particle) const
+	void Spawn(FBaseParticle& Particle) const
 	{
 		Particle.Color = FVector(InitialColor.R, InitialColor.G, InitialColor.B);
 		Particle.Alpha = InitialColor.A;

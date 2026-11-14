@@ -5,7 +5,7 @@
 
 struct FParticleEmitter;
 
-struct FParticle
+struct FBaseParticle
 {
 	// 파티클 한 개의 물리·수명·SubUV 프레임 상태를 담는다.
 	FVector Location;
@@ -26,15 +26,19 @@ struct FParticle
 class FParticleEmitterInstance
 {
 public:
+	void Init(const FParticleEmitter& Emitter);
 	void Reset();
 	void UpdateParticles(float DeltaTime);
 	int32 ConsumeSpawnCount(const FParticleEmitter& Emitter, float DeltaTime);
 
-	TArray<FParticle>& GetParticles() { return Particles; }
-	const TArray<FParticle>& GetParticles() const { return Particles; }
+	TArray<FBaseParticle>& GetParticles() { return Particles; }
+	const TArray<FBaseParticle>& GetParticles() const { return Particles; }
+
 
 private:
-	TArray<FParticle> Particles;
+	TArray<FBaseParticle> Particles;
 	float SpawnRemainder = 0.0f;
 	float EmitterTime = 0.0f;
+	uint32 ParticleStride = 0;
+	uint32 OrbitPayloadOffset = 0;
 };

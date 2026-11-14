@@ -62,7 +62,7 @@ void UParticleSubUVComponent::PlayOnce(float ScaleMultiplier)
 	SetFrameRate(FrameRate);
 	bPlayOnce = true;
 	EmitterInstance.Reset();
-	FParticle Particle{};
+	FBaseParticle Particle{};
 	Particle.Location = GetWorldLocation();
 	Particle.LifeTime = (ColSize * RowSize) / FrameRate;
 	Particle.Scale = StartScale * std::max(0.0f, ScaleMultiplier);
@@ -101,12 +101,12 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 	SetSubUVSize(ColSize, RowSize);
 	SetFrameRate(FrameRate);
-	TArray<FParticle>& Particles = EmitterInstance.GetParticles();
+	TArray<FBaseParticle>& Particles = EmitterInstance.GetParticles();
 	const uint32 TotalFrames = ColSize * RowSize;
 	if (bPlayOnce)
 	{
 		if (Particles.IsEmpty()) return;
-		FParticle& Particle = Particles[0];
+		FBaseParticle& Particle = Particles[0];
 		Particle.Age += DeltaTime;
 		if (Particle.Age >= Particle.LifeTime)
 		{
@@ -119,7 +119,7 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 
 	EmitterInstance.UpdateParticles(DeltaTime);
 
-	for (FParticle& Particle : Particles)
+	for (FBaseParticle& Particle : Particles)
 	{
 		const float LifeRatio = Particle.Age / Particle.LifeTime;
 		
@@ -152,7 +152,7 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 
 	for (int32 Index = 0; Index < SpawnCount; ++Index)
 	{
-		FParticle Particle{};
+		FBaseParticle Particle{};
 		RespawnParticle(Particle);
 		Emitter.Lifetime.Spawn(Particle);
 		Particles.Add(Particle);
@@ -162,12 +162,12 @@ void UParticleSubUVComponent::TickComponent(float DeltaTime)
 // 뷰 기준으로 파티클 상수와 렌더 패킷을 구성
 void UParticleSubUVComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
 {
-	const TArray<FParticle>& Particles = GetParticlesForView();
+	const TArray<FBaseParticle>& Particles = GetParticlesForView();
 	if (!QuadMesh || !Material || Particles.IsEmpty()) return;
 	BeginViewSubmission();
 	for (int32 Index = 0; Index < Particles.Num(); ++Index)
 	{
-		const FParticle& Particle = Particles[Index];
+		const FBaseParticle& Particle = Particles[Index];
 		if (!Particle.bAlive) continue;
 		const FMatrix WorldMatrix = ViewContext.BuildBillboardMatrix(
 			Particle.Location, Particle.Scale, Particle.Scale);
@@ -177,7 +177,7 @@ void UParticleSubUVComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, con
 }
 
 // 파티클 위치·속도·수명 등 재생성 상태를 초기화한다.
-void UParticleSubUVComponent::RespawnParticle(FParticle& Particle)
+void UParticleSubUVComponent::RespawnParticle(FBaseParticle& Particle)
 {
 	Particle.Location = GetWorldLocation();
 
@@ -242,10 +242,10 @@ float UParticleSubUVComponent::GedSmoothStepedRatio(float start, float end, floa
 // 프레임당 한 번 전체 인덱스 순서로 상수를 준비하며 View 제출 중 재할당하지 않는다.
 void UParticleSubUVComponent::BeginViewSubmission()
 {
-	const TArray<FParticle>& Particles = GetParticlesForView();
+	const TArray<FBaseParticle>& Particles = GetParticlesForView();
 	Constants.Reset();
 	Constants.Reserve(Particles.Num());
-    for (const FParticle& Particle : Particles)
+    for (const FBaseParticle& Particle : Particles)
     {
         FSubUVConstants Value{};
         Value.CurrentFrame = static_cast<float>(Particle.SubUVFrame);
@@ -264,11 +264,11 @@ void UParticleSubUVComponent::SubmitParticleToRenderQueue(
 	const FMatrix& WorldMatrix,
 	const float CameraDistanceSquared)
 {
-	const TArray<FParticle>& Particles = GetParticlesForView();
+	const TArray<FBaseParticle>& Particles = GetParticlesForView();
 	if (ParticleIndex < 0 || ParticleIndex >= Particles.Num() || QuadMesh == nullptr || Material == nullptr)
 		return;
 
-	const FParticle& Particle = Particles[ParticleIndex];
+	const FBaseParticle& Particle = Particles[ParticleIndex];
 	if (!Particle.bAlive)
 		return;
 

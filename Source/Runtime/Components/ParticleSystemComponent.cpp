@@ -38,7 +38,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	{
 		const FParticleEmitter& Emitter = ParticleSystem.Emitters[EmitterIndex];
 		FParticleEmitterInstance& EmitterInstance = EmitterInstances[EmitterIndex];
-		TArray<FParticle>& Particles = EmitterInstance.GetParticles();
+		TArray<FBaseParticle>& Particles = EmitterInstance.GetParticles();
 
 		const int32 SpawnCount = EmitterInstance.ConsumeSpawnCount(Emitter, DeltaTime);
 		bBoundsChanged |= !Particles.IsEmpty() || SpawnCount > 0;
@@ -46,7 +46,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 		for (int32 Index = 0; Index < SpawnCount; ++Index)
 		{
-			FParticle Particle{};
+			FBaseParticle Particle{};
 			Particle.bAlive = true;
 
 			Emitter.Location.Spawn(Particle, SpawnLocation);
@@ -58,7 +58,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 
 		// 렌더 패킷이 참조할 상수를 제출 순서대로 준비한다.
-		for (const FParticle& Particle : Particles)
+		for (const FBaseParticle& Particle : Particles)
 		{
 			FSubUVConstants Params{ 0.0f, 1.0f, 1.0f, Particle.Alpha };
 			Params.Tint = FVector4(Particle.Color, 1.0f);
@@ -80,7 +80,7 @@ FBox UParticleSystemComponent::CalcLocalBounds() const
 	
 	for(const FParticleEmitterInstance& Instance : EmitterInstances)
 	{
-		for (const FParticle& Particle : Instance.GetParticles())
+		for (const FBaseParticle& Particle : Instance.GetParticles())
 		{
 			const FVector Extent(Particle.Scale);
 			WorldBounds.Expand(FBox{ Particle.Location - Extent, Particle.Location + Extent });
@@ -97,7 +97,7 @@ void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, co
 	int32 ParamIndex = 0;
 	for(const FParticleEmitterInstance& Instance : EmitterInstances)
 	{
-		for (const FParticle& Particle : Instance.GetParticles())
+		for (const FBaseParticle& Particle : Instance.GetParticles())
 		{
 			const FMatrix Billboard = ViewContext.BuildBillboardMatrix(Particle.Location, Particle.Scale, Particle.Scale);
 

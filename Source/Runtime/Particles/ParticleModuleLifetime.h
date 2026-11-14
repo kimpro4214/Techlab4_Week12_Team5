@@ -11,7 +11,7 @@ struct FParticleModuleLifetime
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.001))
 	float Lifetime = 2.0f;
 
-	void Spawn(FParticle& Particle) const
+	void Spawn(FBaseParticle& Particle) const
 	{
 		Particle.LifeTime = Lifetime;
 	}

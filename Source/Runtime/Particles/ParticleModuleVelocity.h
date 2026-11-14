@@ -11,7 +11,7 @@ struct FParticleModuleVelocity
 	UPROPERTY(EditAnywhere)
 	FVector InitialVelocity = FVector(0.0f, 0.0f, 1.0f);
 
-	void Spawn(FParticle& Particle) const
+	void Spawn(FBaseParticle& Particle) const
 	{
 		Particle.Velocity = InitialVelocity;
 	}

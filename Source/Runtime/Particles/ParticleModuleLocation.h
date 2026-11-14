@@ -12,7 +12,7 @@ struct FParticleModuleLocation
 	UPROPERTY(EditAnywhere)
 	FVector Offset = FVector(0.0f, 0.0f, 0.0f);
 
-	void Spawn(FParticle& Particle, const FVector& Origin) const
+	void Spawn(FBaseParticle& Particle, const FVector& Origin) const
 	{
 		Particle.Location = Origin + Offset;
 	}

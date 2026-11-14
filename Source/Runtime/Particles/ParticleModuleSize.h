@@ -11,7 +11,7 @@ struct FParticleModuleSize
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0))
 	float InitialSize = 1.0f;
 
-	void Spawn(FParticle& Particle) const
+	void Spawn(FBaseParticle& Particle) const
 	{
 		Particle.Scale = InitialSize;
 	}

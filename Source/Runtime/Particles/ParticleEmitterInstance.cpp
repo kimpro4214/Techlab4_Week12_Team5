@@ -15,7 +15,7 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 {
 	for (int32 Index = Particles.Num() - 1; Index >= 0; --Index)
 	{
-		FParticle& Particle = Particles[Index];
+		FBaseParticle& Particle = Particles[Index];
 		Particle.Location += Particle.Velocity * DeltaTime;
 		Particle.Age += DeltaTime;
 
