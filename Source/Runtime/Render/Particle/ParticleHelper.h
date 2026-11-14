@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Math/Color.h"
+#include "Render/Particle/ParticleData.h"
 #include <random>
 
 // 시뮬레이션 쪽 헤더, 렌더 헤더를 include 하지 않음
