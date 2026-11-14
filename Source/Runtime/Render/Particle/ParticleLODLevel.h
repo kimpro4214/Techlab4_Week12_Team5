@@ -19,6 +19,10 @@ public:
 	UParticleModuleSpawn* GetSpawnModule() const { return SpawnModule; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
 
+	void SetRequiredModule(UParticleModuleRequired* InModule) { RequiredModule = InModule; }
+	void SetSpawnModule(UParticleModuleSpawn* InModule) { SpawnModule = InModule; }
+	void AddModule(UParticleModule* InModule) { if (InModule) Modules.Add(InModule); }
+
 private:
 	int32 Level = 0;	// 현재 LOD Level
 	bool bEnabled = true;

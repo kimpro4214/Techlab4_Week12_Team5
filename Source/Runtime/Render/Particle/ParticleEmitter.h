@@ -11,6 +11,7 @@ class UParticleEmitter : public UObject
 
 public:
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
+	void AddLODLevels(UParticleLODLevel* InLODLevel) { if (InLODLevel) LODLevels.Add(InLODLevel); }
 
 private:
 	TArray<UParticleLODLevel*> LODLevels;
