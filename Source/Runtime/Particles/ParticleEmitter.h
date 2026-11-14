@@ -20,6 +20,7 @@ struct FParticleEmitter
 	UPROPERTY(EditAnywhere)
 	FParticleModuleSpawn Spawn;
 
+	UPROPERTY(EditAnywhere)
 	FParticleModuleLifetime Lifetime;
 
 	UPROPERTY(EditAnywhere)
