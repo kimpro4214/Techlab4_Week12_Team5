@@ -7,6 +7,7 @@
 #include "Particles/ParticleModuleVelocity.h"
 #include "Particles/ParticleModuleSize.h"
 #include "Particles/ParticleModuleColor.h"
+#include "Particles/ParticleModuleOrbit.h"
 #include "ParticleEmitter.generated.h"
 
 USTRUCT()
@@ -34,4 +35,7 @@ struct FParticleEmitter
 
 	UPROPERTY(EditAnywhere)
 	FParticleModuleColor Color;
+
+	UPROPERTY(EditAnywhere)
+	FParticleModuleOrbit Orbit;
 };
