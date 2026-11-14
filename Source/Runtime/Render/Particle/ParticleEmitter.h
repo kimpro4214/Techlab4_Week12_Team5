@@ -5,13 +5,18 @@
 #include "ParticleEmitter.generated.h"
 
 class UParticleLODLevel;
+class UParticleSystemComponent;
+struct FParticleEmitterInstance;
 
-// Emitter 템플릿 (UE: UParticleEmitter)
+// Emitter
 UCLASS()
 class UParticleEmitter : public UObject
 {
 	GENERATED_BODY()
 public:
+	// 이 Emitter의 실행 인스턴스를 만든다. 실패하면 nullptr, TypeData에 따라 달라짐
+	virtual FParticleEmitterInstance* CreateInstance(UParticleSystemComponent* Component);
+
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
 	UParticleLODLevel* GetLODLevel(int32 Index) const;
 	void AddLODLevel(UParticleLODLevel* InLODLevel) { if (InLODLevel) LODLevels.Add(InLODLevel); }
