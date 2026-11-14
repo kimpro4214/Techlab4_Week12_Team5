@@ -2,6 +2,10 @@
 
 // Source: /UnrealEngine/Engine/Source/Runtime/Engine/Public/ParticleHelper.h
 
+#define	PARTICLE_PREFETCH(Index)					FPlatformMisc::Prefetch( ParticleData, ParticleStride * ParticleIndices[Index] )
+#define PARTICLE_INSTANCE_PREFETCH(Instance, Index)	FPlatformMisc::Prefetch( Instance->ParticleData, Instance->ParticleStride * Instance->ParticleIndices[Index] )
+#define	PARTICLE_OWNER_PREFETCH(Index)				FPlatformMisc::Prefetch( Owner->ParticleData, Owner->ParticleStride * Owner->ParticleIndices[Index] )
+
 #define DECLARE_PARTICLE(Name,Address)		\
 	FBaseParticle& Name = *((FBaseParticle*) (Address));
 
