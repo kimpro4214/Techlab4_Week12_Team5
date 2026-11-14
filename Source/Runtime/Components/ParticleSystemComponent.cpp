@@ -58,6 +58,12 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
 	if (EmitterInstances.IsEmpty() && Template)
 		InitializeSystem();
+
+	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한
+	DeltaTime = std::min(DeltaTime, 0.1f);
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+		Instance->Tick(DeltaTime);
 }
 
 int32 UParticleSystemComponent::GetNumActiveParticles() const
