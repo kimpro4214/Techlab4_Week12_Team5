@@ -113,7 +113,10 @@ bool UParticleLODLevel::RemoveModule(UParticleModule* Module)
 bool UParticleLODLevel::Validate() const
 {
 	// 레벨이 올바른지, 기본 모듈이 있는지
-	if (Level < 0 || !RequiredModule || !SpawnModule)
+	if (Level < 0 ||
+		!RequiredModule ||
+		!SpawnModule ||
+		!RequiredModule->IsEnabled())
 	{
 		return false;
 	}
@@ -186,4 +189,10 @@ void UParticleLODLevel::ClearModuleLists()
 {
 	SpawnModules.Reset();
 	UpdateModules.Reset();
+}
+
+EParticleEmitterType UParticleLODLevel::GetEmitterType() const
+{
+	return TypeDataModule && TypeDataModule->IsEnabled()
+		? TypeDataModule->GetEmitterType() : EParticleEmitterType::Sprite;
 }

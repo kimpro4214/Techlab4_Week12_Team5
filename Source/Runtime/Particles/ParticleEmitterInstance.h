@@ -21,15 +21,25 @@ public:
 	FParticleEmitterInstance(const FParticleEmitterInstance&) = delete;
 	FParticleEmitterInstance& operator=(const FParticleEmitterInstance&) = delete;
 
+	// Required 모듈의 용량을 사용하는 기본 설정 경로입니다.
+	void Initialize(
+		UParticleEmitter* InSpriteTemplate,
+		UParticleSystemComponent* InComponent,
+		int32 InCurrentLODLevelIndex,
+		UParticleLODLevel* InCurrentLODLevel
+	);
+
+	// 용량을 명시하는 기존 경로이며 Required 설정보다 인자가 우선합니다.
 	void Initialize(
 		UParticleEmitter* InSpriteTemplate,
 		UParticleSystemComponent* InComponent,
 		int32 InCurrentLODLevelIndex,
 		UParticleLODLevel* InCurrentLODLevel,
-		int32 InCapacity = 1024,
+		int32 InCapacity,
 		float InDefaultLifetime = 1.0f
 	);
 
+	// InitialLocation/Velocity는 월드 값입니다. 선택적 행렬은 모듈 초기값에만 적용합니다.
 	// StartTime은 프레임 끝 기준 첫 입자의 경과 시간(초), Increment는 생성 간격(초)입니다.
 	void SpawnParticles(
 		int32 Count,
@@ -37,7 +47,8 @@ public:
 		float Increment,
 		const FVector& InitialLocation,
 		const FVector& InitialVelocity,
-		FParticleEventInstancePayload* EventPayload = nullptr
+		FParticleEventInstancePayload* EventPayload = nullptr,
+		const FMatrix* EmitterToWorld = nullptr
 	);
 
 	// 파티클을 정리합니다. Index는 ParticleIndices의 인덱스입니다.

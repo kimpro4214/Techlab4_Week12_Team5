@@ -6,6 +6,7 @@
 class UParticleModule;
 struct FBaseParticle;
 struct FParticleEmitterInstance;
+struct FMatrix;
 
 // 설정에서 계산하는 파생 정보입니다. 에셋에 저장하거나 실행 상태를 넣지 않습니다.
 struct FParticleModuleBinding
@@ -44,6 +45,8 @@ struct FParticleSpawnContext
 	float SpawnTime;
 	void* ParticlePayload;
 	void* InstancePayload;
+	// 콜백 동안만 유효한 생성 시점 변환입니다. nullptr은 단위 변환입니다.
+	const FMatrix* EmitterToWorld = nullptr;
 };
 
 struct FParticleUpdateContext

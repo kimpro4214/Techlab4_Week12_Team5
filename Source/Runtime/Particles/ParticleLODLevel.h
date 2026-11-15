@@ -9,6 +9,7 @@ class UParticleModule;
 class UParticleModuleRequired;
 class UParticleModuleSpawn;
 class UParticleModuleTypeDataBase;
+enum class EParticleEmitterType : uint8;
 
 UCLASS()
 class UParticleLODLevel : public UObject
@@ -34,6 +35,7 @@ public:
 
 	bool Validate() const;
 	bool BuildModuleLists();
+	EParticleEmitterType GetEmitterType() const;
 
 	UParticleModuleRequired* GetRequiredModule() const
 	{

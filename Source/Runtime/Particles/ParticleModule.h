@@ -5,6 +5,14 @@
 #include "ParticleHelper.h"
 #include "ParticleModule.generated.h"
 
+struct FVector;
+
+enum class EParticleEmitterType : uint8
+{
+	Sprite,
+	Mesh
+};
+
 UCLASS()
 class UParticleModule : public UObject
 {
@@ -34,6 +42,8 @@ public:
 	virtual void Update(const FParticleUpdateContext& Context) const noexcept {}
 
 protected:
+	static bool IsFiniteVector(const FVector& Value);
+
 	bool bEnabled = true;
 	bool bSpawnModule = false;
 	bool bUpdateModule = false;
@@ -43,16 +53,40 @@ UCLASS()
 class UParticleModuleRequired : public UParticleModule
 {
 	GENERATED_BODY()
+
+public:
+	virtual bool Validate() const override;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxActiveParticles = 1024;
+
+	UPROPERTY(EditAnywhere)
+	float EmitterDuration = 1.0f;
+
+	// 0은 무한 반복입니다. 반복 실행 자체는 6단계에서 처리합니다.
+	UPROPERTY(EditAnywhere)
+	int32 EmitterLoops = 0;
 };
 
 UCLASS()
 class UParticleModuleSpawn : public UParticleModule
 {
 	GENERATED_BODY()
+
+public:
+	virtual bool Validate() const override;
+	float GetSpawnRate() const { return bEnabled ? SpawnRate : 0.0f; }
+
+	// 초당 생성량만 보관합니다. 소수 누적값은 Instance가 관리합니다.
+	UPROPERTY(EditAnywhere)
+	float SpawnRate = 10.0f;
 };
 
 UCLASS()
 class UParticleModuleTypeDataBase : public UParticleModule
 {
 	GENERATED_BODY()
+
+public:
+	virtual EParticleEmitterType GetEmitterType() const { return EParticleEmitterType::Sprite; }
 };

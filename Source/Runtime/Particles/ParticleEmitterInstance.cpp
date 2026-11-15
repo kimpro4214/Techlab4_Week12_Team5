@@ -23,6 +23,19 @@ void FParticleEmitterInstance::Initialize(
 	UParticleEmitter* InSpriteTemplate,
 	UParticleSystemComponent* InComponent,
 	int32 InCurrentLODLevelIndex,
+	UParticleLODLevel* InCurrentLODLevel
+)
+{
+	const UParticleModuleRequired* Required = InCurrentLODLevel
+		? InCurrentLODLevel->GetRequiredModule() : nullptr;
+	const int32 Capacity = Required ? Required->MaxActiveParticles : 1024;
+	Initialize(InSpriteTemplate, InComponent, InCurrentLODLevelIndex, InCurrentLODLevel, Capacity, 1.0f);
+}
+
+void FParticleEmitterInstance::Initialize(
+	UParticleEmitter* InSpriteTemplate,
+	UParticleSystemComponent* InComponent,
+	int32 InCurrentLODLevelIndex,
 	UParticleLODLevel* InCurrentLODLevel,
 	int32 InCapacity,
 	float InDefaultLifetime
@@ -99,7 +112,8 @@ void FParticleEmitterInstance::SpawnParticles(
 	float Increment,
 	const FVector& InitialLocation,
 	const FVector& InitialVelocity,
-	FParticleEventInstancePayload* EventPayload
+	FParticleEventInstancePayload* EventPayload,
+	const FMatrix* EmitterToWorld
 )
 {
 	// 0개 이하의 파티클을 생성하려고 함
@@ -156,9 +170,11 @@ void FParticleEmitterInstance::SpawnParticles(
 
 			void* Payload = Binding.ParticleBytes > 0 ? SlotData + Binding.ParticleOffset : nullptr;
 			Binding.Module->Spawn({ *this, *Particle, Binding, Age,
-				Payload, GetInstancePayload(Binding.Module) });
+				Payload, GetInstancePayload(Binding.Module), EmitterToWorld });
 		}
 
+		// 초기 위치 모듈 적용 후의 위치를 이전 위치로 보관합니다.
+		Particle->OldLocation = Particle->Location;
 		// Spawn 모듈이 결정한 속도와 수명으로 생성 시점 보정을 수행합니다.
 		Particle->Location += Particle->Velocity * Age;
 		Particle->RelativeTime = Age / Particle->Lifetime;
