@@ -1,61 +1,55 @@
 #pragma once
 
-// Source: /UnrealEngine/Engine/Source/Runtime/Engine/Public/ParticleHelper.h
+#include "Containers/Array.h"
+#include "Core/Types.h"
 
-#define	PARTICLE_PREFETCH(Index)					FPlatformMisc::Prefetch( ParticleData, ParticleStride * ParticleIndices[Index] )
-#define PARTICLE_INSTANCE_PREFETCH(Instance, Index)	FPlatformMisc::Prefetch( Instance->ParticleData, Instance->ParticleStride * Instance->ParticleIndices[Index] )
-#define	PARTICLE_OWNER_PREFETCH(Index)				FPlatformMisc::Prefetch( Owner->ParticleData, Owner->ParticleStride * Owner->ParticleIndices[Index] )
+class UParticleModule;
+struct FBaseParticle;
+struct FParticleEmitterInstance;
 
-#define DECLARE_PARTICLE(Name,Address)		\
-	FBaseParticle& Name = *((FBaseParticle*) (Address));
+// 설정에서 계산하는 파생 정보입니다. 에셋에 저장하거나 실행 상태를 넣지 않습니다.
+struct FParticleModuleBinding
+{
+	UParticleModule* Module = nullptr;
+	int32 ParticleOffset = 0;
+	int32 ParticleBytes = 0;
+	int32 InstanceOffset = 0;
+	int32 InstanceBytes = 0;
+	bool bSpawn = false;
+	bool bUpdate = false;
+};
 
-#define DECLARE_PARTICLE_CONST(Name,Address)		\
-	const FBaseParticle& Name = *((const FBaseParticle*) (Address));
+struct FParticleEmitterLayout
+{
+	TArray<FParticleModuleBinding> Modules;
+	int32 ParticleSize = 0;
+	int32 ParticleStride = 0;
+	int32 InstancePayloadSize = 0;
+};
 
-#define DECLARE_PARTICLE_PTR(Name, Address)				\
-	FBaseParticle* Name = (FBaseParticle*) (Address);	\
+// Payload는 정렬된 원시 저장 공간입니다. 모듈이 단순 데이터의 초기화를 담당합니다.
+// 동적 자원이나 별도 소멸 처리가 필요한 객체는 Payload에 보관하지 않습니다.
+struct FParticleInstanceContext
+{
+	FParticleEmitterInstance& Owner;
+	const FParticleModuleBinding& Binding;
+	void* InstancePayload;
+};
 
-#define BEGIN_UPDATE_LOOP																								\
-	{																													\
-		int32&			ActiveParticles = Context.Owner.ActiveParticles;												\
-		int32			Offset			= Context.Offset;																\
-		uint32			CurrentOffset	= Offset;																		\
-		float			DeltaTime		= Context.DeltaTime;															\
-		const uint8*	ParticleData	= Context.Owner.ParticleData;													\
-		const uint32	ParticleStride	= Context.Owner.ParticleStride;													\
-		uint16*			ParticleIndices	= Context.Owner.ParticleIndices;												\
-		for(int32 i=ActiveParticles-1; i>=0; i--)																		\
-		{																												\
-			const int32	CurrentIndex	= ParticleIndices[i];															\
-			const uint8* ParticleBase	= ParticleData + CurrentIndex * ParticleStride;									\
-			FBaseParticle& Particle		= *((FBaseParticle*) ParticleBase);												\
-			if ((Particle.Flags & STATE_Particle_Freeze) == 0)															\
-			{																											\
+struct FParticleSpawnContext
+{
+	FParticleEmitterInstance& Owner;
+	FBaseParticle& Particle;
+	const FParticleModuleBinding& Binding;
+	float SpawnTime;
+	void* ParticlePayload;
+	void* InstancePayload;
+};
 
-#define END_UPDATE_LOOP																									\
-			}																											\
-			CurrentOffset				= Offset;																		\
-		}																												\
-	}
-
-#define CONTINUE_UPDATE_LOOP																							\
-		CurrentOffset = Offset;																							\
-		continue;
-
-#define SPAWN_INIT																										\
-	const int32		ActiveParticles	= Context.Owner.ActiveParticles;													\
-	const uint32	ParticleStride	= Context.Owner.ParticleStride;														\
-	uint32			CurrentOffset	= Context.Offset;																	\
-	FBaseParticle*	ParticleBase	= Context.ParticleBase;																\
-	FBaseParticle&	Particle		= *(ParticleBase);
-
-#define PARTICLE_ELEMENT(Type,Name)																						\
-	Type& Name = *((Type*)((uint8*)ParticleBase + CurrentOffset));														\
-	CurrentOffset += sizeof(Type);
-
-#define KILL_CURRENT_PARTICLE																							\
-	{																													\
-		ParticleIndices[i]					= ParticleIndices[ActiveParticles-1];										\
-		ParticleIndices[ActiveParticles-1]	= CurrentIndex;																\
-		ActiveParticles--;																								\
-	}
+struct FParticleUpdateContext
+{
+	FParticleEmitterInstance& Owner;
+	const FParticleModuleBinding& Binding;
+	float DeltaTime;
+	void* InstancePayload;
+};

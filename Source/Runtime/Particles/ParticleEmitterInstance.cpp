@@ -2,6 +2,10 @@
 #include "ParticleEmitterInstance.h"
 #include "BaseParticle.h"
 #include "ParticleDataContainer.h"
+#include "ParticleEmitter.h"
+#include "ParticleLODLevel.h"
+#include "ParticleModule.h"
+#include "Core/HAL/UnrealMemory.h"
 
 #include <cassert>
 #include <cmath>
@@ -42,9 +46,35 @@ void FParticleEmitterInstance::Initialize(
 	// FBaseParticle의 정렬이 일반적인 최대 정렬 바이트와 같거나 작아야함
 	static_assert(alignof(FBaseParticle) <= alignof(std::max_align_t));
 
-	// 초기 파티클 메모리 블록 크기는 FBaseParticle의 크기로 지정
-	const int32 BaseParticleSize = static_cast<int32>(sizeof(FBaseParticle));
-	InitializeParticleStorage(BaseParticleSize, InCapacity);
+	FParticleEmitterLayout Layout;
+	Layout.ParticleSize = sizeof(FBaseParticle);
+	Layout.ParticleStride = sizeof(FBaseParticle);
+
+	// nullptr 쌍은 저장소 단독 사용 경로입니다. 실제 설정은 서로 일치해야 합니다.
+	if (InSpriteTemplate || InCurrentLODLevel)
+	{
+		if (!InSpriteTemplate ||
+			!InCurrentLODLevel ||
+			InSpriteTemplate->GetLODLevel(InCurrentLODLevelIndex) != InCurrentLODLevel ||
+			!InSpriteTemplate->Build())
+		{
+			throw std::invalid_argument("Invalid particle emitter template.");
+		}
+
+		Layout = *InSpriteTemplate->GetModuleLayout(InCurrentLODLevelIndex);
+	}
+
+	// 인스턴스 영역을 먼저 확보하여 어느 할당이 실패하더라도 기존 상태를 유지합니다.
+	TUniquePtr<FParticleDataContainer> NewInstanceContainer;
+	if (Layout.InstancePayloadSize > 0)
+	{
+		NewInstanceContainer = MakeUnique<FParticleDataContainer>();
+		NewInstanceContainer->Allocate(Layout.InstancePayloadSize, 0);
+	}
+
+	InitializeParticleStorage(Layout.ParticleStride, InCapacity);
+	InstanceContainer = std::move(NewInstanceContainer);
+	ModuleBindings = std::move(Layout.Modules);
 
 	// 인자 넣기
 	SpriteTemplate = InSpriteTemplate;
@@ -55,11 +85,12 @@ void FParticleEmitterInstance::Initialize(
 	DefaultLifetime = InDefaultLifetime;
 
 	// 기본값 초기화
-	ParticleSize = sizeof(FBaseParticle);
+	ParticleSize = Layout.ParticleSize;
 	PayloadOffset = sizeof(FBaseParticle);
 
-	InstanceData = nullptr;
-	InstancePayloadSize = 0;
+	InstanceData = InstanceContainer ? InstanceContainer->ParticleData : nullptr;
+	InstancePayloadSize = Layout.InstancePayloadSize;
+	InitializeModuleInstances();
 }
 
 void FParticleEmitterInstance::SpawnParticles(
@@ -97,14 +128,15 @@ void FParticleEmitterInstance::SpawnParticles(
 		const uint16 Slot = ParticleIndices[ActiveParticles];
 		uint8* SlotData = ParticleData + Slot * ParticleStride;
 
-		// 재사용 슬롯에서도 모든 필드를 초기화하고 객체 수명을 시작합니다.
+		// 모듈의 입자 Payload까지 초기화하여 재사용 슬롯의 이전 값이 남지 않게 합니다.
+		FMemory::Memzero(SlotData, ParticleStride);
 		FBaseParticle* Particle = new (SlotData) FBaseParticle{};
 		const double Elapsed = static_cast<double>(StartTime)
 			- static_cast<double>(Index) * Increment;
 		const float Age = Elapsed > 0.0 ? static_cast<float>(Elapsed) : 0.0f;
 
 		Particle->OldLocation = InitialLocation;
-		Particle->Location = InitialLocation + InitialVelocity * Age;
+		Particle->Location = InitialLocation;
 		Particle->BaseVelocity = InitialVelocity;
 		Particle->Velocity = InitialVelocity;
 		Particle->BaseSize = FVector(1.0f);
@@ -112,10 +144,24 @@ void FParticleEmitterInstance::SpawnParticles(
 		Particle->BaseColor = FColor(255, 255, 255, 255);
 		Particle->Color = Particle->BaseColor;
 		Particle->Lifetime = DefaultLifetime;
-		Particle->RelativeTime = Age / Particle->Lifetime;
-
 		++ActiveParticles;
 		++ParticleCounter;
+
+		for (const FParticleModuleBinding& Binding : ModuleBindings)
+		{
+			if (!Binding.bSpawn)
+			{
+				continue;
+			}
+
+			void* Payload = Binding.ParticleBytes > 0 ? SlotData + Binding.ParticleOffset : nullptr;
+			Binding.Module->Spawn({ *this, *Particle, Binding, Age,
+				Payload, GetInstancePayload(Binding.Module) });
+		}
+
+		// Spawn 모듈이 결정한 속도와 수명으로 생성 시점 보정을 수행합니다.
+		Particle->Location += Particle->Velocity * Age;
+		Particle->RelativeTime = Age / Particle->Lifetime;
 	}
 }
 
@@ -162,6 +208,78 @@ void FParticleEmitterInstance::Reset()
 
 	// 카운터도 초기화
 	ParticleCounter = 0;
+	InitializeModuleInstances();
+}
+
+void FParticleEmitterInstance::InitializeModuleInstances() noexcept
+{
+	if (InstanceData)
+	{
+		FMemory::Memzero(InstanceData, InstancePayloadSize);
+	}
+
+	for (const FParticleModuleBinding& Binding : ModuleBindings)
+	{
+		Binding.Module->InitializeInstance({ *this, Binding, GetInstancePayload(Binding.Module) });
+	}
+}
+
+void FParticleEmitterInstance::UpdateModules(float DeltaTime)
+{
+	if (!std::isfinite(DeltaTime) || DeltaTime < 0.0f)
+	{
+		throw std::invalid_argument("Invalid particle delta time.");
+	}
+
+	for (const FParticleModuleBinding& Binding : ModuleBindings)
+	{
+		if (Binding.bUpdate)
+		{
+			Binding.Module->Update({ *this, Binding, DeltaTime, GetInstancePayload(Binding.Module) });
+		}
+	}
+}
+
+const FParticleModuleBinding* FParticleEmitterInstance::GetModuleBinding(const UParticleModule* Module) const
+{
+	for (const FParticleModuleBinding& Binding : ModuleBindings)
+	{
+		if (Binding.Module == Module)
+		{
+			return &Binding;
+		}
+	}
+
+	return nullptr;
+}
+
+void* FParticleEmitterInstance::GetParticlePayload(int32 Index, const UParticleModule* Module)
+{
+	return const_cast<void*>(static_cast<const FParticleEmitterInstance&>(*this).GetParticlePayload(Index, Module));
+}
+
+const void* FParticleEmitterInstance::GetParticlePayload(int32 Index, const UParticleModule* Module) const
+{
+	const FParticleModuleBinding* Binding = GetModuleBinding(Module);
+	const FBaseParticle* Particle = GetParticle(Index);
+	if (!Particle || !Binding || Binding->ParticleBytes == 0)
+	{
+		return nullptr;
+	}
+
+	return reinterpret_cast<const uint8*>(Particle) + Binding->ParticleOffset;
+}
+
+void* FParticleEmitterInstance::GetInstancePayload(const UParticleModule* Module)
+{
+	return const_cast<void*>(static_cast<const FParticleEmitterInstance&>(*this).GetInstancePayload(Module));
+}
+
+const void* FParticleEmitterInstance::GetInstancePayload(const UParticleModule* Module) const
+{
+	const FParticleModuleBinding* Binding = GetModuleBinding(Module);
+	return InstanceData && Binding && Binding->InstanceBytes > 0
+		? InstanceData + Binding->InstanceOffset : nullptr;
 }
 
 FBaseParticle* FParticleEmitterInstance::GetParticle(int32 Index)

@@ -2,10 +2,12 @@
 
 #include "Core/Types.h"
 #include "Math/Vector.h"
+#include "ParticleHelper.h"
 
 class UParticleEmitter;
 class UParticleSystemComponent;
 class UParticleLODLevel;
+class UParticleModule;
 struct FBaseParticle;
 struct FParticleDataContainer;
 struct FParticleEventInstancePayload;
@@ -50,9 +52,20 @@ public:
 	// 모든 파티클들을 정리하고, Counter를 리셋합니다. 
 	void Reset();
 
+	// 모듈 갱신만 수행합니다. 수명·이동 적분과 생성 스케줄은 6단계에서 연결합니다.
+	void UpdateModules(float DeltaTime);
+
+	const FParticleModuleBinding* GetModuleBinding(const UParticleModule* Module) const;
+	void* GetParticlePayload(int32 Index, const UParticleModule* Module);
+	const void* GetParticlePayload(int32 Index, const UParticleModule* Module) const;
+	void* GetInstancePayload(const UParticleModule* Module);
+	const void* GetInstancePayload(const UParticleModule* Module) const;
+
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
 	int32 GetCapacity() const { return MaxActiveParticles; }
 	int32 GetParticleStride() const { return ParticleStride; }
+	int32 GetParticleSize() const { return ParticleSize; }
+	int32 GetInstancePayloadSize() const { return InstancePayloadSize; }
 	uint32 GetParticleCounter() const { return ParticleCounter; }
 
 	FBaseParticle* GetParticle(int32 Index);
@@ -61,11 +74,15 @@ public:
 
 private:
 	void InitializeParticleStorage(int32 InParticleStride, int32 InCapacity);
+	void InitializeModuleInstances() noexcept;
 
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;
 
 	TUniquePtr<FParticleDataContainer> Container;
+	TUniquePtr<FParticleDataContainer> InstanceContainer;
+	// 배치만 복사합니다. Module 설정 객체는 Template이 계속 소유합니다.
+	TArray<FParticleModuleBinding> ModuleBindings;
 	int32 CurrentLODLevelIndex = 0;
 	UParticleLODLevel* CurrentLODLevel = nullptr;
 
@@ -73,7 +90,7 @@ private:
 	uint8* ParticleData = nullptr;
 	uint16* ParticleIndices = nullptr;
 
-	// 모듈 Payload는 후속 단계에서 배치합니다.
+	// InstanceContainer가 소유하는 비소유 포인터입니다.
 	uint8* InstanceData = nullptr;
 	int32 InstancePayloadSize = 0;
 	int32 PayloadOffset = 0;
