@@ -8,6 +8,7 @@
 #include "Core/HAL/UnrealMemory.h"
 
 #include <cassert>
+#include <algorithm>
 #include <cmath>
 #include <new>
 #include <utility>
@@ -103,7 +104,14 @@ void FParticleEmitterInstance::Initialize(
 
 	InstanceData = InstanceContainer ? InstanceContainer->ParticleData : nullptr;
 	InstancePayloadSize = Layout.InstancePayloadSize;
-	InitializeModuleInstances();
+
+	const UParticleModuleRequired* Required = CurrentLODLevel ? CurrentLODLevel->GetRequiredModule() : nullptr;
+	const UParticleModuleSpawn* SpawnModule = CurrentLODLevel ? CurrentLODLevel->GetSpawnModule() : nullptr;
+	EmitterDuration = Required ? Required->EmitterDuration : 1.0;
+	EmitterLoops = Required ? Required->EmitterLoops : 0;
+	SpawnRate = SpawnModule ? SpawnModule->GetSpawnRate() : 0.0;
+	bEmitterEnabled = CurrentLODLevel && CurrentLODLevel->IsEnabled();
+	Reset();
 }
 
 void FParticleEmitterInstance::SpawnParticles(
@@ -132,6 +140,12 @@ void FParticleEmitterInstance::SpawnParticles(
 
 	// TODO: 이벤트 Payload의 형식과 배치는 아직 지원하지 않음
 	(void)EventPayload;
+	SpawnParticlesInternal(Count, StartTime, Increment, InitialLocation, InitialVelocity, EmitterToWorld);
+}
+
+void FParticleEmitterInstance::SpawnParticlesInternal(int32 Count, double StartTime, double Increment,
+	const FVector& InitialLocation, const FVector& InitialVelocity, const FMatrix* EmitterToWorld)
+{
 
 	// MaxActiveParticles 갯수까지만 생성.
 	// TODO: 추후 메모리 블록을 늘리는 기능을 넣어야함
@@ -145,19 +159,9 @@ void FParticleEmitterInstance::SpawnParticles(
 		// 모듈의 입자 Payload까지 초기화하여 재사용 슬롯의 이전 값이 남지 않게 합니다.
 		FMemory::Memzero(SlotData, ParticleStride);
 		FBaseParticle* Particle = new (SlotData) FBaseParticle{};
-		const double Elapsed = static_cast<double>(StartTime)
-			- static_cast<double>(Index) * Increment;
-		const float Age = Elapsed > 0.0 ? static_cast<float>(Elapsed) : 0.0f;
+		const double Age = std::max(0.0, StartTime - static_cast<double>(Index) * Increment);
 
-		Particle->OldLocation = InitialLocation;
-		Particle->Location = InitialLocation;
-		Particle->BaseVelocity = InitialVelocity;
-		Particle->Velocity = InitialVelocity;
-		Particle->BaseSize = FVector(1.0f);
-		Particle->Size = Particle->BaseSize;
-		Particle->BaseColor = FColor(255, 255, 255, 255);
-		Particle->Color = Particle->BaseColor;
-		Particle->Lifetime = DefaultLifetime;
+		PreSpawn(*Particle, InitialLocation, InitialVelocity);
 		++ActiveParticles;
 		++ParticleCounter;
 
@@ -169,15 +173,11 @@ void FParticleEmitterInstance::SpawnParticles(
 			}
 
 			void* Payload = Binding.ParticleBytes > 0 ? SlotData + Binding.ParticleOffset : nullptr;
-			Binding.Module->Spawn({ *this, *Particle, Binding, Age,
+			Binding.Module->Spawn({ *this, *Particle, Binding, static_cast<float>(Age),
 				Payload, GetInstancePayload(Binding.Module), EmitterToWorld });
 		}
 
-		// 초기 위치 모듈 적용 후의 위치를 이전 위치로 보관합니다.
-		Particle->OldLocation = Particle->Location;
-		// Spawn 모듈이 결정한 속도와 수명으로 생성 시점 보정을 수행합니다.
-		Particle->Location += Particle->Velocity * Age;
-		Particle->RelativeTime = Age / Particle->Lifetime;
+		PostSpawn(Slot, *Particle, Age);
 	}
 }
 
@@ -220,11 +220,196 @@ void FParticleEmitterInstance::Reset()
 	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
 	{
 		ParticleIndices[Index] = static_cast<uint16>(Index);
+		ParticleAges[Index] = 0.0;
 	}
 
 	// 카운터도 초기화
 	ParticleCounter = 0;
+	SecondsSinceCreation = 0.0;
+	EmitterTime = 0.0;
+	SpawnFraction = 0.0;
+	CompletedLoops = 0;
+	bSpawningEnabled = true;
+	bEmitterFinished = !bEmitterEnabled;
 	InitializeModuleInstances();
+}
+
+void FParticleEmitterInstance::Tick(float DeltaTime, const FVector& InitialLocation,
+	const FVector& InitialVelocity, const FMatrix* EmitterToWorld)
+{
+	if (!std::isfinite(DeltaTime) || DeltaTime < 0.0f)
+	{
+		throw std::invalid_argument("Invalid particle delta time.");
+	}
+
+	if (!ParticleData || DeltaTime == 0.0f)
+	{
+		return;
+	}
+
+	const double EmissionDeltaTime = UpdateEmitterTime(DeltaTime);
+	UpdateParticleTimes(DeltaTime);
+	KillParticles();
+	ResetParticleParameters();
+	UpdateModules(DeltaTime);
+	// 모듈이 수명을 끝낸 입자는 이동시키기 전에 제거합니다.
+	KillParticles();
+	IntegrateParticles(DeltaTime);
+
+	// 신규 입자는 PostSpawn에서 경과 시간만 보정하므로 공통 적분을 다시 받지 않습니다.
+	Spawn(EmissionDeltaTime, DeltaTime, InitialLocation, InitialVelocity, EmitterToWorld);
+	KillParticles();
+}
+
+void FParticleEmitterInstance::SetSpawningEnabled(bool bEnabled)
+{
+	if (bSpawningEnabled != bEnabled)
+	{
+		// 중단 전의 소수 생성량을 재개 시 몰아서 생성하지 않습니다.
+		SpawnFraction = 0.0;
+	}
+
+	bSpawningEnabled = bEnabled;
+}
+
+bool FParticleEmitterInstance::HasCompleted() const
+{
+	return (bEmitterFinished || !bSpawningEnabled) && ActiveParticles == 0;
+}
+
+double FParticleEmitterInstance::UpdateEmitterTime(float DeltaTime)
+{
+	const double PreviousTime = SecondsSinceCreation;
+	const double NextTime = PreviousTime + DeltaTime;
+	if (!std::isfinite(NextTime))
+	{
+		throw std::overflow_error("Particle emitter time overflow.");
+	}
+
+	SecondsSinceCreation = NextTime;
+	if (bEmitterFinished)
+	{
+		return 0.0;
+	}
+
+	const double Tolerance = 1.0e-7 * std::min(EmitterDuration, 1.0);
+	double EmissionEnd = NextTime;
+	if (EmitterLoops > 0)
+	{
+		const double EndTime = EmitterDuration * EmitterLoops;
+		if (NextTime >= EndTime - Tolerance)
+		{
+			EmissionEnd = EndTime;
+			bEmitterFinished = true;
+		}
+	}
+
+	const double Loops = std::floor((EmissionEnd + Tolerance) / EmitterDuration);
+	CompletedLoops = Loops >= static_cast<double>(std::numeric_limits<uint64>::max())
+		? std::numeric_limits<uint64>::max() : static_cast<uint64>(Loops);
+	EmitterTime = std::fmod(EmissionEnd, EmitterDuration);
+	if (EmitterTime < Tolerance || EmitterDuration - EmitterTime < Tolerance)
+	{
+		EmitterTime = 0.0;
+	}
+	if (bEmitterFinished)
+	{
+		// 큰 유한 반복 횟수도 나눗셈 오차 없이 정확한 완료 상태를 반환합니다.
+		CompletedLoops = static_cast<uint64>(EmitterLoops);
+		EmitterTime = 0.0;
+	}
+
+	return std::max(0.0, EmissionEnd - PreviousTime);
+}
+
+void FParticleEmitterInstance::UpdateParticleTimes(float DeltaTime)
+{
+	for (int32 Index = ActiveParticles - 1; Index >= 0; --Index)
+	{
+		FBaseParticle& Particle = *GetParticle(Index);
+		if (!std::isfinite(Particle.Lifetime) || Particle.Lifetime <= 0.0f)
+		{
+			KillParticle(Index);
+			continue;
+		}
+
+		double& Age = ParticleAges[GetParticleSlot(Index)];
+		Age += DeltaTime;
+		Particle.RelativeTime = static_cast<float>(Age / Particle.Lifetime);
+	}
+}
+
+void FParticleEmitterInstance::ResetParticleParameters()
+{
+	for (int32 Index = 0; Index < ActiveParticles; ++Index)
+	{
+		FBaseParticle& Particle = *GetParticle(Index);
+		Particle.Velocity = Particle.BaseVelocity;
+		Particle.Size = Particle.BaseSize;
+		Particle.Color = Particle.BaseColor;
+		Particle.RotationRate = Particle.BaseRotationRate;
+	}
+}
+
+void FParticleEmitterInstance::IntegrateParticles(float DeltaTime)
+{
+	for (int32 Index = 0; Index < ActiveParticles; ++Index)
+	{
+		FBaseParticle& Particle = *GetParticle(Index);
+		Particle.OldLocation = Particle.Location;
+		Particle.Location += Particle.Velocity * DeltaTime;
+		Particle.Rotation += Particle.RotationRate * DeltaTime;
+	}
+}
+
+void FParticleEmitterInstance::Spawn(double EmissionDeltaTime, float DeltaTime,
+	const FVector& InitialLocation, const FVector& InitialVelocity, const FMatrix* EmitterToWorld)
+{
+	if (!bSpawningEnabled || SpawnRate <= 0.0 || EmissionDeltaTime <= 0.0)
+	{
+		return;
+	}
+
+	const double PreviousFraction = SpawnFraction;
+	const double Requested = PreviousFraction + SpawnRate * EmissionDeltaTime;
+	// 정수 경계의 작은 부동소수점 오차만 보정합니다.
+	const double WholeParticles = std::floor(Requested + 1.0e-7);
+	SpawnFraction = std::max(0.0, Requested - WholeParticles);
+	const int32 Count = static_cast<int32>(std::min(WholeParticles,
+		static_cast<double>(MaxActiveParticles - ActiveParticles)));
+	if (Count <= 0)
+	{
+		return;
+	}
+
+	const double FirstSpawnTime = (1.0 - PreviousFraction) / SpawnRate;
+	const double Age = std::max(0.0, DeltaTime - FirstSpawnTime);
+	const double Increment = Count > 1 ? 1.0 / SpawnRate : 0.0;
+	SpawnParticlesInternal(Count, Age, Increment, InitialLocation, InitialVelocity, EmitterToWorld);
+}
+
+void FParticleEmitterInstance::PreSpawn(FBaseParticle& Particle,
+	const FVector& InitialLocation, const FVector& InitialVelocity)
+{
+	Particle.OldLocation = InitialLocation;
+	Particle.Location = InitialLocation;
+	Particle.BaseVelocity = InitialVelocity;
+	Particle.Velocity = InitialVelocity;
+	Particle.BaseSize = FVector(1.0f);
+	Particle.Size = Particle.BaseSize;
+	Particle.BaseColor = FColor(255, 255, 255, 255);
+	Particle.Color = Particle.BaseColor;
+	Particle.Lifetime = DefaultLifetime;
+}
+
+void FParticleEmitterInstance::PostSpawn(int32 Slot, FBaseParticle& Particle, double Age)
+{
+	ParticleAges[Slot] = Age;
+	Particle.OldLocation = Particle.Location;
+	Particle.Location += Particle.Velocity * static_cast<float>(Age);
+	Particle.Rotation += Particle.RotationRate * static_cast<float>(Age);
+	Particle.RelativeTime = std::isfinite(Particle.Lifetime) && Particle.Lifetime > 0.0f
+		? static_cast<float>(Age / Particle.Lifetime) : 1.0f;
 }
 
 void FParticleEmitterInstance::InitializeModuleInstances() noexcept
@@ -357,9 +542,12 @@ void FParticleEmitterInstance::InitializeParticleStorage(
 		NewContainer->ParticleIndices[Index] = static_cast<uint16>(Index);
 	}
 
+	auto NewParticleAges = MakeUnique<double[]>(InCapacity);
+
 	// 컨테이너를 서로 스왑.
 	// 기존 컨테이너는 NewContainer에 담기게 되어 함수 종료시 사라진다.
 	Container.swap(NewContainer);
+	ParticleAges = std::move(NewParticleAges);
 
 	ParticleData = Container->ParticleData;
 	ParticleIndices = Container->ParticleIndices;

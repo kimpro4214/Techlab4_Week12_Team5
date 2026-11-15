@@ -60,10 +60,27 @@ public:
 	// 모든 파티클들을 정리합니다.
 	void KillAllParticles();
 	
-	// 모든 파티클들을 정리하고, Counter를 리셋합니다. 
+	// 같은 설정으로 재시작합니다. 입자·시간·누적값·모듈 상태를 초기화하고 생성을 허용합니다.
 	void Reset();
 
-	// 모듈 갱신만 수행합니다. 수명·이동 적분과 생성 스케줄은 6단계에서 연결합니다.
+	// 기존 월드 입자를 갱신한 뒤 이번 프레임의 신규 입자를 생성합니다.
+	void Tick(
+		float DeltaTime,
+		const FVector& InitialLocation = FVector(0.0f),
+		const FVector& InitialVelocity = FVector(0.0f),
+		const FMatrix* EmitterToWorld = nullptr
+	);
+
+	// 생성만 중단합니다. Tick의 시간 진행과 기존 입자 갱신은 계속됩니다.
+	void SetSpawningEnabled(bool bEnabled);
+	bool IsSpawningEnabled() const { return bSpawningEnabled; }
+	bool HasCompleted() const;
+	double GetEmitterTime() const { return EmitterTime; }
+	double GetSecondsSinceCreation() const { return SecondsSinceCreation; }
+	double GetSpawnFraction() const { return SpawnFraction; }
+	uint64 GetCompletedLoops() const { return CompletedLoops; }
+
+	// 직접 호출하면 모듈만 갱신합니다. 전체 시뮬레이션은 Tick을 사용합니다.
 	void UpdateModules(float DeltaTime);
 
 	const FParticleModuleBinding* GetModuleBinding(const UParticleModule* Module) const;
@@ -86,12 +103,24 @@ public:
 private:
 	void InitializeParticleStorage(int32 InParticleStride, int32 InCapacity);
 	void InitializeModuleInstances() noexcept;
+	double UpdateEmitterTime(float DeltaTime);
+	void UpdateParticleTimes(float DeltaTime);
+	void ResetParticleParameters();
+	void IntegrateParticles(float DeltaTime);
+	void Spawn(double EmissionDeltaTime, float DeltaTime, const FVector& InitialLocation,
+		const FVector& InitialVelocity, const FMatrix* EmitterToWorld);
+	void SpawnParticlesInternal(int32 Count, double StartTime, double Increment,
+		const FVector& InitialLocation, const FVector& InitialVelocity, const FMatrix* EmitterToWorld);
+	void PreSpawn(FBaseParticle& Particle, const FVector& InitialLocation, const FVector& InitialVelocity);
+	void PostSpawn(int32 Slot, FBaseParticle& Particle, double Age);
 
 	UParticleEmitter* SpriteTemplate = nullptr;
 	UParticleSystemComponent* Component = nullptr;
 
 	TUniquePtr<FParticleDataContainer> Container;
 	TUniquePtr<FParticleDataContainer> InstanceContainer;
+	// 슬롯별 실제 경과 시간을 보관하고 RelativeTime은 매 프레임 다시 계산합니다.
+	TUniquePtr<double[]> ParticleAges;
 	// 배치만 복사합니다. Module 설정 객체는 Template이 계속 소유합니다.
 	TArray<FParticleModuleBinding> ModuleBindings;
 	int32 CurrentLODLevelIndex = 0;
@@ -113,4 +142,16 @@ private:
 	uint32 ParticleCounter = 0;
 	int32 MaxActiveParticles = 0;
 	float DefaultLifetime = 1.0f;
+
+	// 실행 중 설정 변경은 지원하지 않으므로 초기화 시 생성 설정을 복사합니다.
+	double EmitterDuration = 1.0;
+	int32 EmitterLoops = 0;
+	double SpawnRate = 0.0;
+	double SecondsSinceCreation = 0.0;
+	double EmitterTime = 0.0;
+	double SpawnFraction = 0.0;
+	uint64 CompletedLoops = 0;
+	bool bEmitterEnabled = false;
+	bool bSpawningEnabled = true;
+	bool bEmitterFinished = true;
 };
