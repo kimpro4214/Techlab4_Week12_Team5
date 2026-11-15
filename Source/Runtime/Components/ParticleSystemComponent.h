@@ -3,8 +3,8 @@
 #include "PrimitiveComponent.h"
 #include "ParticleSystemComponent.generated.h"
 
-class UParticleSystem;
-struct FParticleEmitterInstance;
+class UParticleSystem;               // 정의: Render/Particle/ParticleSystem.h
+struct FParticleEmitterInstance;     // 정의: Render/Particle/ParticleEmitterInstance.h
 
 // 월드에 배치되는 파티클 (UE: UParticleSystemComponent)
 // Template의 Emitter마다 EmitterInstance를 만들어 돌린다.
@@ -34,4 +34,6 @@ private:
 
 	// 파티클은 월드 공간에서 날아가므로 컬링 박스를 넉넉하게 잡는다
 	float BoundsExtent = 10.0f;
+
+	float DebugLogTimer = 0.0f;   // [임시] 1초마다 활성 수 로그. 렌더가 붙으면 지운다
 };

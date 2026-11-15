@@ -4,6 +4,8 @@
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
+#include "Render/Particle/ParticleModule.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Core/HAL/UnrealMemory.h"
 #include <algorithm>
 
@@ -57,7 +59,7 @@ void FParticleEmitterInstance::Spawn(float DeltaTime)
 	SpawnFraction = NewParticles - static_cast<float>(Count);
 
 	if (Count > 0)
-		SpawnParticles(Count, GetSpawnOrigin());
+		SpawnParticles(Count, EmitterToSimulation.GetOrigin());   // UpdateTransforms가 매 Tick 갱신
 }
 
 void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& InitialLocation)
@@ -116,6 +118,9 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		return;
 
 	EmitterTime += DeltaTime;
+
+	// 컴포넌트가 움직였을 수 있으므로 생성 위치/공간 변환을 먼저 갱신
+	UpdateTransforms();
 
 	// Age 증가
 	ResetParticleParameters(DeltaTime);

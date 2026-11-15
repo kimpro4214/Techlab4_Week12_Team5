@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Render/Particle/ParticleHelper.h"   // 렌더 헤더는 include하지 않는다
-#include "Render/Particle/ParticleModule.h"
-#include "Components/ParticleSystemComponent.h"
 
 class UParticleEmitter;
 class UParticleLODLevel;
@@ -59,9 +57,6 @@ protected:
 
 	// 새 파티클의 칸을 비우고 기본값을 채운다 (모듈이 덮어쓰지 않은 값은 이 값을 쓴다)
 	void PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation);
-
-	// 파티클이 생성될 위치. LocalSpace면 컴포넌트 로컬, 아니면 월드 좌표
-	FVector GetSpawnOrigin() const;
 
 	void ResetParticleParameters(float DeltaTime);   // Age 증가 
 	void KillParticles();                            // RelativeTime 1 이상인 파티클 제거

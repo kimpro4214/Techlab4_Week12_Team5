@@ -3,6 +3,42 @@
 #include "Render/Particle/ParticleSystem.h"
 #include "Render/Particle/ParticleEmitter.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
+#include "Render/Particle/ParticleLODLevel.h"
+#include "Render/Particle/ParticleModuleRequired.h"
+#include "Render/Particle/ParticleModuleSpawn.h"
+#include <algorithm>
+
+namespace
+{
+	// [임시] 에디터가 생기기 전까지 쓰는 테스트용 에셋. 모듈을 추가할 때마다 여기도 늘어난다
+	UParticleSystem* CreateTestParticleSystem()
+	{
+		UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
+		Required->SetMaxParticles(300);
+
+		UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
+		Spawn->SetRate(60.0f);
+
+		UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
+		LODLevel->SetRequiredModule(Required);
+		LODLevel->SetSpawnModule(Spawn);
+
+		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
+		Emitter->AddLODLevel(LODLevel);
+		Emitter->CacheEmitterModuleInfo();   // 모듈을 다 넣은 뒤 Spawn/Update 목록 분류
+
+		UParticleSystem* System = NewObject<UParticleSystem>();
+		System->AddEmitter(Emitter);
+		return System;
+	}
+
+	// 처음 필요할 때(첫 Tick) 한 번만 만든다. 생성자에서 만들면 엔진 초기화 전에 불릴 수 있다
+	UParticleSystem* GetTestParticleSystem()
+	{
+		static UParticleSystem* TestSystem = CreateTestParticleSystem();
+		return TestSystem;
+	}
+}
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
@@ -55,6 +91,9 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
 
+	if (!Template)
+		Template = GetTestParticleSystem();   // [임시] 에디터가 생기면 지운다
+
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
 	if (EmitterInstances.IsEmpty() && Template)
 		InitializeSystem();
@@ -64,6 +103,14 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 		Instance->Tick(DeltaTime);
+
+	// [임시] 렌더 전까지 시뮬레이션을 로그로 확인한다
+	DebugLogTimer += DeltaTime;
+	if (DebugLogTimer >= 1.0f)
+	{
+		DebugLogTimer = 0.0f;
+		HTR_LOG(Info, "[Particle] Emitters: {}, Active: {}", EmitterInstances.Num(), GetNumActiveParticles());
+	}
 }
 
 int32 UParticleSystemComponent::GetNumActiveParticles() const

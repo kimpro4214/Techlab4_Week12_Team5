@@ -4,6 +4,7 @@
 #include "Editor/Gizmo/Gizmo.h"
 
 #include "GameFramework/Actor/ParticleActor.h"
+#include "GameFramework/Actor/ParticleSystemActor.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Actor/SkeletalMeshActor.h"
 #include "GameFramework/Actor/DirectionalLightActor.h"
@@ -57,6 +58,7 @@ public:
 		AStaticMeshActor::StaticClass(),
 		ASkeletalMeshActor::StaticClass(),
 		AParticleActor::StaticClass(),
+		AParticleSystemActor::StaticClass(),
 		ATextRenderActor::StaticClass(),
 		AExponentialHeightFogActor::StaticClass(),
 		AFireBallActor::StaticClass(),

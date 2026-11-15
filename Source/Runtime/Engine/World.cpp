@@ -18,6 +18,7 @@
 #include "Collision/Ray.h"
 #include "Components/BillboardComponent.h"
 #include "Components/ParticleSubUVComponent.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Components/ExponentialHeightFogComponent.h"
 
 #include "Components/StaticMeshComponent.h"
@@ -180,6 +181,15 @@ void UWorld::Tick(float RealDeltaTime)
 			if (Comp->GetParticlesForView().IsEmpty())
 			{
 				Comp->SetParticles(10);
+			}
+			Comp->TickComponent(DeltaTime);
+		}
+		// 에디터 월드에서도 Cascade 파티클 시뮬레이션이 돌아야 한다
+		for (TObjectIterator<UParticleSystemComponent> Comp; Comp; ++Comp)
+		{
+			if (!Comp || !Comp->IsRegistered() || Comp->GetWorld() != this)
+			{
+				continue;
 			}
 			Comp->TickComponent(DeltaTime);
 		}
