@@ -38,10 +38,17 @@ public:
 		FParticleEventInstancePayload* EventPayload = nullptr
 	);
 
-	// Index는 실제 슬롯 번호가 아닌 활성 목록의 순번입니다.
+	// 파티클을 정리합니다. Index는 ParticleIndices의 인덱스입니다.
 	void KillParticle(int32 Index);
-	// RelativeTime이 1 이상인 입자를 제거합니다. 수명 갱신은 호출자가 수행합니다.
+
+	// 수명이 끝난 파티클을 정리합니다. 수명 갱신은 호출자가 수행합니다.
 	void KillParticles();
+
+	// 모든 파티클들을 정리합니다.
+	void KillAllParticles();
+	
+	// 모든 파티클들을 정리하고, Counter를 리셋합니다. 
+	void Reset();
 
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
 	int32 GetCapacity() const { return MaxActiveParticles; }

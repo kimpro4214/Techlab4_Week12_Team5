@@ -7,16 +7,13 @@
 #include <cmath>
 #include <new>
 #include <utility>
+#include <cstddef>
+#include <limits>
+#include <stdexcept>
+#include <type_traits>
 
 FParticleEmitterInstance::FParticleEmitterInstance() = default;
-
-FParticleEmitterInstance::~FParticleEmitterInstance()
-{
-	if (Container)
-	{
-		Container->Free();
-	}
-}
+FParticleEmitterInstance::~FParticleEmitterInstance() = default;
 
 void FParticleEmitterInstance::Initialize(
 	UParticleEmitter* InSpriteTemplate,
@@ -27,56 +24,42 @@ void FParticleEmitterInstance::Initialize(
 	float InDefaultLifetime
 )
 {
-	// 범위가 0 ~ 65535 이내인가?
-	assert(InCapacity > 0 && InCapacity <= 65535);
-
 	// InDefaultLifetime 유효 체크 및 0보다 큰지
-	assert(std::isfinite(InDefaultLifetime) && InDefaultLifetime > 0.0f);
+	if (!std::isfinite(InDefaultLifetime) || InDefaultLifetime <= 0.0f)
+	{
+		throw std::invalid_argument("Invalid particle lifetime.");
+	}
 
-	// 컨테이너 없으면 만들기
-	if (Container)
+	// LOD Index는 반드시 0 이상
+	if (InCurrentLODLevelIndex < 0)
 	{
-		Container->Free();
+		throw std::invalid_argument("Invalid particle LOD index.");
 	}
-	else
-	{
-		Container = MakeUnique<FParticleDataContainer>();
-	}
+
+	// FBaseParticle가 특수한 소멸 처리(ex. 메모리 할당 해제)가 없는 default 소멸자만 허용
+	static_assert(std::is_trivially_destructible_v<FBaseParticle>);
+
+	// FBaseParticle의 정렬이 일반적인 최대 정렬 바이트와 같거나 작아야함
+	static_assert(alignof(FBaseParticle) <= alignof(std::max_align_t));
+
+	// 초기 파티클 메모리 블록 크기는 FBaseParticle의 크기로 지정
+	const int32 BaseParticleSize = static_cast<int32>(sizeof(FBaseParticle));
+	InitializeParticleStorage(BaseParticleSize, InCapacity);
 
 	// 인자 넣기
 	SpriteTemplate = InSpriteTemplate;
 	Component = InComponent;
+
 	CurrentLODLevelIndex = InCurrentLODLevelIndex;
 	CurrentLODLevel = InCurrentLODLevel;
 	DefaultLifetime = InDefaultLifetime;
 
 	// 기본값 초기화
-	PayloadOffset = sizeof(FBaseParticle);
 	ParticleSize = sizeof(FBaseParticle);
-	ParticleStride = sizeof(FBaseParticle);
+	PayloadOffset = sizeof(FBaseParticle);
+
 	InstanceData = nullptr;
 	InstancePayloadSize = 0;
-	ActiveParticles = 0;
-	ParticleCounter = 0;
-	MaxActiveParticles = 0;
-
-	// Container를 기본 값으로 초기화
-	Container->Allocate(ParticleStride * InCapacity, InCapacity);
-	ParticleData = Container->ParticleData;
-	ParticleIndices = Container->ParticleIndices;
-
-	// 제대로 초기화 되었는가?
-	assert(ParticleData);
-	assert(ParticleIndices);
-
-	// 최대 활성 입자 수를 설정
-	MaxActiveParticles = InCapacity;
-
-	// 인덱스 목록 초기화
-	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
-	{
-		ParticleIndices[Index] = static_cast<uint16>(Index);
-	}
 }
 
 void FParticleEmitterInstance::SpawnParticles(
@@ -160,6 +143,27 @@ void FParticleEmitterInstance::KillParticles()
 	}
 }
 
+void FParticleEmitterInstance::KillAllParticles()
+{
+	// 굳이 메모리를 번거롭게 0으로 초기화하면 오버헤드가 발생
+	// 그냥 모든 공간이 비어있다고 표시
+	ActiveParticles = 0;
+}
+
+void FParticleEmitterInstance::Reset()
+{
+	KillAllParticles();
+
+	// Reset은 슬롯 사용 순서도 초기 상태로 되돌림
+	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
+	{
+		ParticleIndices[Index] = static_cast<uint16>(Index);
+	}
+
+	// 카운터도 초기화
+	ParticleCounter = 0;
+}
+
 FBaseParticle* FParticleEmitterInstance::GetParticle(int32 Index)
 {
 	return const_cast<FBaseParticle*>(
@@ -176,4 +180,59 @@ const FBaseParticle* FParticleEmitterInstance::GetParticle(int32 Index) const
 int32 FParticleEmitterInstance::GetParticleSlot(int32 Index) const
 {
 	return Index >= 0 && Index < ActiveParticles ? ParticleIndices[Index] : -1;
+}
+
+void FParticleEmitterInstance::InitializeParticleStorage(
+	int32 InParticleStride,
+	int32 InCapacity
+)
+{
+	// 범위가 0 ~ 65535 이내인가?
+	if (InCapacity <= 0 || InCapacity > 65535)
+	{
+		throw std::invalid_argument("Invalid particle capacity.");
+	}
+
+	// 적어도 Stride가 FBaseParticle의 크기 이상이어야 함
+	if (InParticleStride < static_cast<int32>(sizeof(FBaseParticle)))
+	{
+		throw std::invalid_argument("Invalid particle stride.");
+	}
+
+	// 적어도 Stride가 FBaseParticle의 정렬에 맞춰져야 함
+	if (InParticleStride % alignof(FBaseParticle) != 0)
+	{
+		throw std::invalid_argument("Invalid particle stride.");
+	}
+
+	// 전체 메모리 블록 크기
+	const uint64 ParticleBytes = static_cast<uint64>(InParticleStride) * static_cast<uint64>(InCapacity);
+
+	// 메모리 블록 크기가 int32 양수 영역에 들어가는가
+	if (ParticleBytes > static_cast<uint64>(std::numeric_limits<int32>::max()))
+	{
+		throw std::length_error("Particle data exceeds int32 range.");
+	}
+
+	// 새 저장소가 완성될 때까지 기존 저장소와 실행 상태는 유지
+	auto NewContainer = MakeUnique<FParticleDataContainer>();
+	NewContainer->Allocate(static_cast<int32>(ParticleBytes), InCapacity);
+
+	for (int32 Index = 0; Index < InCapacity; ++Index)
+	{
+		NewContainer->ParticleIndices[Index] = static_cast<uint16>(Index);
+	}
+
+	// 컨테이너를 서로 스왑.
+	// 기존 컨테이너는 NewContainer에 담기게 되어 함수 종료시 사라진다.
+	Container.swap(NewContainer);
+
+	ParticleData = Container->ParticleData;
+	ParticleIndices = Container->ParticleIndices;
+
+	ParticleStride = InParticleStride;
+	MaxActiveParticles = InCapacity;
+
+	ActiveParticles = 0;
+	ParticleCounter = 0;
 }
