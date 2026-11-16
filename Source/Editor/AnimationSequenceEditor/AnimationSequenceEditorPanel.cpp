@@ -11,7 +11,6 @@
 #include "Editor/Settings/SettingsPanel.h"
 #include "Engine/Classes/Animation/AnimSequence.h"
 #include "Engine/Classes/Animation/BonePose.h"
-#include "Asset/AssetManager.h"
 #include "Render/SkeletalMesh.h"
 
 #include <algorithm>
@@ -386,7 +385,6 @@ void FAnimationSequenceEditorPanel::DrawAnimationTimeline()
 				const float MaxStart = std::max(0.0f, Length - DragNotify.Duration);
 				DragNotify.TriggerTime = std::clamp(MouseTime, 0.0f, MaxStart);
 			}
-			UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 		}
 		else
 		{
@@ -421,7 +419,6 @@ void FAnimationSequenceEditorPanel::DrawAnimationTimeline()
 	if (!IO.WantTextInput && EditSequence->Notifies.IsValidIndex(SelectedNotifyIndex) && ImGui::IsKeyPressed(ImGuiKey_Delete))
 	{
 		EditSequence->Notifies.RemoveAt(SelectedNotifyIndex);
-		UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 		SelectNotify(INDEX_NONE);
 	}
 
@@ -490,7 +487,6 @@ void FAnimationSequenceEditorPanel::DrawAnimationTimeline()
 			if (ImGui::MenuItem("Delete Selected Notify"))
 			{
 				EditSequence->Notifies.RemoveAt(SelectedNotifyIndex);
-				UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 				SelectNotify(INDEX_NONE);
 			}
 		}
@@ -507,7 +503,6 @@ int32 FAnimationSequenceEditorPanel::AddNotifyEvent(const char* InName, float In
 	NewEvent.TriggerTime = std::clamp(InTriggerTime, 0.0f, std::max(0.0f, Length - NewEvent.Duration));
 	NewEvent.NotifyName = FName((InName && InName[0] != '\0') ? InName : "AnimNotify");
 	const int32 NewIdx = EditSequence->Notifies.Add(NewEvent);
-	UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 	SelectNotify(NewIdx);
 	return NewIdx;
 }
@@ -742,26 +737,18 @@ void FAnimationSequenceEditorPanel::DrawSelectedNotifyInspector()
 		if (ImGui::InputText("Name##EditNotify", EditNotifyName, sizeof(EditNotifyName)))
 		{
 			Notify.NotifyName = FName((EditNotifyName[0] != '\0') ? EditNotifyName : "AnimNotify");
-			UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 		}
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(75.0f);
 		const float MaxStartTime = std::max(0.0f, Length - Notify.Duration);
-		if (ImGui::DragFloat("Time##EditNotify", &Notify.TriggerTime, 0.005f, 0.0f, MaxStartTime, "%.3fs", ImGuiSliderFlags_AlwaysClamp))
-		{
-			UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
-		}
+		ImGui::DragFloat("Time##EditNotify", &Notify.TriggerTime, 0.005f, 0.0f, MaxStartTime, "%.3fs", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(75.0f);
-		if (ImGui::DragFloat("Dur##EditNotify", &Notify.Duration, 0.005f, 0.0f, std::max(0.0f, Length - Notify.TriggerTime), "%.3fs", ImGuiSliderFlags_AlwaysClamp))
-		{
-			UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
-		}
+		ImGui::DragFloat("Dur##EditNotify", &Notify.Duration, 0.005f, 0.0f, std::max(0.0f, Length - Notify.TriggerTime), "%.3fs", ImGuiSliderFlags_AlwaysClamp);
 		ImGui::SameLine();
 		if (ImGui::Button("Delete##EditNotify"))
 		{
 			EditSequence->Notifies.RemoveAt(SelectedNotifyIndex);
-			UAssetManager::Get().SyncAnimNotifiesByClipName(EditSequence);
 			SelectNotify(INDEX_NONE);
 		}
 	}

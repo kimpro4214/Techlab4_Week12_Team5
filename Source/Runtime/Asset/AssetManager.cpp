@@ -929,27 +929,6 @@ void UAssetManager::GetFbxAnimationAssets(const FString& FbxKey, TArray<FFbxAnim
 	});
 }
 
-void UAssetManager::SyncAnimNotifiesByClipName(const UAnimSequence* SourceSequence)
-{
-	if (!SourceSequence) return;
-	const FString& SrcPath = SourceSequence->GetPath();
-	const size_t SlashPos = SrcPath.find_last_of('/');
-	if (SlashPos == FString::npos) return;
-
-	const FString ClipSuffix = SrcPath.substr(SlashPos); // e.g., "/Walk_Loop"
-	for (auto& [Key, Asset] : AssetMap)
-	{
-		if (!Asset || Asset == SourceSequence) continue;
-		if (Key.ends_with(ClipSuffix))
-		{
-			if (UAnimSequence* TargetSeq = Cast<UAnimSequence>(Asset))
-			{
-				TargetSeq->Notifies = SourceSequence->Notifies;
-			}
-		}
-	}
-}
-
 bool UAssetManager::ReorientStaticMesh(UStaticMesh& Mesh, const std::function<FVector(const FVector&)>& Rotate)
 {
 	if (Mesh.GetLODCount() > 1 || Mesh.MeshData.Vertices.IsEmpty())
