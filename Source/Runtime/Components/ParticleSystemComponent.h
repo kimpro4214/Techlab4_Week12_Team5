@@ -17,12 +17,13 @@ public:
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime) override;
 	FBox CalcLocalBounds() const override;
-	void SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext) override;
+	FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 private:
+	friend class FParticleSystemSceneProxy;
+
 	UPROPERTY(EditAnywhere)
 	FParticleSystem ParticleSystem;
 
 	TArray<FParticleEmitterInstance> EmitterInstances;
-	TArray<FSubUVConstants> ParticleRenderParams;
 };

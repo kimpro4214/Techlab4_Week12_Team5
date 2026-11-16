@@ -1,6 +1,6 @@
 #include "EnginePCH.h"
-#include "Render/RenderPacket.h"
 #include "Components/ParticleSystemComponent.h"
+#include "Engine/ParticleSystemSceneProxy.h"
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
@@ -18,7 +18,6 @@ void UParticleSystemComponent::SetParticleSystem(const FParticleSystem& InSystem
 	{
 		EmitterInstances[Index].Init(ParticleSystem.Emitters[Index]);
 	}
-	ParticleRenderParams.Reset();
 	OnTransformDirty();
 }
 
@@ -31,7 +30,6 @@ void UParticleSystemComponent::BeginPlay()
 	{
 		EmitterInstances[Index].Init(ParticleSystem.Emitters[Index]);
 	}
-	ParticleRenderParams.Reset();
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
@@ -40,7 +38,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	const FVector SpawnLocation = GetWorldLocation();
 	bool bBoundsChanged = false;
-	ParticleRenderParams.Reset();
 
 	for (int32 EmitterIndex = 0; EmitterIndex < EmitterInstances.Num(); ++EmitterIndex)
 	{
@@ -62,16 +59,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 			Emitter.Color.Spawn(Particle);
 			Emitter.Lifetime.Spawn(Particle);
 			EmitterInstance.AddParticle(Particle);
-		}
-
-		// 렌더 패킷이 참조할 상수를 제출 순서대로 준비한다.
-		for (int32 Index = 0; Index < EmitterInstance.GetActiveParticleCount(); ++Index)
-		{
-			const FBaseParticle Particle = EmitterInstance.GetParticle(Index);
-			FSubUVConstants Params{ 0.0f, 1.0f, 1.0f, Particle.Alpha };
-			Params.Tint = FVector4(Particle.Color, 1.0f);
-			Params.DecodeSRGB = 0.0f;
-			ParticleRenderParams.Add(Params);
 		}
 	}
 
@@ -99,24 +86,7 @@ FBox UParticleSystemComponent::CalcLocalBounds() const
 	return WorldBounds.GetWorldAABB(GetWorldMatrix().Inverse());
 }
 
-void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
+FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 {
-	if (!QuadMesh || !Material) return;
-
-	int32 ParamIndex = 0;
-	for(const FParticleEmitterInstance& Instance : EmitterInstances)
-	{
-		for (int32 Index = 0; Index < Instance.GetActiveParticleCount(); ++Index)
-		{
-			const FBaseParticle Particle = Instance.GetParticle(Index);
-			const FMatrix Billboard = ViewContext.BuildBillboardMatrix(Particle.Location, Particle.Scale, Particle.Scale);
-
-			UBillboardComponent::SubmitToRenderQueue(RenderQueue, Billboard);
-
-			FRenderPacket& Packet = RenderQueue.Last();
-			Packet.MaterialParamData = &ParticleRenderParams[ParamIndex++];
-			const FVector Delta = Particle.Location - ViewContext.CameraPosition;
-			Packet.CameraToParticleDistance = Delta.Dot(Delta);
-		}
-	}
+	return new FParticleSystemSceneProxy(this);
 }
