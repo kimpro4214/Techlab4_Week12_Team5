@@ -12,6 +12,9 @@ class UParticleModuleVelocity : public UParticleModule
 public:
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* OutParticle) override;
 
+	FVector GetStartVelocityMin() const { return StartVelocityMin; }
+	FVector GetStartVelocityMax() const { return StartVelocityMax; }
+
 private:
 	// 초기 속도(방향 + 크기 벡터). 축마다 [Min, Max]에서 랜덤으로 결정
 	FVector StartVelocityMin = FVector(-10.0f, -10.0f, 50.0f);		// Particle 초기 속도 하한

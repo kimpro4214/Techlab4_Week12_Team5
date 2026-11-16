@@ -3,7 +3,52 @@
 
 #include "Asset/AssetManager.h"					
 #include "Render/Particle/ParticleHelper.h"			
-#include "Render/Particle/ParticleModuleRequired.h"
+#include "Render/Particle/ParticleModules.h"	// Required + Bounds 계산용 Location/Velocity/Lifetime/Size
+#include <algorithm>
+
+void UParticleSystemComponent::InitializeSystem()
+{
+	ResetSystem();
+	if (!Template) return;
+
+	int32 MaxParticleCount = 0;
+	for (UParticleEmitter* Emitter : Template->GetEmitterArray())
+	{
+		FParticleEmitterInstance* EmitterInstance = new FParticleEmitterInstance();
+		if (EmitterInstance->Init(Emitter, this))
+		{
+			EmitterInstances.Add(EmitterInstance);
+			MaxParticleCount += EmitterInstance->MaxActiveParticles;
+		}
+		else delete EmitterInstance;
+	}
+
+	if (MaxParticleCount > 0)
+	{
+		SpriteBatcher = MakeUnique<FSpriteBatcher>();
+		SpriteBatcher->Init(MaxParticleCount);		// PSC당 Batcher 하나 사용, 전체 파티클 세팅
+	}
+	UpdateBoundsExtent();	// Template이 정해졌으니 모듈 값으로 컬링 범위 다시 계산
+}
+
+void UParticleSystemComponent::ResetSystem()
+{
+	for (FParticleEmitterInstance* Inst : EmitterInstances)
+	{
+		delete Inst;
+	}
+	EmitterInstances.Empty();
+	SpriteBatcher.reset();
+}
+
+void UParticleSystemComponent::TickComponent(float deltaTime)
+{
+	for (FParticleEmitterInstance* Inst : EmitterInstances)
+	{
+		Inst->Update(deltaTime);
+		Inst->Spawn(deltaTime);
+	}
+}
 
 void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
 {
@@ -43,7 +88,7 @@ void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, co
 		// WorldSpace: Spawn 때 이미 월드 좌표로 저장됨 → 단위 행렬 (Component 행렬을 곱하면 이중 변환)
 		const FMatrix Model = Required->IsUseLocalSpace() ? GetWorldMatrix() : FMatrix::Identity;
 
-		FRenderPacket RenderPac;	// Mesh / Proxy는 null 유지: Proxy가 있으면 Model 대신 Proxy 행렬이 쓰임 (PacketWorld)
+		FRenderPacket RenderPac;
 
 		RenderPac.Geometry = SpriteBatcher->GetGeometry();
 		RenderPac.StartIndex = Start * 6;		// 이 Emitter 구간의 시작 인덱스 (Sprite당 인덱스 6개)
@@ -61,6 +106,47 @@ void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, co
 
 FBox UParticleSystemComponent::CalcLocalBounds() const
 {
-	// TODO: 파티클이 퍼지는 범위를 덮는 넉넉한 박스로 교체
-	return Super::CalcLocalBounds();
+	const float Extent = BoundsExtent;
+	return FBox{ FVector(-Extent, -Extent, -Extent), FVector(Extent, Extent, Extent) };
+}
+
+void UParticleSystemComponent::UpdateBoundsExtent()
+{
+	// 벡터의 세 축 중 절댓값이 가장 큰 값 (정육면체 박스 반경으로 사용)
+	auto MaxAbsAxis = [](const FVector& V)
+	{
+		const FVector A = V.GetAbs();
+		return std::max(A.X, std::max(A.Y, A.Z));
+	};
+
+	BoundsExtent = 0.0f;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		const UParticleLODLevel* LODLevel = Instance->CurrentLODLevel;
+
+		// 모듈이 없으면 0: Location/Velocity/Size 모듈이 없으면 그만큼 퍼지지 않음
+		float OriginExtent = MaxAbsAxis(LODLevel->GetRequiredModule()->GetEmitterOrigin());
+		float LocationExtent = 0.0f;
+		float SpeedExtent = 0.0f;
+		float LifeTime = 0.0f;
+		float SizeExtent = 0.0f;
+
+		for (UParticleModule* Module : LODLevel->GetModules())
+		{
+			if (const UParticleModuleLocation* Location = Cast<UParticleModuleLocation>(Module))
+				LocationExtent = std::max(MaxAbsAxis(Location->GetMinLocation()), MaxAbsAxis(Location->GetMaxLocation()));
+			else if (const UParticleModuleVelocity* Velocity = Cast<UParticleModuleVelocity>(Module))
+				SpeedExtent = std::max(MaxAbsAxis(Velocity->GetStartVelocityMin()), MaxAbsAxis(Velocity->GetStartVelocityMax()));	
+			else if (const UParticleModuleLifetime* Lifetime = Cast<UParticleModuleLifetime>(Module))
+				LifeTime = Lifetime->GetMaxLifeTime();
+			else if (const UParticleModuleSize* Size = Cast<UParticleModuleSize>(Module))
+				SizeExtent = MaxAbsAxis(Size->GetMaxSize()) * 0.5f;
+		}
+
+		// 수명 동안 초기 속도로 이동한 거리까지 포함 (속도를 바꾸는 Update 모듈이 생기면 다시 검토)
+		const float EmitterExtent = OriginExtent + LocationExtent + SpeedExtent * LifeTime + SizeExtent;
+		BoundsExtent = std::max(BoundsExtent, EmitterExtent);
+	}
+
+	OnTransformDirty();
 }

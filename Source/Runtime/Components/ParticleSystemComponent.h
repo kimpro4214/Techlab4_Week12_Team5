@@ -21,44 +21,10 @@ public:
 
 	~UParticleSystemComponent() override { ResetSystem(); }
 
-	void InitializeSystem()	// EmitterInstance 초기 생성
-	{
-		ResetSystem();
-		if (!Template) return;
-		int32 MaxParticleCount = 0;
-		for (UParticleEmitter* Emitter : Template->GetEmitterArray())
-		{
-			FParticleEmitterInstance* EmitterInstance = new FParticleEmitterInstance();
-			if (EmitterInstance->Init(Emitter, this))
-			{EmitterInstances.Add(EmitterInstance);
-			MaxParticleCount += EmitterInstance->MaxActiveParticles;
-			}
-			else delete EmitterInstance;
-		}
-		if (MaxParticleCount > 0) {
-			SpriteBatcher = MakeUnique<FSpriteBatcher>();
-			SpriteBatcher.get()->Init(MaxParticleCount);		// PSC당 Batcher 하나 사용, 전체 파티클 세팅
-		}
-	}
+	void InitializeSystem();	// Template의 Emitter마다 Instance 생성 + Batcher / Bounds 준비
+	void ResetSystem();			// Instance / Batcher 해제
 
-	void ResetSystem()	// EmitterInstnace 리셋
-	{
-		for (FParticleEmitterInstance* Inst : EmitterInstances)
-		{
-			delete Inst;
-		}
-		EmitterInstances.Empty();
-		SpriteBatcher.reset();
-	}
-
-	void TickComponent(float deltaTime) override
-	{
-		for (FParticleEmitterInstance* Inst : EmitterInstances)
-		{
-			Inst->Update(deltaTime);
-			Inst->Spawn(deltaTime);
-		}
-	}
+	void TickComponent(float deltaTime) override;
 
 	void SetTemplate(UParticleSystem* newTemp)
 	{
@@ -78,6 +44,10 @@ public:
 	FBox CalcLocalBounds() const override;	// 컬링용 범위 (기본값은 크기 0 박스라 원점이 화면 밖이면 통째로 컬링됨)
 
 private:
+	// 모듈 최댓값(Origin + Location + Velocity x Lifetime + Size/2)으로 BoundsExtent 계산 후 프록시 갱신 요청
+	void UpdateBoundsExtent();
+
+	float BoundsExtent = 0.0f;	// 파티클이 퍼질 수 있는 최대 반경 (CalcLocalBounds에서 사용)
 	UParticleSystem* Template = nullptr;
 	TUniquePtr<FSpriteBatcher> SpriteBatcher = nullptr;
 	TArray<FParticleEmitterInstance*> EmitterInstances;
