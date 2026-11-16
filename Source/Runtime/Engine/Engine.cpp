@@ -130,7 +130,7 @@ void UEngine::DestroyWorldContext(UWorld* InWorld)
 			}
 			WorldContextlist[idx].SetCurrentWorld(nullptr);
 			WorldContextlist.RemoveAt(idx);
-			if (ContextType == EWorldType::PIE || ContextType == EWorldType::Game)
+			if (ContextType == EWorldType::PIE || ContextType == EWorldType::Game || ContextType == EWorldType::EditorPreview)
 			{
 				if (MainAudioDevice) MainAudioDevice->Flush(InWorld);
 				DestroyWorld(InWorld);

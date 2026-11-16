@@ -2,6 +2,7 @@
 
 #include "SkeletalPose.h"
 #include "Editor/EditorUI/EditorPanel.h"
+#include "Editor/AssetEditor/FPreviewScene.h"
 #include "Editor/Gizmo/BoneGizmoTarget.h"
 #include "Editor/Gizmo/Gizmo.h"
 #include "Editor/Viewports/EditorViewportClient.h"
@@ -13,13 +14,14 @@ class UWorld;
 class FSkeletalMeshEditorPanel : public IEditorPanel
 {
 public:
+	~FSkeletalMeshEditorPanel() override;
+	void Shutdown();
 	virtual bool Init() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnRender() override;
 	virtual const char* GetPanelName() const override { return "Skeletal Mesh Editor"; }
 
-	UWorld* ReleasePreviewWorld();
-	UWorld* GetPreviewWorld() const { return PreviewWorld; }
+	UWorld* GetPreviewWorld() const { return PreviewScene.GetWorld(); }
 	FEditorViewportClient* GetViewportClient() { return &ViewportClient; }
 	void SetEditorSettings(const FEditorSettings* InSettings) { Settings = InSettings; }
 	bool IsFocused() const { return IsOpen() && bFocused; }
@@ -59,7 +61,7 @@ private:
 	void ApplyPoseToAsset();
 	void SavePoseToFile();
 
-	UWorld* PreviewWorld = nullptr;
+	FPreviewScene PreviewScene;
 	FEditorViewportClient ViewportClient;
 	const FEditorSettings* Settings = nullptr;
 	bool bFocused = false;

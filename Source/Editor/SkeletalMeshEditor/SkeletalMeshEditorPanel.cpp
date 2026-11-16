@@ -4,11 +4,10 @@
 #include "Camera/ViewportCameraMovement.h"
 #include "Editor/Settings/SettingsPanel.h"
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "Asset/AssetManager.h"
 #include "Asset/FbxImporter/SkeletalPoseFile.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/SkyLightComponent.h"
 #include "Render/ReferenceSkeleton.h"
 
 namespace
@@ -139,35 +138,30 @@ namespace
 	}
 }
 
+FSkeletalMeshEditorPanel::~FSkeletalMeshEditorPanel()
+{
+	Shutdown();
+}
+
 bool FSkeletalMeshEditorPanel::Init()
 {
+	if (PreviewScene.GetWorld()) return true;
 	SetOpen(false);
 
-	PreviewWorld = UWorld::CreateWorld(EWorldType::Editor, false, "SkeletalMeshPreview");
-	ViewportClient.SetWorld(PreviewWorld);
-	ViewportClient.SetViewLocation(FVector{ -4.0f, 0.0f, 2.0f });
-	ViewportClient.SetViewRotation(FVector{ 20.0f, 0.0f, 0.0f });
+	FPreviewSceneOptions Options;
+	Options.WorldName = "SkeletalMeshPreview";
+	if (!PreviewScene.Initialize(GEngine, Options)) return false;
 
-	if (AActor* PreviewActor = PreviewWorld->SpawnActor<AActor>("SkeletalPreview"))
+	ViewportClient.SetWorld(PreviewScene.GetWorld());
+	ViewportClient.SetViewLocation(FVector(-4.0f, 0.0f, 2.0f));
+	ViewportClient.SetViewRotation(FRotator(20.0f, 0.0f, 0.0f));
+	PreviewMeshComponent = Cast<USkeletalMeshComponent>(
+		PreviewScene.AddComponent(USkeletalMeshComponent::StaticClass(), "PreviewMesh"));
+	if (!PreviewMeshComponent)
 	{
-		PreviewMeshComponent = Cast<USkeletalMeshComponent>(PreviewActor->AddComponent(USkeletalMeshComponent::StaticClass(), "PreviewMesh"));
+		Shutdown();
+		return false;
 	}
-
-	// 라이트 액터 대신 컴포넌트만 붙여서 프리뷰에 아이콘/화살표가 보이지 않게 한다
-	if (AActor* LightActor = PreviewWorld->SpawnActor<AActor>("PreviewLights"))
-	{
-		if (auto* Sky = Cast<USkyLightComponent>(LightActor->AddComponent(USkyLightComponent::StaticClass(), "PreviewAmbient")))
-		{
-			Sky->SetIntensity(0.3f);
-		}
-
-		if (auto* Sun = Cast<UDirectionalLightComponent>(LightActor->AddComponent(UDirectionalLightComponent::StaticClass(), "PreviewDirectional")))
-		{
-			Sun->SetRelativeRotation(FRotator(45.0f, 30.0f, 0.0f));
-			Sun->SetIntensity(1.0f);
-		}
-	}
-
 	return true;
 }
 
@@ -176,10 +170,7 @@ void FSkeletalMeshEditorPanel::Tick(float DeltaTime)
 	PreviewPose.UpdateComponentSpace();
 	SyncPoseToComponent();
 
-	if (PreviewWorld)
-	{
-		PreviewWorld->GetScene().UpdateAllTransforms();
-	}
+	PreviewScene.Tick(DeltaTime);
 }
 
 void FSkeletalMeshEditorPanel::OnRender()
@@ -293,12 +284,14 @@ void FSkeletalMeshEditorPanel::OnRender()
 	bWasAnyItemActive = bAnyItemActive;
 }
 
-UWorld* FSkeletalMeshEditorPanel::ReleasePreviewWorld()
+void FSkeletalMeshEditorPanel::Shutdown()
 {
 	ViewportClient.SetWorld(nullptr);
-	UWorld* World = PreviewWorld;
-	PreviewWorld = nullptr;
-	return World;
+	BoneGizmo.SetTarget(nullptr);
+	BoneGizmoTarget.SetBone(nullptr, -1);
+	PreviewMeshComponent = nullptr;
+	bFocused = false;
+	PreviewScene.Release();
 }
 
 bool FSkeletalMeshEditorPanel::OpenAsset(const FString& Path)

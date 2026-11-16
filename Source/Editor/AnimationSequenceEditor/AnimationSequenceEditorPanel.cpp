@@ -2,11 +2,9 @@
 #include "Editor/AnimationSequenceEditor/AnimationSequenceEditorPanel.h"
 
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Components/SkyLightComponent.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/PointLightComponent.h"
 #include "Camera/ViewportCameraMovement.h"
 #include "Editor/Settings/SettingsPanel.h"
 #include "Engine/Classes/Animation/AnimSequence.h"
@@ -17,41 +15,32 @@
 #include <cmath>
 #include <cstring>
 
+FAnimationSequenceEditorPanel::~FAnimationSequenceEditorPanel()
+{
+	Shutdown();
+}
+
 bool FAnimationSequenceEditorPanel::Init()
 {
+	if (PreviewScene.GetWorld()) return true;
 	SetOpen(false);
 
-	PreviewWorld = UWorld::CreateWorld(EWorldType::Editor, false, "AnimationSequencePreview");
-	if (!PreviewWorld)
-	{
-		HTR_LOG(Error, "Failed to create preview world for animation sequence editor.");
-		return false;
-	}
+	FPreviewSceneOptions Options;
+	Options.WorldName = "AnimationSequencePreview";
+	Options.SkyLightIntensity = 1.0f;
+	Options.DirectionalLightIntensity = 3.0f;
+	if (!PreviewScene.Initialize(GEngine, Options)) return false;
 
-	ViewportClient.SetWorld(PreviewWorld);
+	ViewportClient.SetWorld(PreviewScene.GetWorld());
 	ViewportClient.SetViewLocation(FVector(-4.0f, 0.0f, 2.0f));
 	ViewportClient.SetViewRotation(FRotator(20.0f, 0.0f, 0.0f));
-
-	if (AActor* Actor = PreviewWorld->SpawnActor<AActor>("AnimationPreviewMesh"))
+	PreviewMeshComponent = Cast<USkeletalMeshComponent>(
+		PreviewScene.AddComponent(USkeletalMeshComponent::StaticClass(), "PreviewMesh"));
+	if (!PreviewMeshComponent)
 	{
-		PreviewMeshComponent = Cast<USkeletalMeshComponent>(Actor->AddComponent(USkeletalMeshComponent::StaticClass(), "PreviewMesh"));
+		Shutdown();
+		return false;
 	}
-
-	if (AActor* Actor = PreviewWorld->SpawnActor<AActor>("AnimationPreviewLights"))
-	{
-		if (auto* Sky = Cast<USkyLightComponent>(Actor->AddComponent(USkyLightComponent::StaticClass(), "PreviewAmbient")))
-		{
-			Sky->SetIntensity(1.0f);
-		}
-
-		if (auto* Directional = Cast<UDirectionalLightComponent>(Actor->AddComponent(UDirectionalLightComponent::StaticClass(), "PreviewDirectional")))
-		{
-			Directional->SetRelativeRotation(FRotator(45.0f, 30.0f, 0.0f));
-			Directional->SetIntensity(3.0f);
-		}
-	}
-
-
 	return true;
 }
 
@@ -85,10 +74,7 @@ void FAnimationSequenceEditorPanel::Tick(float DeltaTime)
 		}
 	}
 
-	if (PreviewWorld)
-	{
-		PreviewWorld->GetScene().UpdateAllTransforms();
-	}
+	PreviewScene.Tick(DeltaTime);
 }
 
 void FAnimationSequenceEditorPanel::OnRender()
@@ -161,7 +147,7 @@ void FAnimationSequenceEditorPanel::OnRender()
 // 콘텐츠 브라우저에서 선택한 클립과 같은 FBX의 메시를 연결한다.
 bool FAnimationSequenceEditorPanel::OpenAsset(UAnimSequence* InSequence, USkeletalMesh* InSkeletalMesh)
 {
-	if (!PreviewWorld || !PreviewMeshComponent || !InSequence || !InSkeletalMesh)
+	if (!PreviewScene.GetWorld() || !PreviewMeshComponent || !InSequence || !InSkeletalMesh)
 	{
 		HTR_LOG(Error, "Cannot open animation sequence: preview or asset is missing.");
 		return false;
@@ -827,7 +813,7 @@ void FAnimationSequenceEditorPanel::DrawBoneTreeNode(int32 BoneIndex)
 	}
 }
 
-UWorld* FAnimationSequenceEditorPanel::ReleasePreviewWorld()
+void FAnimationSequenceEditorPanel::Shutdown()
 {
 	// 월드를 삭제하기 전에 관찰 참조부터 해제
 	ViewportClient.SetWorld(nullptr);
@@ -844,10 +830,7 @@ UWorld* FAnimationSequenceEditorPanel::ReleasePreviewWorld()
 	BoneChildren.Reset();
 	PreviewMeshComponent = nullptr;
 
-	UWorld* ReleasedWorld = PreviewWorld;
-	PreviewWorld = nullptr;
-
-	return ReleasedWorld;
+	PreviewScene.Release();
 }
 
 // 프리뷰 캐릭터를 보여주는 뷰포트 영역을 그립니다.

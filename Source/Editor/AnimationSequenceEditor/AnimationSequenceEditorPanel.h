@@ -2,6 +2,7 @@
 
 #include "Containers/Array.h"
 #include "Editor/EditorUI/EditorPanel.h"
+#include "Editor/AssetEditor/FPreviewScene.h"
 #include "Editor/EditorUI/EditorTimeline.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/Settings/SettingsPanel.h"
@@ -15,6 +16,8 @@ class UAnimSequence;
 class FAnimationSequenceEditorPanel : public IEditorPanel
 {
 public:
+	~FAnimationSequenceEditorPanel() override;
+	void Shutdown();
 	bool Init() override;
 	void Tick(float DeltaTime) override;
 	void OnRender() override;
@@ -29,9 +32,7 @@ public:
 	bool OpenAsset(UAnimSequence* InSequence, USkeletalMesh* InSkeletalMesh);
 
 	// EditorEngine이 프리뷰를 그릴 때 사용
-	UWorld* GetPreviewWorld() const { return PreviewWorld; }
-	// 엔진 종료시 월드를 안전하게 분리
-	UWorld* ReleasePreviewWorld();
+	UWorld* GetPreviewWorld() const { return PreviewScene.GetWorld(); }
 
 	FEditorViewportClient* GetViewportClient() { return &ViewportClient; }
 
@@ -69,7 +70,7 @@ private:
 	bool bRequestFocus = false;
 	float CameraSpeed = 1.0f;
 
-	UWorld* PreviewWorld = nullptr;
+	FPreviewScene PreviewScene;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	const FEditorSettings* Settings = nullptr;
 

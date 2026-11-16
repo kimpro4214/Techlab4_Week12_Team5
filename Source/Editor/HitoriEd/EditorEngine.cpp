@@ -1803,8 +1803,8 @@ void UEditorEngine::PreExit()
 	// 시퀀서는 에디터 월드 액터를 가리키므로 월드보다 먼저 정리한다
 	if (SequencerPanel) SequencerPanel->Shutdown();
 	if (AnimationStateMachinePanel) AnimationStateMachinePanel->Shutdown();
-	if (SkeletalMeshEditorPanel) DestroyWorld(SkeletalMeshEditorPanel->ReleasePreviewWorld());
-	if (AnimationSequenceEditorPanel) DestroyWorld(AnimationSequenceEditorPanel->ReleasePreviewWorld());
+	if (SkeletalMeshEditorPanel) SkeletalMeshEditorPanel->Shutdown();
+	if (AnimationSequenceEditorPanel) AnimationSequenceEditorPanel->Shutdown();
 	EditorWorld->ClearWorld();
 	// PIE 창이 열린 채 종료하면 Device가 살아 있을 때 Swapchain과 타깃을 먼저 정리한다.
 	DestroyPIEWindow();

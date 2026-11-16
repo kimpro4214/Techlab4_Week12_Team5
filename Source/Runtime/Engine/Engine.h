@@ -87,7 +87,7 @@ public:
 	FWorldContext* GetWorldContextFromPIEInstance(int32 PIEInstance);
 	UWorld* GetEditorWorld() const;
 	virtual UWorld* CreatePIEWorldByDuplication(FWorldContext& Context, UWorld* SourceWorld);
-	// PIE 컨텍스트는 게임 인스턴스와 복제 월드까지 함께 정리한다.
+	// Game·PIE·EditorPreview 컨텍스트는 소유한 월드까지 함께 정리한다.
 	void DestroyWorldContext(UWorld* InWorld);
 
 	// 레벨 전환. UE의 SetClientTravel → TickWorldTravel → LoadMap 흐름을 따른다.
