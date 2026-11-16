@@ -7,22 +7,61 @@
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
 #include "Render/Particle/ParticleDynamicData.h"
+#include "Render/Particle/ParticleModuleLifetime.h"
+#include "Render/Particle/ParticleModuleLocation.h"
+#include "Render/Particle/ParticleModuleVelocity.h"
+#include "Render/Particle/ParticleModuleColor.h"
+#include "Render/Particle/ParticleModuleColorOverLife.h"
+#include "Render/Particle/ParticleModuleSize.h"
+#include "Render/Material.h"
+#include "Asset/AssetManager.h"
 #include <algorithm>
 
 namespace
 {
 	// [임시] 에디터가 생기기 전까지 쓰는 테스트용 에셋. 모듈을 추가할 때마다 여기도 늘어난다
+	// 값은 이 엔진 단위(1 = 약 1m, SubUV 파티클 크기 1.2 정도)에 맞춘 것이다
 	UParticleSystem* CreateTestParticleSystem()
 	{
 		UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
 		Required->SetMaxParticles(300);
+		Required->SetMaterial(UAssetManager::GetAssetByPath<UMaterial>("ParticleSpriteMaterial"));
 
 		UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
 		Spawn->SetRate(60.0f);
 
+		UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
+		Lifetime->MinLifetime = 1.0f;
+		Lifetime->MaxLifetime = 2.0f;
+
+		UParticleModuleLocation* Location = NewObject<UParticleModuleLocation>();
+		Location->StartLocationMin = FVector(-0.2f, -0.2f, 0.0f);
+		Location->StartLocationMax = FVector( 0.2f,  0.2f, 0.0f);
+
+		UParticleModuleVelocity* Velocity = NewObject<UParticleModuleVelocity>();
+		Velocity->StartVelocityMin = FVector(-0.3f, -0.3f, 1.0f);
+		Velocity->StartVelocityMax = FVector( 0.3f,  0.3f, 2.0f);
+
+		UParticleModuleColor* Color = NewObject<UParticleModuleColor>();
+		Color->StartColor = FLinearColor(1.0f, 0.6f, 0.2f, 1.0f);
+
+		UParticleModuleColorOverLife* ColorOverLife = NewObject<UParticleModuleColorOverLife>();
+		ColorOverLife->StartColor = FLinearColor(1.0f, 0.6f, 0.2f, 1.0f);
+		ColorOverLife->EndColor   = FLinearColor(1.0f, 0.1f, 0.0f, 0.0f);   // 붉어지며 사라진다
+
+		UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
+		Size->StartSizeMin = FVector(0.2f, 0.2f, 0.2f);
+		Size->StartSizeMax = FVector(0.4f, 0.4f, 0.4f);
+
 		UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
 		LODLevel->SetRequiredModule(Required);
 		LODLevel->SetSpawnModule(Spawn);
+		LODLevel->AddModule(Lifetime);
+		LODLevel->AddModule(Location);
+		LODLevel->AddModule(Velocity);
+		LODLevel->AddModule(Color);
+		LODLevel->AddModule(ColorOverLife);
+		LODLevel->AddModule(Size);
 
 		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
 		Emitter->AddLODLevel(LODLevel);
