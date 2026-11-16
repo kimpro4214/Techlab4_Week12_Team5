@@ -163,6 +163,7 @@ private:
 	FRenderer* Renderer = nullptr;
 
 	TUniquePtr<FEditorUI> EditorUI;
+	FLevelEditorTab* LevelEditorTab = nullptr;
 
 	TUniquePtr<FImGuiRenderer> ImGuiRenderer;
 	TUniquePtr<FGridRenderer> GridRenderer;

@@ -114,15 +114,16 @@ bool UEditorEngine::Init()
 
 	EditorUI = MakeUnique<FEditorUI>();
 	EditorUI->Init();
+	LevelEditorTab = EditorUI->GetLevelEditorTab();
 
-	EditorUI->SetNewSceneCallback([this]() { CreateNewScene(); });
-	EditorUI->SetOpenSceneCallback([this]() { OpenScene(); });
-	EditorUI->SetSaveSceneCallback([this]() { SaveCurrentScene(); });
-	EditorUI->SetSaveSceneAsCallback([this]() { SaveSceneAs(); });
-	EditorUI->SetPackageGameCallback([this]() { Packager.Start("Release"); });
-	EditorUI->SetIsPackagingQuery([this]() { return Packager.IsRunning(); });
+	LevelEditorTab->OnNewScene.AddDynamic(this, &UEditorEngine::CreateNewScene);
+	LevelEditorTab->OnOpenScene.AddDynamic(this, &UEditorEngine::OpenScene);
+	LevelEditorTab->OnSaveScene.AddDynamic(this, &UEditorEngine::SaveCurrentScene);
+	LevelEditorTab->OnSaveSceneAs.AddDynamic(this, &UEditorEngine::SaveSceneAs);
+	LevelEditorTab->OnPackageGame.Add([this]() { Packager.Start("Release"); });
+	LevelEditorTab->SetIsPackagingQuery([this]() { return Packager.IsRunning(); });
 
-	OutputLogPanel = EditorUI->AddEditorPanel<FOutputLogPanel>();
+	OutputLogPanel = LevelEditorTab->AddEditorPanel<FOutputLogPanel>();
 	FLog::AddSink(OutputLogPanel);
 
 	HTR_LOG(Info, "Editor Initialize...");
@@ -151,7 +152,7 @@ bool UEditorEngine::Init()
 	BoneRenderer = MakeUnique<FBoneRenderer>();
 	BoneRenderer->Init(Renderer);
 
-	DetailsPanel = EditorUI->AddEditorPanel<FDetailsPanel>();
+	DetailsPanel = LevelEditorTab->AddEditorPanel<FDetailsPanel>();
 	DetailsPanel->SetImGuiRenderer(ImGuiRenderer.get());
 	DetailsPanel->SetShadowPreviewQuery([this](const ULightComponent* Light, FTexture2DArray*& Atlas,
 		TArray<FLightShadowRenderData>& Shadows)
@@ -174,10 +175,10 @@ bool UEditorEngine::Init()
 		});
 
 
-	EditorControlsPanel = EditorUI->AddEditorPanel<FEditorControlsPanel>();
-	ViewportsPanel = EditorUI->AddEditorPanel<FViewportsPanel>();
+	EditorControlsPanel = LevelEditorTab->AddEditorPanel<FEditorControlsPanel>();
+	ViewportsPanel = LevelEditorTab->AddEditorPanel<FViewportsPanel>();
 	ViewportsPanel->SetRenderer(Renderer);
-	ContentDrawerPanel = EditorUI->AddEditorPanel<FContentDrawerPanel>();
+	ContentDrawerPanel = LevelEditorTab->AddEditorPanel<FContentDrawerPanel>();
 
 	// OutLine
 	OutlineRenderer = MakeUnique<FOutlineRenderer>();
@@ -188,14 +189,14 @@ bool UEditorEngine::Init()
 	CascadeFloorRenderer = MakeUnique<FCascadeFloorRenderer>();
 	CascadeFloorRenderer->Init();
 
-	SettingsPanel = EditorUI->AddEditorPanel<FSettingsPanel>();
-	SequencerPanel = EditorUI->AddEditorPanel<FSequencerPanel>();
+	SettingsPanel = LevelEditorTab->AddEditorPanel<FSettingsPanel>();
+	SequencerPanel = LevelEditorTab->AddEditorPanel<FSequencerPanel>();
 	OutputLogPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
 	
-	UIEditorPanel = EditorUI->AddEditorPanel<FUIEditorPanel>();
-	SkeletalMeshEditorPanel = EditorUI->AddEditorPanel<FSkeletalMeshEditorPanel>();
+	UIEditorPanel = LevelEditorTab->AddEditorPanel<FUIEditorPanel>();
+	SkeletalMeshEditorPanel = LevelEditorTab->AddEditorPanel<FSkeletalMeshEditorPanel>();
 	SkeletalMeshEditorPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
-	AnimationSequenceEditorPanel = EditorUI->AddEditorPanel<FAnimationSequenceEditorPanel>();
+	AnimationSequenceEditorPanel = LevelEditorTab->AddEditorPanel<FAnimationSequenceEditorPanel>();
 	AnimationSequenceEditorPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
 
 
@@ -254,9 +255,9 @@ bool UEditorEngine::Init()
 
 
 
-	OutlinerPanel = EditorUI->AddEditorPanel<FOutlinerPanel>();
+	OutlinerPanel = LevelEditorTab->AddEditorPanel<FOutlinerPanel>();
 	OutlinerPanel->SetWorld(GetActiveWorld());
-	AnimationStateMachinePanel = EditorUI->AddEditorPanel<FAnimationStateMachinePanel>();
+	AnimationStateMachinePanel = LevelEditorTab->AddEditorPanel<FAnimationStateMachinePanel>();
 	AnimationStateMachinePanel->SetSelectedActorQuery([this]()
 	{
 		AActor* Actor = PlayWorld ? OutlinerPanel->GetSelectedActor() : nullptr;
@@ -366,8 +367,8 @@ bool UEditorEngine::Init()
 	Stop.CanExecute = [this]()->bool {return PlayWorld; };
 	Stop.Execute = [this]() { RequestEndPlayMap(); };
 
-	EditorUI->GetToolbar()->SetCommands({ Play, Pause, Resume, StepFrame, Stop });
-	EditorUI->GetToolbar()->SetPlayModeBinding(
+	LevelEditorTab->GetToolbar()->SetCommands({ Play, Pause, Resume, StepFrame, Stop });
+	LevelEditorTab->GetToolbar()->SetPlayModeBinding(
 		[this]() { return PlayMode; },
 		[this](EPlayModeType Mode) { PlayMode = Mode; },
 		[this]() { return !IsPlaying(); });
@@ -759,7 +760,7 @@ void UEditorEngine::TickWorldAndEditor(const float DeltaTime)
 	}
 	{
 		SCOPE_CYCLE_COUNTER(STAT_EditorTick);
-		EditorUI->Tick(DeltaTime);
+		LevelEditorTab->Tick(DeltaTime);
 	}
 	UpdateGizmoAndPicking();
 	EditorWorld->GetScene().UpdateAllTransforms();
