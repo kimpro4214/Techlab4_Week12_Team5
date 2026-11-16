@@ -3,6 +3,7 @@
 #include "EnginePCH.h"
 #include "PrimitiveComponent.h"
 #include "Render/Particle/ParticleSystem.h"
+#include "Render/Particle/SpriteBatcher.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
 #include "ParticleSystemComponent.generated.h"
 
@@ -24,11 +25,19 @@ public:
 	{
 		ResetSystem();
 		if (!Template) return;
+		int32 MaxParticleCount = 0;
 		for (UParticleEmitter* Emitter : Template->GetEmitterArray())
 		{
 			FParticleEmitterInstance* EmitterInstance = new FParticleEmitterInstance();
-			if (EmitterInstance->Init(Emitter, this)) EmitterInstances.Add(EmitterInstance);
+			if (EmitterInstance->Init(Emitter, this))
+			{EmitterInstances.Add(EmitterInstance);
+			MaxParticleCount += EmitterInstance->MaxActiveParticles;
+			}
 			else delete EmitterInstance;
+		}
+		if (MaxParticleCount > 0) {
+			SpriteBatcher = MakeUnique<FSpriteBatcher>();
+			SpriteBatcher.get()->Init(MaxParticleCount);		// PSC당 Batcher 하나 사용, 전체 파티클 세팅
 		}
 	}
 
@@ -39,6 +48,7 @@ public:
 			delete Inst;
 		}
 		EmitterInstances.Empty();
+		SpriteBatcher.reset();
 	}
 
 	void TickComponent(float deltaTime) override
@@ -63,7 +73,13 @@ public:
 		InitializeSystem();
 	}
 
+	// 렌더링: 구현은 ParticleSystemComponent.cpp
+	void SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext) override;	// Emitter마다 Sprite 구간을 채워 패킷 제출
+	FBox CalcLocalBounds() const override;	// 컬링용 범위 (기본값은 크기 0 박스라 원점이 화면 밖이면 통째로 컬링됨)
+
 private:
 	UParticleSystem* Template = nullptr;
+	TUniquePtr<FSpriteBatcher> SpriteBatcher = nullptr;
 	TArray<FParticleEmitterInstance*> EmitterInstances;
+	
 };
