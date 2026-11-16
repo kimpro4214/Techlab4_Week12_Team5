@@ -54,6 +54,19 @@ struct FViewContext
 			+ CameraPosition.Y * CameraForward.Y + CameraPosition.Z * CameraForward.Z;
 	}
 
+	// 화면 오른쪽 / 위쪽 축. 파티클 스프라이트는 이 축으로 VS에서 코너를 펼친다
+	// BuildBillboardMatrix와 같은 규칙(왼손 좌표계, Up × Forward = Right)을 따른다
+	void GetBillboardAxes(FVector& OutRight, FVector& OutUp) const
+	{
+		FVector Forward = CameraForward.Normalized();
+		if (Forward.Length() <= 1e-6f)
+			Forward = FVector(1.0f, 0.0f, 0.0f);
+		OutRight = FVector::Cross(FVector(0.0f, 0.0f, 1.0f), Forward).Normalized();
+		if (OutRight.Length() <= 1e-6f)
+			OutRight = FVector(0.0f, 1.0f, 0.0f); // 수직으로 내려다보거나 올려다보는 카메라
+		OutUp = FVector::Cross(Forward, OutRight).Normalized();
+	}
+
 	FMatrix BuildBillboardMatrix(const FVector& WorldPosition, float Width, float Height) const
 	{
 		// 카메라 화면에 나란하게 세운다. 면은 카메라 쪽(앞쪽의 반대)을 보고, 가로는 화면 오른쪽, 세로는 화면 위쪽이다.

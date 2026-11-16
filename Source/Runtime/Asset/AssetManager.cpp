@@ -293,6 +293,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateDefaultMeshes();
 	Get().CreateBillboardMaterial();
 	Get().CreateParticleMaterial();
+	Get().CreateParticleSpriteMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -539,6 +540,20 @@ void UAssetManager::CreateParticleMaterial()
 	ParticleMat->ParamLayout = EMaterialParamLayout::ParticleSubUV;
 	ParticleMat->ParamBuffer = RenderCommand::CreateConstantBuffer(256);
 	RegisterAsset("SubUVMaterial", ParticleMat);
+}
+
+// ParticleSystemComponent 스프라이트 이미터의 기본 재질
+// 셰이더는 PSO 테이블이 정한다. 파티클별 값은 정점에, 카메라 축은 패킷 파라미터로 넘어간다
+void UAssetManager::CreateParticleSpriteMaterial()
+{
+	UMaterial* SpriteMat = NewObject<UMaterial>();
+	SpriteMat->PSOType = EPSOType::ParticleSprite_Additive;
+	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/StarParticle.png"));
+	SpriteMat->BlendState = EBlendState::Additive;
+	SpriteMat->DepthStencilState = EDepthStencilState::ReadOnly;
+	SpriteMat->SamplerState = ESamplerState::LinearClamp;
+	SpriteMat->ParamLayout = EMaterialParamLayout::None;
+	RegisterAsset("ParticleSpriteMaterial", SpriteMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

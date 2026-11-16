@@ -31,6 +31,8 @@ enum class EPSOType : uint8
 	ShadowProjection,        // 그림자 한 장을 화면 마스크(ScreenShadowMask)에 그린다
 	ShadowMaskVisualize,     // Shadow Mask 뷰 모드: 마스크를 화면에 띄운다
 	SkeletalMesh_BoneWeight,
+	ParticleSprite_Additive,     // ParticleSystemComponent 스프라이트 (정렬 불필요)
+	ParticleSprite_AlphaBlend,   // ParticleSystemComponent 스프라이트 (뒤→앞 정렬 필요)
 	Count
 };
 

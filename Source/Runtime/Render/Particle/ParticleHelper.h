@@ -30,6 +30,7 @@ struct FDynamicEmitterReplayDataBase
 	const uint8*  ParticleData    = nullptr;   // EmitterInstance 블록을 가리킨다 (비소유)
 	const uint16* ParticleIndices = nullptr;
 	FMatrix SimulationToWorld = FMatrix::Identity;
+	FVector EmitterWorldOrigin = FVector::ZeroVector;   // 반투명 패킷 정렬(이미터끼리 순서)용
 };
 
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase

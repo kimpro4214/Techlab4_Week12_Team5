@@ -8,28 +8,28 @@
 class UMaterial;
 
 // 코너마다 1개씩(파티클당 4개) 올린다. 
-// ParticleSprite.hlsl의 VS_INPUT과 필드 순서, 크기가 정확히 같아야 한다.
+// ParticleSpriteShader.hlsl의 VS_INPUT과 필드 순서, 크기가 정확히 같아야 한다.
 struct FParticleSpriteVertex
 {
-	FVector  Position;      // 0   파티클 중심 (월드)
+	FVector  Position;      // 0   파티클 중심 (시뮬레이션 공간. VS가 World(=SimulationToWorld)를 곱한다)
 	float    RelativeTime;  // 12  수명 진행도
 	FVector2 Size;          // 16  가로·세로 크기
 	FVector2 Corner;        // 24  쿼드 코너 (-0.5 ~ 0.5). UV로도 쓴다
 	float    Rotation;      // 32  화면 기준 회전(라디안)
 	FVector4 Color;         // 36
 };
-static_assert(sizeof(FParticleSpriteVertex) == 52, "ParticleSprite.hlsl VS_INPUT과 맞춰야 한다");
+static_assert(sizeof(FParticleSpriteVertex) == 52, "ParticleSpriteShader.hlsl VS_INPUT과 맞춰야 한다");
 
 
-// ParticleSprite.hlsl의 cbuffer ParticleSprite(b1)과 바이트 단위로 같아야 한다.
+// ParticleSpriteShader.hlsl의 cbuffer ParticleSprite(b1)과 바이트 단위로 같아야 한다.
 struct FParticleSpriteConstants
 {
 	FVector CameraRight = FVector(0.0f, 1.0f, 0.0f);   // 0   카메라 오른쪽 벡터
 	float SoftCircle = 1.0f;      // 12  소프트 서클(0~1)
 	FVector CameraUp = FVector(0.0f, 0.0f, 1.0f);      // 16  카메라 위쪽 벡터
-	float Padding = 0.0f;            // 28  패딩
+	float PremultiplyAlpha = 0.0f;   // 28  1이면 rgb에 알파를 곱한다 (Additive가 One/One이라 필요)
 };
-static_assert(sizeof(FParticleSpriteConstants) == 32, "ParticleSprite.hlsl cbuffer ParticleSprite과 맞춰야 한다");
+static_assert(sizeof(FParticleSpriteConstants) == 32, "ParticleSpriteShader.hlsl cbuffer ParticleSprite과 맞춰야 한다");
 
 
 // ReplayData(Source)를 받아 렌더 패킷을 만들어서 렌더 큐로 전달

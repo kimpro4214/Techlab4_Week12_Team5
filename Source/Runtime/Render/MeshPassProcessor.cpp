@@ -100,6 +100,9 @@ namespace
 			FPipelineState* Pipeline = FRenderResourceManager::GetPSO(Type);
 			if (!Pipeline) return false;
 			Batch.Pipeline = *Pipeline;
+			// 파티클 스프라이트는 VS에서 카메라 축(b1)으로 코너를 펼치므로 머티리얼 상수를 VS에도 바인딩한다
+			if (Type == EPSOType::ParticleSprite_Additive || Type == EPSOType::ParticleSprite_AlphaBlend)
+				Batch.MaterialStages = EShaderBindFlagBits::Vertex | EShaderBindFlagBits::Pixel;
 			Batch.bForceWireframe = Pass == EMeshPassType::GBuffer && View.bIsWireframe;
 			if (Material->PSOType == EPSOType::StaticMesh_Opaque ||
 				Material->PSOType == EPSOType::StaticMesh_Translucent ||
