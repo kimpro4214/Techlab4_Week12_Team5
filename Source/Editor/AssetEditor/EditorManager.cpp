@@ -105,6 +105,15 @@ void FEditorManager::Tick(float DeltaTime)
 	}
 }
 
+bool FEditorManager::HasFocusedAssetEditor() const
+{
+	for (const auto& Editor : Editors)
+	{
+		if (!Editor->IsClosing() && Editor->IsFocused()) return true;
+	}
+	return false;
+}
+
 void FEditorManager::RenderPreview()
 {
 	if (!bInitialized || bShuttingDown) return;

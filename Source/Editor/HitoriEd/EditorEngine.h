@@ -51,8 +51,8 @@
 #include "EditorEngine.generated.h"
 
 class FAnimationStateMachinePanel;
-class FSkeletalMeshEditorPanel;
-class FAnimationSequenceEditorPanel;
+class FSkeletalMeshEditor;
+class FAnimationSequenceEditor;
 
 inline constexpr int32 InvalidViewIndex = -1;
 
@@ -148,8 +148,9 @@ private:
 	bool IsPlayingView(int32 ViewIndex) const { return PlayWorld && ViewIndex == PIEViewIndex && !bIsPaused && !IsSimulatingInEditor(); }
 	bool IsSimulatingInEditor() const;
 
-	void RenderSkeletalMeshPreview();
-	void RenderAnimationSequencePreview();
+	void RenderSkeletalMeshPreview(FSkeletalMeshEditor& Editor);
+	bool IsLevelEditorInputEnabled() const;
+	void RenderAnimationSequencePreview(FAnimationSequenceEditor& Editor);
 
 	void SetSelectedComponent(USceneComponent* Component)
 	{
@@ -198,8 +199,6 @@ private:
 	FOutlinerPanel* OutlinerPanel = nullptr;
 	FContentDrawerPanel* ContentDrawerPanel = nullptr;
 	FUIEditorPanel* UIEditorPanel = nullptr;
-	FSkeletalMeshEditorPanel* SkeletalMeshEditorPanel = nullptr;
-	FAnimationSequenceEditorPanel* AnimationSequenceEditorPanel = nullptr;
 
 	UWorld* EditorWorld = nullptr;
 	UWorld* PlayWorld = nullptr;

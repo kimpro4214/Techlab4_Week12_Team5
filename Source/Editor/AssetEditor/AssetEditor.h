@@ -42,6 +42,7 @@ public:
 	virtual void RenderPreview() {}
 	virtual void OnRender(bool bActive) = 0;
 	virtual void DrawMenuBar() {}
+	virtual bool IsFocused() const { return false; }
 	virtual bool IsDirty() const { return false; }
 	virtual bool CanSave() const { return false; }
 	virtual bool Save() { return false; }

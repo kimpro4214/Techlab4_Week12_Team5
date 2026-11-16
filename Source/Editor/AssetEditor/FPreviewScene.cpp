@@ -6,6 +6,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "UObject/UObjectGlobals.h"
 
 #include <cmath>
 
@@ -20,7 +21,9 @@ bool FPreviewScene::Initialize(UEngine* InEngine, const FPreviewSceneOptions& Op
 	if (!InEngine) return false;
 
 	Engine = InEngine;
-	World = UWorld::CreateWorld(EWorldType::EditorPreview, false, Options.WorldName);
+	// 같은 종류의 에디터를 여러 개 열어도 기존 이름의 월드를 재사용하지 않는다.
+	const FName WorldName = MakeUniqueObjectName(nullptr, UWorld::StaticClass(), Options.WorldName);
+	World = UWorld::CreateWorld(EWorldType::EditorPreview, false, WorldName);
 	if (!World)
 	{
 		Engine = nullptr;

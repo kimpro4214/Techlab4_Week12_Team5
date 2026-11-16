@@ -739,6 +739,19 @@ UAnimSequence* UAssetManager::LoadFbxAnimSequence(const FString& Path, FString& 
 		if (UAnimSequence* Cached = Cast<UAnimSequence>(AssetMap.FindRef(AnimKey))) return Cached;
 	}
 
+	// 에디터 키의 절대 경로/대소문자 정규화 이후에도 기존 클립을 재사용한다.
+	for (const auto& [RegisteredKey, RegisteredAsset] : AssetMap)
+	{
+		UAnimSequence* Cached = Cast<UAnimSequence>(RegisteredAsset);
+		if (!Cached || Name.empty()) continue;
+		const fs::path ClipPath(RegisteredKey);
+		if (!Name.empty() && ClipPath.filename().string() != Name) continue;
+		const fs::path RegisteredPath = fs::path("Assets") / ClipPath.parent_path();
+		std::error_code Error;
+		const fs::path RequestedPath = fs::exists(Path) ? fs::path(Path) : fs::path("Assets") / Key;
+		if (fs::equivalent(RequestedPath, RegisteredPath, Error) && !Error) return Cached;
+	}
+
 	if (!FirstFbxAnimations.Contains(Key))
 	{
 		FString DiskPath = Path;
@@ -800,6 +813,15 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 		}
 
 		return CachedMesh;
+	}
+
+	// 편집기 식별 경로의 대소문자·절대 경로 표기가 달라도 기존 공유 메시를 재사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : AssetPathMap)
+	{
+		URenderAsset** Registered = AssetMap.Find(RegisteredKey);
+		if (!Registered || !*Registered || !(*Registered)->IsA<USkeletalMesh>()) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Cast<USkeletalMesh>(*Registered);
 	}
 
 	FSkeletalMeshData MeshData;

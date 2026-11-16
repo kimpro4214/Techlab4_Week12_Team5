@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Editor/EditorUI/EditorPanel.h"
-#include "Editor/Viewports/EditorViewportClient.h" 
+#include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/LevelViewportLayout.h"
 #include <functional>
 
@@ -30,7 +30,8 @@ public:
 	FVector2 GetContentSize() const { return {ContentSize.x, ContentSize.y}; }
 	FVector2 GetLocalMousePosition() const;
 	bool IsHovered() const;
-	bool IsFocused() const { return bFocused; }
+	bool IsFocused() const { return bInteractionEnabled && bFocused; }
+	void SetInteractionEnabled(bool bEnabled) { bInteractionEnabled = bEnabled; }
 
 	float ConsumeHorizontalDrag();
 	float ConsumeVerticalDrag();
@@ -69,6 +70,7 @@ public:
 	}
 
 private:
+	bool bInteractionEnabled = true;
 	const FRenderer* Renderer = nullptr;
 	std::function<void(USkeletalMesh*, int32, const FVector2&)> OnDropSkeletalMesh;
 	int32 ActiveViewIndex = 0;

@@ -30,6 +30,7 @@ public:
 	int32 GetEditorCount() const { return Editors.Num(); }
 	IEditorTab* GetMainSelectedTab() const { return TabContainer.GetMainSelectedTab(); }
 	IEditorTab* GetFocusedTab() const { return TabContainer.GetFocusedTab(); }
+	bool HasFocusedAssetEditor() const;
 
 	void AddEditorTab(IEditorTab* Tab) { TabContainer.AddTab(Tab); }
 	void RemoveEditorTab(IEditorTab* Tab) { TabContainer.RemoveTab(Tab); }

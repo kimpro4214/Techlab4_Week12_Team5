@@ -44,8 +44,8 @@
 #include "Editor/Outliner/OutlinerPanel.h"
 #include "Editor/HitoriEd/EditorFileUtils.h"
 #include "Editor/Viewports/EditorViewportClient.h"
-#include "Editor/SkeletalMeshEditor/SkeletalMeshEditorPanel.h"
-#include "Editor/AnimationSequenceEditor/AnimationSequenceEditorPanel.h"
+#include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
+#include "Editor/AnimationSequenceEditor/AnimationSequenceEditor.h"
 #include "UObject/UObjectIterator.h"
 
 #include "Core/EngineLog.h"
@@ -194,18 +194,47 @@ bool UEditorEngine::Init()
 	OutputLogPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
 	
 	UIEditorPanel = LevelEditorTab->AddEditorPanel<FUIEditorPanel>();
-	SkeletalMeshEditorPanel = LevelEditorTab->AddEditorPanel<FSkeletalMeshEditorPanel>();
-	SkeletalMeshEditorPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
-	AnimationSequenceEditorPanel = LevelEditorTab->AddEditorPanel<FAnimationSequenceEditorPanel>();
-	AnimationSequenceEditorPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
-
+	EditorManager->RegisterFactory("SkeletalMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
+	{
+		std::error_code Error;
+		const fs::path RelativePath = fs::relative(Key.AssetPath, "Assets", Error);
+		if (Error) return nullptr;
+		FString LoadError;
+		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(RelativePath.generic_string(), Key.AssetPath, LoadError);
+		if (!Mesh)
+		{
+			HTR_LOG(Error, "Cannot open skeletal mesh '{}': {}", Key.AssetPath, LoadError);
+			return nullptr;
+		}
+		return MakeUnique<FSkeletalMeshEditor>(this, Manager, Key, Mesh, &SettingsPanel->GetSettings(),
+			[this](FSkeletalMeshEditor& Editor) { RenderSkeletalMeshPreview(Editor); });
+	});
+	EditorManager->RegisterFactory("AnimationSequence", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
+	{
+		FString Error;
+		UAnimSequence* Sequence = UAssetManager::Get().LoadFbxAnimSequence(Key.AssetPath, Error, Key.SubAssetName);
+		std::error_code PathError;
+		const fs::path RelativePath = fs::relative(Key.AssetPath, "Assets", PathError);
+		if (!Sequence || PathError) return nullptr;
+		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(RelativePath.generic_string(), Key.AssetPath, Error);
+		if (!Mesh) return nullptr;
+		return MakeUnique<FAnimationSequenceEditor>(this, Manager, Key, Sequence, Mesh, &SettingsPanel->GetSettings(),
+			[this](FAnimationSequenceEditor& Editor) { RenderAnimationSequencePreview(Editor); });
+	});
 
 	ContentDrawerPanel->SetCreateWidgetCallback([this](const FString& Path) { UIEditorPanel->NewAsset(Path); });
 	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { UIEditorPanel->OpenAsset(Path); });
-	ContentDrawerPanel->SetOpenSkeletalCallback([this](const FString& Path) { SkeletalMeshEditorPanel->OpenAsset(Path); });
+	ContentDrawerPanel->SetOpenSkeletalCallback([this](const FString& Path)
+	{
+		EditorManager->OpenEditor({ "SkeletalMesh", Path, "" });
+	});
 	ContentDrawerPanel->SetOpenAnimationCallback([this](UAnimSequence* Sequence, USkeletalMesh* Mesh)
 	{
-		AnimationSequenceEditorPanel->OpenAsset(Sequence, Mesh);
+		if (!Sequence || !Mesh) return;
+		const FString& Path = Sequence->GetPath();
+		const size_t Separator = Path.find_last_of('/');
+		if (Separator == FString::npos) return;
+		EditorManager->OpenEditor({ "AnimationSequence", (fs::path("Assets") / Path.substr(0, Separator)).generic_string(), Path.substr(Separator + 1) });
 	});
 	ViewportsPanel->SetSkeletalMeshDropCallback([this](USkeletalMesh* Mesh, int32 ViewIndex, const FVector2& Mouse)
 	{
@@ -306,7 +335,7 @@ bool UEditorEngine::Init()
 	EditorControlsPanel->SetWorld(EditorWorld);
 	EditorControlsPanel->SetIsPlayingQuery([this]() { return IsPlaying(); });
 	EditorControlsPanel->SetGizmo(Gizmo.get());
-	EditorControlsPanel->SetGizmoInputBlockedQuery([this] { return SkeletalMeshEditorPanel->IsFocused(); });
+	EditorControlsPanel->SetGizmoInputBlockedQuery([this] { return !IsLevelEditorInputEnabled(); });
 	EditorControlsPanel->SetViewportsPanel(ViewportsPanel);
 
 	SettingsPanel->SetWorld(EditorWorld);
@@ -433,13 +462,20 @@ void UEditorEngine::PostLoadMap(FWorldContext& Context)
 }
 
 // DeltaTime을 패널에 전달하고 에디터 단축키를 처리한다.
+bool UEditorEngine::IsLevelEditorInputEnabled() const
+{
+	return LevelEditorTab && LevelEditorTab->IsActive() && !EditorManager->HasFocusedAssetEditor() &&
+		!ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup);
+}
+
 void UEditorEngine::BeginFrame(const float DeltaTime)
 {
+	ViewportsPanel->SetInteractionEnabled(IsLevelEditorInputEnabled());
 	Packager.Tick();
 	FStatOverlay::Tick(DeltaTime);
 	EditorControlsPanel->FEditorControlsPanel::DeltaTime = DeltaTime;
 
-	if (!ImGui::GetIO().WantTextInput && FInputSystem::IsKeyPressed(EKeyCode::Delete))
+	if (IsLevelEditorInputEnabled() && !ImGui::GetIO().WantTextInput && FInputSystem::IsKeyPressed(EKeyCode::Delete))
 		DeleteActor(OutlinerPanel->GetSelectedActor());
 
 	HandleSkeletalMeshPreviewInput();
@@ -464,7 +500,7 @@ void UEditorEngine::BeginFrame(const float DeltaTime)
 // F6: 모델 표시, F7: 본 회전, F8: BlendSpace(UAL1) 미리보기, F9: 기준 자세 복구. 플레이 중에는 게임 입력을 건드리지 않는다.
 void UEditorEngine::HandleSkeletalMeshPreviewInput()
 {
-	if (PlayWorld || ImGui::GetIO().WantTextInput
+	if (!IsLevelEditorInputEnabled() || PlayWorld || ImGui::GetIO().WantTextInput
 		|| ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) return;
 	const bool bLoad = FInputSystem::IsKeyPressed(EKeyCode::F6);
 	const bool bRotate = FInputSystem::IsKeyPressed(EKeyCode::F7);
@@ -680,7 +716,7 @@ void UEditorEngine::UpdateViewportState(const float DeltaTime)
 
 	// 마우스 캡처 및 활성 뷰 결정
 	static int32 CapturedViewportIndex = -1;
-	if (FInputSystem::IsMouseReleased(EMouseButton::Right))
+	if (!IsLevelEditorInputEnabled() || FInputSystem::IsMouseReleased(EMouseButton::Right))
 	{
 		CapturedViewportIndex = -1;
 	}
@@ -886,8 +922,6 @@ void UEditorEngine::RenderViewports()
 	}
 
 	UIEditorPanel->RenderPreview(*UIRenderer);
-	RenderSkeletalMeshPreview();
-	RenderAnimationSequencePreview();
 	EditorManager->RenderPreview();
 }
 
@@ -923,12 +957,10 @@ bool UEditorEngine::IsSimulatingInEditor() const
 	return false;
 }
 
-void UEditorEngine::RenderSkeletalMeshPreview()
+void UEditorEngine::RenderSkeletalMeshPreview(FSkeletalMeshEditor& Editor)
 {
-	if (!SkeletalMeshEditorPanel || !SkeletalMeshEditorPanel->IsOpen()) return;
-
-	UWorld* PreviewWorld = SkeletalMeshEditorPanel->GetPreviewWorld();
-	FEditorViewportClient* PreviewClient = SkeletalMeshEditorPanel->GetViewportClient();
+	UWorld* PreviewWorld = Editor.GetPreviewWorld();
+	FEditorViewportClient* PreviewClient = Editor.GetViewportClient();
 	if (!PreviewWorld ||
 		!PreviewClient ||
 		PreviewClient->GetWidth() == 0 ||
@@ -937,8 +969,8 @@ void UEditorEngine::RenderSkeletalMeshPreview()
 
 	FSceneRenderOptions Options;
 	BuildSceneRenderOptions(PreviewClient, false, Options);
-	Options.bShowBoneWeight = SkeletalMeshEditorPanel->IsBoneWeightEnabled();
-	Options.BoneWeightBoneIndex = SkeletalMeshEditorPanel->GetBoneWeightBoneIndex();
+	Options.bShowBoneWeight = Editor.IsBoneWeightEnabled();
+	Options.BoneWeightBoneIndex = Editor.GetBoneWeightBoneIndex();
 	if (Options.bShowBoneWeight)
 		Options.LightingModel = ELightingModel::Unlit; // Weight 표시에는 조명과 그림자 준비가 필요 없다.
 
@@ -949,9 +981,9 @@ void UEditorEngine::RenderSkeletalMeshPreview()
 
 	FSceneViewTargets& Targets = PreviewClient->GetViewTargets();
 	RenderScene(Targets, SceneView, SceneRenderer, PreviewWorld, Options,
-		[this, &SceneView, &Targets](FSceneOverlayCallbacks& Overlays)
+		[this, &Editor, &SceneView, &Targets](FSceneOverlayCallbacks& Overlays)
 		{
-			if (SkeletalMeshEditorPanel->IsRenderGrid())
+			if (Editor.IsRenderGrid())
 			{
 				const FViewportSettings ViewportSettings
 				{
@@ -976,24 +1008,24 @@ void UEditorEngine::RenderSkeletalMeshPreview()
 					};
 			}
 
-			if (SkeletalMeshEditorPanel->IsRenderBones())
+			if (Editor.IsRenderBones())
 			{
-				Overlays.EditorBones = [this, &SceneView]
+				Overlays.EditorBones = [this, &Editor, &SceneView]
 					{
 						BoneRenderer->OnRender(
-							SkeletalMeshEditorPanel->GetPreviewPose(),
-							SkeletalMeshEditorPanel->GetSelectedBoneIndex(),
+							Editor.GetPreviewPose(),
+							Editor.GetSelectedBoneIndex(),
 							SceneView.ViewProjectionMatrix,
 							SceneView.ViewLocation);
 					};
 			}
 
-			if (SkeletalMeshEditorPanel->GetBoneGizmo().GetTarget())
+			if (Editor.GetBoneGizmo().GetTarget())
 			{
-				Overlays.EditorGizmo = [this, &SceneView]
+				Overlays.EditorGizmo = [this, &Editor, &SceneView]
 					{
 						GizmoRenderer->OnRender(
-							SkeletalMeshEditorPanel->GetBoneGizmo(),
+							Editor.GetBoneGizmo(),
 							SceneView.ViewProjectionMatrix,
 							SceneView.ViewLocation, 
 							!SceneView.bIsPerspective);
@@ -1005,12 +1037,11 @@ void UEditorEngine::RenderSkeletalMeshPreview()
 }
 
 // 애니메이션 시퀀스 에디터의 프리뷰 월드를 렌더 타깃에 그립니다.
-void UEditorEngine::RenderAnimationSequencePreview()
+void UEditorEngine::RenderAnimationSequencePreview(FAnimationSequenceEditor& Editor)
 {
-	if (!AnimationSequenceEditorPanel || !AnimationSequenceEditorPanel->IsOpen()) return;
 
-	UWorld* PreviewWorld = AnimationSequenceEditorPanel->GetPreviewWorld();
-	FEditorViewportClient* PreviewClient = AnimationSequenceEditorPanel->GetViewportClient();
+	UWorld* PreviewWorld = Editor.GetPreviewWorld();
+	FEditorViewportClient* PreviewClient = Editor.GetViewportClient();
 	if (!PreviewWorld ||
 		!PreviewClient ||
 		PreviewClient->GetWidth() == 0 ||
@@ -1020,8 +1051,8 @@ void UEditorEngine::RenderAnimationSequencePreview()
 	FSceneRenderOptions Options;
 	BuildSceneRenderOptions(PreviewClient, false, Options);
 	// 재생/스크럽은 현재 포즈만 갱신하고, Weight 표시는 기존 Viewer 패스를 공유한다.
-	Options.bShowBoneWeight = AnimationSequenceEditorPanel->IsBoneWeightEnabled();
-	Options.BoneWeightBoneIndex = AnimationSequenceEditorPanel->GetBoneWeightBoneIndex();
+	Options.bShowBoneWeight = Editor.IsBoneWeightEnabled();
+	Options.BoneWeightBoneIndex = Editor.GetBoneWeightBoneIndex();
 	if (Options.bShowBoneWeight)
 		Options.LightingModel = ELightingModel::Unlit;
 
@@ -1032,9 +1063,9 @@ void UEditorEngine::RenderAnimationSequencePreview()
 
 	FSceneViewTargets& Targets = PreviewClient->GetViewTargets();
 	RenderScene(Targets, SceneView, SceneRenderer, PreviewWorld, Options,
-		[this, &SceneView, &Targets](FSceneOverlayCallbacks& Overlays)
+		[this, &Editor, &SceneView, &Targets](FSceneOverlayCallbacks& Overlays)
 		{
-			if (AnimationSequenceEditorPanel->IsRenderGrid())
+			if (Editor.IsRenderGrid())
 			{
 				const FViewportSettings ViewportSettings
 				{
@@ -1803,8 +1834,6 @@ void UEditorEngine::PreExit()
 	// 시퀀서는 에디터 월드 액터를 가리키므로 월드보다 먼저 정리한다
 	if (SequencerPanel) SequencerPanel->Shutdown();
 	if (AnimationStateMachinePanel) AnimationStateMachinePanel->Shutdown();
-	if (SkeletalMeshEditorPanel) SkeletalMeshEditorPanel->Shutdown();
-	if (AnimationSequenceEditorPanel) AnimationSequenceEditorPanel->Shutdown();
 	EditorWorld->ClearWorld();
 	// PIE 창이 열린 채 종료하면 Device가 살아 있을 때 Swapchain과 타깃을 먼저 정리한다.
 	DestroyPIEWindow();

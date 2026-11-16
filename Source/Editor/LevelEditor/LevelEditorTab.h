@@ -15,6 +15,7 @@ public:
 	const char* GetTabName() const override { return "LevelEditor###LevelEditor"; }
 	bool CanDetach() const override { return false; }
 	void DrawMenuBar() override;
+	bool IsActive() const { return bActive; }
 
 	template <typename T>
 	T* AddEditorPanel()
@@ -39,6 +40,7 @@ public:
 	void SetIsPackagingQuery(std::function<bool()> InQuery) { IsPackaging = InQuery; }
 
 private:
+	bool bActive = true;
 	bool bUseDockSpace = true;
 	bool bPassthruCentralNode = false;
 

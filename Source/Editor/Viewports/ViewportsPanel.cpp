@@ -83,6 +83,7 @@ FVector2 FViewportsPanel::GetLocalMousePosition() const {
 // 엔진 입력 처리는 ImGui NewFrame보다 먼저 실행되므로 현재 OS 커서로 버튼
 // 영역을 검사한다.
 bool FViewportsPanel::IsHovered() const {
+	if (!bInteractionEnabled) return false;
 	if (bStatResetButtonVisible && FStatOverlay::IsAnyEnabled()) {
 		POINT Cursor{};
 		if (::GetCursorPos(&Cursor) && Cursor.x >= StatResetButtonMin.x &&

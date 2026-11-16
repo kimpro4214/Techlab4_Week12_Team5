@@ -21,6 +21,7 @@ void FLevelEditorTab::Tick(float DeltaTime)
 
 void FLevelEditorTab::OnRender(bool bActive)
 {
+	this->bActive = bActive;
 	if (bActive && Toolbar) Toolbar->Draw();
 
 	if (bUseDockSpace && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable))
