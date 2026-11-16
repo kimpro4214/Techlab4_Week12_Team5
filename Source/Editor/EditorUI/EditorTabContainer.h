@@ -3,7 +3,7 @@
 #include "Containers/Array.h"
 #include "Editor/EditorUI/EditorTab.h"
 
-// 탭은 각 편집기가 소유하며, 등록한 탭의 수명은 컨테이너보다 길어야 한다.
+// 탭은 각 편집기가 소유한다. 탭을 파괴하기 전에 등록을 해제해야 한다.
 class FEditorTabContainer
 {
 public:

@@ -97,7 +97,7 @@ void FEditorTabContainer::ProcessCloseRequests()
 	PendingCloseTabs = {};
 	for (IEditorTab* Tab : Requests)
 	{
-		RemoveTab(Tab);
+		// 닫기 확인 중에도 탭 등록을 유지한다. 실제 제거는 소유자가 결정한다.
 		Tab->OnCloseRequested();
 	}
 }
@@ -135,6 +135,7 @@ void FEditorTabContainer::DrawTabs()
 		ImGuiDockNodeFlags_NoCloseButton, &TabClass);
 
 	MainSelectedTab = nullptr;
+	FocusedTab = nullptr;
 
 	for (IEditorTab* Tab : Tabs)
 	{

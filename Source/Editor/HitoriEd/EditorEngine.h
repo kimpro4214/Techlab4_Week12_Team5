@@ -21,7 +21,7 @@
 #include "Render/RenderGraph/RenderGraph.h"
 
 
-#include "Editor/EditorUI/EditorUI.h"
+#include "Editor/AssetEditor/EditorManager.h"
 #include "Editor/OutputLog/OutputLogPanel.h"
 #include "Editor/Details/DetailsPanel.h"
 #include "Editor/EditorControls/EditorControlsPanel.h"
@@ -162,7 +162,7 @@ private:
 	FSwapchain* MainWindowSC = nullptr;
 	FRenderer* Renderer = nullptr;
 
-	TUniquePtr<FEditorUI> EditorUI;
+	TUniquePtr<FEditorManager> EditorManager;
 	FLevelEditorTab* LevelEditorTab = nullptr;
 
 	TUniquePtr<FImGuiRenderer> ImGuiRenderer;

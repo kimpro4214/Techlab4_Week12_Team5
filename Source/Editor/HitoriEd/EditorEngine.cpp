@@ -112,9 +112,9 @@ bool UEditorEngine::Init()
 	Renderer = GetEngineLoop().GetRenderer();
 	FRenderDevice* RenderDevice = GetEngineLoop().GetRenderDevice();
 
-	EditorUI = MakeUnique<FEditorUI>();
-	EditorUI->Init();
-	LevelEditorTab = EditorUI->GetLevelEditorTab();
+	EditorManager = MakeUnique<FEditorManager>();
+	if (!EditorManager->Init()) return false;
+	LevelEditorTab = EditorManager->GetLevelEditorTab();
 
 	LevelEditorTab->OnNewScene.AddDynamic(this, &UEditorEngine::CreateNewScene);
 	LevelEditorTab->OnOpenScene.AddDynamic(this, &UEditorEngine::OpenScene);
@@ -760,7 +760,7 @@ void UEditorEngine::TickWorldAndEditor(const float DeltaTime)
 	}
 	{
 		SCOPE_CYCLE_COUNTER(STAT_EditorTick);
-		LevelEditorTab->Tick(DeltaTime);
+		EditorManager->Tick(DeltaTime);
 	}
 	UpdateGizmoAndPicking();
 	EditorWorld->GetScene().UpdateAllTransforms();
@@ -888,6 +888,7 @@ void UEditorEngine::RenderViewports()
 	UIEditorPanel->RenderPreview(*UIRenderer);
 	RenderSkeletalMeshPreview();
 	RenderAnimationSequencePreview();
+	EditorManager->RenderPreview();
 }
 
 void UEditorEngine::UpdatePIEViewCamera()
@@ -1182,6 +1183,7 @@ void UEditorEngine::EndFrame()
 		PIESwapchain->SwapBuffers(0);
 	// UI 변경 후 설정을 복사해 종료 시 카메라 수명에 의존하지 않는다.
 	SettingsPanel->CaptureViewportSettings();
+	EditorManager->LateTick();
 	// 프로파일러 반영
 	FStatRegistry::EndFrame();
 }
@@ -1590,7 +1592,7 @@ void UEditorEngine::PresentFrame()
 
 		ImGuiRenderer->Begin();
 
-		EditorUI->OnRender();
+		EditorManager->DrawEditorUI();
 
 		if (bBlendSpaceWindowOpen)
 		{
@@ -1806,6 +1808,9 @@ void UEditorEngine::PreExit()
 	EditorWorld->ClearWorld();
 	// PIE 창이 열린 채 종료하면 Device가 살아 있을 때 Swapchain과 타깃을 먼저 정리한다.
 	DestroyPIEWindow();
+	FLog::RemoveSink(OutputLogPanel);
+	EditorManager->Shutdown();
+	LevelEditorTab = nullptr;
 	ImGuiRenderer->Shutdown();
 }
 
