@@ -32,7 +32,8 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 		return false;
 
 	// 칸 크기: 지금은 FBaseParticle뿐. 모듈별 Payload가 생기면 여기에 더해진다.
-	ParticleSize = sizeof(FBaseParticle);
+	ParticleSize = SpriteTemplate->GetParticleSize();
+	if (ParticleSize == 0) return false;
 	// 칸 간격을 16의 배수로 올린다 → 모든 칸의 시작 주소가 16바이트 정렬 (Address Align)
 	ParticleStride = static_cast<int32>(FMemory::QuantizeSize(ParticleSize, 16));
 
@@ -76,7 +77,10 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& Initia
 		PreSpawn(Particle, InitialLocation);
 
 		for (UParticleModule* Module : CurrentLODLevel->GetSpawnModules())
-			Module->Spawn(this, 0, 0.0f, Particle);
+		{
+			const int32 Offset = SpriteTemplate->GetModuleOffset(Module);
+			Module->Spawn({*this, Offset, 0.0f, Particle});
+		}
 
 		++ActiveParticles;
 		++ParticleCounter;
@@ -147,7 +151,10 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime)
 {
 	for (UParticleModule* Module : CurrentLODLevel->GetUpdateModules())
-		Module->Update(this, 0, DeltaTime);
+	{
+		const int32 Offset = SpriteTemplate->GetModuleOffset(Module);
+		Module->Update({ *this, Offset, DeltaTime });
+	}
 }
 
 void FParticleEmitterInstance::Integrate(float DeltaTime)

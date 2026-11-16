@@ -11,7 +11,7 @@ class UParticleModuleLocation : public UParticleModule
 public:
 	UParticleModuleLocation() { bSpawnModule = true; }
 
-	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override;
+	void Spawn(const FSpawnContext& Context) override;
 
 	UPROPERTY(EditAnywhere) FVector StartLocationMin = FVector(-10.0f, -10.0f, 0.0f);   // 이미터 로컬 기준
 	UPROPERTY(EditAnywhere) FVector StartLocationMax = FVector(10.0f, 10.0f, 0.0f);

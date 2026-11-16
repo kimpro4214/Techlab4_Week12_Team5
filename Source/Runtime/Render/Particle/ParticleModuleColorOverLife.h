@@ -11,7 +11,7 @@ class UParticleModuleColorOverLife : public UParticleModule
 public:
 	UParticleModuleColorOverLife() { bUpdateModule = true; }
 
-	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+	void Update(const FUpdateContext& Context) override;
 
 	UPROPERTY(EditAnywhere) FLinearColor StartColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	UPROPERTY(EditAnywhere) FLinearColor EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 0.0f);

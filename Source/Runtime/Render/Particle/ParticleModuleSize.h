@@ -10,7 +10,7 @@ class UParticleModuleSize : public UParticleModule
 public:
 	UParticleModuleSize() { bSpawnModule = true; }
 
-	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override;
+	void Spawn(const FSpawnContext& Context) override;
 
 	UPROPERTY(EditAnywhere) FVector StartSizeMin = FVector(5.0f, 5.0f, 5.0f);
 	UPROPERTY(EditAnywhere) FVector StartSizeMax = FVector(10.0f, 10.0f, 10.0f);

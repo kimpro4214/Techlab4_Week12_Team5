@@ -4,8 +4,9 @@
 #include "Render/Particle/ParticleEmitterInstance.h"
 #include <algorithm>
 
-void UParticleModuleColorOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModuleColorOverLife::Update(const FUpdateContext& Context)
 {
+	FParticleEmitterInstance* Owner = &Context.Owner;
 	BEGIN_UPDATE_LOOP
 		const float T = std::min(Particle.RelativeTime, 1.0f);
 	Particle.Color.R = StartColor.R + (EndColor.R - StartColor.R) * T;
