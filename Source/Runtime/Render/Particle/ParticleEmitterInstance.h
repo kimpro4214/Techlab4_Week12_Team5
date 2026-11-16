@@ -58,6 +58,8 @@ protected:
 	// 새 파티클의 칸을 비우고 기본값을 채운다 (모듈이 덮어쓰지 않은 값은 이 값을 쓴다)
 	void PreSpawn(FBaseParticle* Particle, const FVector& InitialLocation);
 
-	void ResetParticleParameters(float DeltaTime);   // Age 증가 
+	void ResetParticleParameters(float DeltaTime);   // Base값 복원 & Age 증가 
 	void KillParticles();                            // RelativeTime 1 이상인 파티클 제거
+	void Tick_ModuleUpdate(float DeltaTime);         // Update 모듈 실행
+	void Integrate(float DeltaTime);                 // 속도 → 위치, 회전속도 → 회전
 };

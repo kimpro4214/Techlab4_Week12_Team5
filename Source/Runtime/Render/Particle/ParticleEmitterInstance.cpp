@@ -114,6 +114,11 @@ void FParticleEmitterInstance::UpdateTransforms()
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
+
+	if (!CurrentLODLevel || !Component) return;
+	EmitterTime += DeltaTime;
+	UpdateTransforms();
+
 	if (!CurrentLODLevel || !Component)
 		return;
 
@@ -125,9 +130,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	// Age 증가
 	ResetParticleParameters(DeltaTime);
 
-	// 모듈을 Update
-	for (UParticleModule* Module : CurrentLODLevel->GetUpdateModules())
-		Module->Update(this, 0, DeltaTime);
+	Tick_ModuleUpdate(DeltaTime);
 
 	// 수명 끝난 파티클 제거
 	KillParticles();
@@ -136,11 +139,32 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	Spawn(DeltaTime);
 }
 
+void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime)
+{
+	for (UParticleModule* Module : CurrentLODLevel->GetUpdateModules())
+		Module->Update(this, 0, DeltaTime);
+}
+
+void FParticleEmitterInstance::Integrate(float DeltaTime)
+{
+	FParticleEmitterInstance* Owner = this;
+	BEGIN_UPDATE_LOOP
+		Particle.Location += Particle.Velocity * DeltaTime;
+	Particle.Rotation += Particle.RotationRate * DeltaTime;
+	END_UPDATE_LOOP
+}
+
+
 void FParticleEmitterInstance::ResetParticleParameters(float DeltaTime)
 {
-	FParticleEmitterInstance* Owner = this;   // BEGIN_UPDATE_LOOP가 Owner를 찾는다
+	FParticleEmitterInstance* Owner = this;
 	BEGIN_UPDATE_LOOP
-		Particle.RelativeTime += DeltaTime * Particle.LifeTime;   // 미리 나눠둔 1/수명을 곱한다
+		// Update 모듈은 "Base에서 얼마나 바꿀지"만 계산한다 → 매 프레임 되돌려야 값이 누적되지 않는다
+		Particle.Velocity = Particle.BaseVelocity;
+	Particle.Size = Particle.BaseSize;
+	Particle.RotationRate = Particle.BaseRotationRate;
+	Particle.Color = Particle.BaseColor;
+	Particle.RelativeTime += Particle.OneOverMaxLifetime * DeltaTime;
 	END_UPDATE_LOOP
 }
 
@@ -171,7 +195,7 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 	FMemory::Memzero(Particle, ParticleStride);
 
 	Particle->Location = InitialLocation;
-	Particle->LifeTime = 1.0f;    // 기본 수명 1초 (Lifetime 모듈이 덮어쓴다)
+	Particle->OneOverMaxLifetime = 1.0f;    // 기본 수명 1초 (Lifetime 모듈이 덮어쓴다)
 	Particle->Size = Particle->BaseSize = FVector(1.0f, 1.0f, 1.0f);
 	Particle->Color = Particle->BaseColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 }

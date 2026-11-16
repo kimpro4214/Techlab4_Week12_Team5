@@ -10,12 +10,13 @@
 struct FBaseParticle
 {
 	FVector Location;
-	FVector Velocity;  // 현재 속도. 매 프레임 BaseVelocity로 되돌린 뒤 Update 모듈이 가공한다
 	FVector BaseVelocity; // Spawn 모듈이 정한 기준 속도
+	FVector Velocity;  // 현재 속도. 매 프레임 BaseVelocity로 되돌린 뒤 Update 모듈이 가공한다
 	float RelativeTime = 0.0f; // 0~1. 수명 진행도. 매 프레임 Update에서 증가한다
-	float LifeTime = 0.0f; // 1 / 수명(초). 매 프레임 나눗셈을 피하려고 미리 나눠 둔다
+	float OneOverMaxLifetime = 0.0f; // 1 / 수명(초). 매 프레임 나눗셈을 피하려고 미리 나눠 둔다
 	float Rotation = 0.0f;
-	float RotationRate = 0.0f;
+	float BaseRotationRate = 0.0f; // Spawn 모듈이 정한 기준 회전속도
+	float RotationRate = 0.0f; // 현재 회전속도. 매 프레임 BaseRotationRate로 되돌린 뒤 Update 모듈이 가공한다
 	FVector Size = FVector(1.0f, 1.0f, 1.0f);
 	FVector BaseSize = FVector(1.0f, 1.0f, 1.0f); // Spawn 모듈이 정한 기준 크기
 	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
