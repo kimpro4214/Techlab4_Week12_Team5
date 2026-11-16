@@ -6,6 +6,7 @@
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
+#include "Render/Particle/ParticleDynamicData.h"
 #include <algorithm>
 
 namespace
@@ -82,6 +83,8 @@ void UParticleSystemComponent::InitializeSystem()
 
 void UParticleSystemComponent::ResetSystem()
 {
+	// 렌더 데이터는 인스턴스가 소유한다 → 인스턴스보다 먼저 비워서 지워진 메모리를 Submit하지 않게 한다
+	EmitterRenderData.Reset();
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 		delete Instance;
 	EmitterInstances.Reset();
@@ -104,13 +107,32 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 		Instance->Tick(DeltaTime);
 
+	// 시뮬레이션이 끝난 뒤 프레임당 한 번 렌더 데이터를 만든다
+	// 뷰마다 만들면 안 된다: GetDynamicData가 뷰 버퍼 인덱스를 처음으로 되돌린다
+	EmitterRenderData.Reset();
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (FDynamicEmitterDataBase* Data = Instance->GetDynamicData())
+			EmitterRenderData.Add(Data);
+	}
+
 	// [임시] 렌더 전까지 시뮬레이션을 로그로 확인한다
 	DebugLogTimer += DeltaTime;
 	if (DebugLogTimer >= 1.0f)
 	{
 		DebugLogTimer = 0.0f;
-		HTR_LOG(Info, "[Particle] Emitters: {}, Active: {}", EmitterInstances.Num(), GetNumActiveParticles());
+		const int32 RenderParticles = EmitterRenderData.IsEmpty()
+			? 0 : EmitterRenderData[0]->GetSource().ActiveParticleCount;
+		HTR_LOG(Info, "[Particle] Emitters: {}, Active: {}, RenderData: {}, FirstEmitterRenderCount: {}",
+			EmitterInstances.Num(), GetNumActiveParticles(), EmitterRenderData.Num(), RenderParticles);
 	}
+}
+
+void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
+{
+	// 뷰포트(4분할 등)마다 한 번씩 불린다
+	for (FDynamicEmitterDataBase* Data : EmitterRenderData)
+		Data->Submit(RenderQueue, ViewContext);
 }
 
 int32 UParticleSystemComponent::GetNumActiveParticles() const

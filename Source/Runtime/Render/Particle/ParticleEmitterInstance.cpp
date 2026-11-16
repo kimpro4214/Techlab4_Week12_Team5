@@ -114,11 +114,6 @@ void FParticleEmitterInstance::UpdateTransforms()
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-
-	if (!CurrentLODLevel || !Component) return;
-	EmitterTime += DeltaTime;
-	UpdateTransforms();
-
 	if (!CurrentLODLevel || !Component)
 		return;
 
@@ -127,16 +122,24 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	// 컴포넌트가 움직였을 수 있으므로 생성 위치/공간 변환을 먼저 갱신
 	UpdateTransforms();
 
-	// Age 증가
-	ResetParticleParameters(DeltaTime);
+	KillParticles();                     // 1. 지난 프레임에 수명이 다한 파티클 제거
+	ResetParticleParameters(DeltaTime);  // 2. Base값 복원 + 나이 증가
+	Tick_ModuleUpdate(DeltaTime);        // 3. Update 모듈이 Base값을 가공
+	Spawn(DeltaTime);                    // 4. 새 파티클 생성
+	Integrate(DeltaTime);                // 5. 속도 → 위치, 회전속도 → 회전
+}
 
-	Tick_ModuleUpdate(DeltaTime);
+bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
+{
+	if (ActiveParticles <= 0 || !ParticleDataBlock.ParticleData)
+		return false;
 
-	// 수명 끝난 파티클 제거
-	KillParticles();
-
-	// 새 파티클 생성. Update 뒤에 하므로 막 태어난 파티클은 이번 프레임에 Update되지 않는다 
-	Spawn(DeltaTime);
+	OutData.ActiveParticleCount = ActiveParticles;
+	OutData.ParticleStride      = ParticleStride;
+	OutData.ParticleData        = ParticleDataBlock.ParticleData;
+	OutData.ParticleIndices     = ParticleDataBlock.ParticleIndices;
+	OutData.SimulationToWorld   = SimulationToWorld;
+	return true;
 }
 
 void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime)

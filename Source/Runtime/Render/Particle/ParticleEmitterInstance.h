@@ -5,6 +5,7 @@
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleSystemComponent;
+struct FDynamicEmitterDataBase;   // 정의는 렌더 헤더(ParticleDynamicData.h). 여기서는 전방 선언만
 
 // Component × Emitter 하나마다 하나 존재하는 실행 상태 
 // Payload 블록을 소유하고 Spawn / Update / Kill을 수행한다.
@@ -34,6 +35,9 @@ struct FParticleEmitterInstance
 	// i번째 살아있는 파티클(ParticleIndices[i])을 죽인다. 칸은 지우지 않고 인덱스만 뒤로 보낸다
 	void KillParticle(int32 Index);
 
+	// 렌더용 데이터를 프레임당 한 번 만든다. 그릴 게 없으면 nullptr. 이미터 종류별 서브클래스가 구현한다
+	virtual FDynamicEmitterDataBase* GetDynamicData() { return nullptr; }
+
 	FMatrix EmitterToSimulation = FMatrix::Identity;   // Emitter 로컬 → 시뮬레이션 공간, 원점이 생성 위치
 	FMatrix SimulationToWorld = FMatrix::Identity;   // 시뮬레이션 공간 → 월드, 렌더 단계에서 사용
 
@@ -52,6 +56,9 @@ struct FParticleEmitterInstance
 	float  EmitterTime = 0.0f;
 
 protected:
+	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
+	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);
+
 	bool AllocateParticleData(int32 MaxParticles);
 	void FreeParticleData();
 
