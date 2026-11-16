@@ -12,29 +12,45 @@ namespace
 {
 	bool AppendPayload(int32 Bytes, int32 Alignment, uint64& Cursor, int32& Offset)
 	{
-		if (Bytes < 0 ||
-			Alignment <= 0 ||
-			(Alignment & (Alignment - 1)) != 0 ||
-			Alignment > alignof(std::max_align_t))
+		// 크기, 정렬이 양수인가
+		if (Bytes < 0 || Alignment <= 0)
+		{
+			return false;
+		}
+		
+		// 정렬이 2의 거듭제곱인가?
+		if ((Alignment & (Alignment - 1)) != 0)
 		{
 			return false;
 		}
 
+		// 정렬이 일반적인 최대 정렬을 초과하지 않는가
+		if (Alignment > alignof(std::max_align_t))
+		{
+			return false;
+		}
+
+		// 크기가 0이면 그냥 Offset 0으로 반환
 		if (Bytes == 0)
 		{
 			Offset = 0;
 			return true;
 		}
 
+		// Cursor로부터 Alignment에 따라 정렬된 주소를 계산
 		const uint64 Aligned = (Cursor + Alignment - 1) & ~static_cast<uint64>(Alignment - 1);
+
+		// 종료 주소를 계산하고 범위를 초과하는지 체크
 		const uint64 End = Aligned + static_cast<uint64>(Bytes);
 		if (End > static_cast<uint64>(std::numeric_limits<int32>::max()))
 		{
 			return false;
 		}
 
+		// 다음 주소를 Cursor로 반환하고, Offset을 Payload의 시작 주소로 반환
 		Offset = static_cast<int32>(Aligned);
 		Cursor = End;
+
 		return true;
 	}
 }
