@@ -46,6 +46,7 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Editor/AnimationSequenceEditor/AnimationSequenceEditor.h"
+#include "Editor/UIEditor/UIEditor.h"
 #include "UObject/UObjectIterator.h"
 
 #include "Core/EngineLog.h"
@@ -193,7 +194,10 @@ bool UEditorEngine::Init()
 	SequencerPanel = LevelEditorTab->AddEditorPanel<FSequencerPanel>();
 	OutputLogPanel->SetEditorSettings(&SettingsPanel->GetMutableSettings());
 	
-	UIEditorPanel = LevelEditorTab->AddEditorPanel<FUIEditorPanel>();
+	EditorManager->RegisterFactory("UI", [this](FEditorManager& Manager, const FAssetEditorKey& Key)
+	{
+		return MakeUnique<FUIEditor>(Manager, Key, UIRenderer.get());
+	});
 	EditorManager->RegisterFactory("SkeletalMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		std::error_code Error;
@@ -222,8 +226,11 @@ bool UEditorEngine::Init()
 			[this](FAnimationSequenceEditor& Editor) { RenderAnimationSequencePreview(Editor); });
 	});
 
-	ContentDrawerPanel->SetCreateWidgetCallback([this](const FString& Path) { UIEditorPanel->NewAsset(Path); });
-	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { UIEditorPanel->OpenAsset(Path); });
+	ContentDrawerPanel->SetCreateWidgetCallback([this](const FString& Path)
+	{
+		if (FUIEditor::CreateAssetFile(Path)) EditorManager->OpenEditor({ "UI", Path, "" });
+	});
+	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { EditorManager->OpenEditor({ "UI", Path, "" }); });
 	ContentDrawerPanel->SetOpenSkeletalCallback([this](const FString& Path)
 	{
 		EditorManager->OpenEditor({ "SkeletalMesh", Path, "" });
@@ -921,7 +928,6 @@ void UEditorEngine::RenderViewports()
 		}
 	}
 
-	UIEditorPanel->RenderPreview(*UIRenderer);
 	EditorManager->RenderPreview();
 }
 

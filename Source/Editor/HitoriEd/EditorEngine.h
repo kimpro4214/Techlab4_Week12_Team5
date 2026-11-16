@@ -30,7 +30,6 @@
 #include "Editor/Viewports/ViewportsPanel.h"
 #include "Editor/LevelViewportLayout.h"
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
-#include "Editor/UIEditor/UIEditorPanel.h"
 
 #include "Editor/Rendering/Outline.h"
 #include "Editor/Rendering/OutLineRenderer.h"
@@ -198,7 +197,6 @@ private:
 	TArray<FEditorViewportClient*> AllViewportClients;
 	FOutlinerPanel* OutlinerPanel = nullptr;
 	FContentDrawerPanel* ContentDrawerPanel = nullptr;
-	FUIEditorPanel* UIEditorPanel = nullptr;
 
 	UWorld* EditorWorld = nullptr;
 	UWorld* PlayWorld = nullptr;
