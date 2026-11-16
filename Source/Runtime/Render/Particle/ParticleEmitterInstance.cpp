@@ -42,6 +42,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 	ParticleCounter = 0;
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
+	bSpawnFinished = false;
 
 	const int32 MaxParticles = std::clamp(Required->GetMaxParticles(), 1, 65535);
 	
@@ -72,7 +73,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 	return true;
 }
 
-void FParticleEmitterInstance::Spawn(float DeltaTime)
+void FParticleEmitterInstance::Spawn(float DeltaTime, float SpawnDeltaTime)
 {
 	UParticleModuleSpawn* SpawnModule = CurrentLODLevel->GetSpawnModule();
 	if (!SpawnModule)
@@ -82,7 +83,7 @@ void FParticleEmitterInstance::Spawn(float DeltaTime)
 	// 예) Rate 30, dt 0.016 → 0.48개: 이번엔 0개, 다음 프레임 0.96, 그다음 1.44 → 1개 생성
 	const float SpawnRate = SpawnModule->GetRate() * SpawnModule->GetRateScale();
 	const float OldFraction = SpawnFraction;
-	const float NewParticles = OldFraction + SpawnRate * DeltaTime;
+	const float NewParticles = OldFraction + SpawnRate * SpawnDeltaTime;
 	const int32 Count = static_cast<int32>(NewParticles);
 	SpawnFraction = NewParticles - static_cast<float>(Count);
 
@@ -158,6 +159,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	if (!CurrentLODLevel || !Component)
 		return;
 
+	const float FrameStartTime = EmitterTime;
 	EmitterTime += DeltaTime;
 
 	// 컴포넌트가 움직였을 수 있으므로 생성 위치/공간 변환을 먼저 갱신
@@ -167,7 +169,19 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	ResetParticleParameters(DeltaTime);  // 2. Base값 복원 + 나이 증가
 	Tick_ModuleUpdate(DeltaTime);        // 3. Update 모듈이 Base값을 가공
 	Integrate(DeltaTime);                // 4. 기존 파티클의 위치·회전 갱신
-	Spawn(DeltaTime);                    // 5. 새 파티클은 SpawnTime만큼만 진행
+	
+	// 5. 새 파티클은 SpawnTime만큼만 진행
+	if (bSpawnFinished)
+		return;
+	
+	const UParticleModuleRequired* Required = CurrentLODLevel->GetRequiredModule();
+	const int32 Loops = Required->GetEmitterLoops();
+	const float EndTime = Required->GetEmitterDuration() * Loops;
+
+	const float SpawnDeltaTime = Loops > 0 ? std::clamp(EndTime - FrameStartTime, 0.0f, DeltaTime) : DeltaTime;
+
+	if (SpawnDeltaTime > 0.0f) Spawn(DeltaTime, SpawnDeltaTime);
+	if (Loops > 0 && EmitterTime >= EndTime) bSpawnFinished = true;
 }
 
 uint8* FParticleEmitterInstance::GetModuleInstanceData(const UParticleModule* Module)

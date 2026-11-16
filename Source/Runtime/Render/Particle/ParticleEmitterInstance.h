@@ -23,7 +23,7 @@ struct FParticleEmitterInstance
 	virtual bool Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
 
 	// 이번 프레임 생성 개수를 계산해 SpawnParticles를 부른다. 소수점은 SpawnFraction으로 이월
-	void Spawn(float DeltaTime);
+	void Spawn(float DeltaTime, float SpawnDeltaTime);
 	// Count개를 빈 칸에 생성한다. 블록이 가득 차면 멈춘다
 	void SpawnParticles(int32 Count, const FVector& InitialLocation, float FirstSpawnTime, float SpawnInterval);
 
@@ -58,6 +58,9 @@ struct FParticleEmitterInstance
 
 	uint8* GetModuleInstanceData(const UParticleModule* Module);
 
+	void StopSpawning() { bSpawnFinished = true; }
+	bool HasCompleted() const { return bSpawnFinished && ActiveParticles == 0; }
+
 protected:
 	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
 	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);
@@ -74,4 +77,7 @@ protected:
 	void Integrate(float DeltaTime);                 // 속도 → 위치, 회전속도 → 회전
 
 	uint8* InstanceData = nullptr;
+
+private:
+	bool bSpawnFinished = false;
 };

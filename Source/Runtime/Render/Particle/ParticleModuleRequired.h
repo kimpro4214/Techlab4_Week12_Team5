@@ -23,6 +23,12 @@ public:
 	void SetEmitterOrigin(const FVector& InOrigin) { EmitterOrigin = InOrigin; }
 	void SetUseLocalSpace(bool bInLocal) { bUseLocalSpace = bInLocal; }
 
+	float GetEmitterDuration() const { return EmitterDuration; }
+	int32 GetEmitterLoops() const { return EmitterLoops; }
+
+	void SetEmitterDuration(float InDuration) { EmitterDuration = InDuration; }
+	void SetEmitterLoops(int32 InLoops) { EmitterLoops = InLoops; }
+
 private:
 	UMaterial* Material = nullptr;              // 렌더 단계에서 사용
 
@@ -35,4 +41,7 @@ private:
 	// true : 파티클이 컴포넌트 로컬 좌표로 저장된다 → 액터를 움직이면 파티클도 같이 움직인다
 	// false: 월드 좌표로 저장된다 → 이미 나온 파티클은 그 자리에 남는다
 	bool bUseLocalSpace = false;
+
+	float EmitterDuration = 1.0f;
+	int32 EmitterLoops = 0;
 };
