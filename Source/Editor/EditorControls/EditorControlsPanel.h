@@ -44,7 +44,9 @@ public:
 
 	int32 SelectedIndex = 0;
 
-	const char* Items[11] = {"StaticMesh", "SkeletalMesh", "Particle", "Text", "HeightFog", "FireBall", "Projectile", "ScoreboardManager", "LevelSequence", "Decal", "FakeSpotLight" };
+	// 아래 Classes와 순서·개수가 같아야 한다 (콤보 인덱스로 Classes를 고른다)
+	// "Particle"은 Cascade 방식 파티클 시스템. 기존 SubUV 파티클은 씬/Lua 호환 때문에 클래스는 그대로 두고 이름만 Old로 표시한다
+	const char* Items[12] = {"StaticMesh", "SkeletalMesh", "Particle", "ParticleOld (SubUV)", "Text", "HeightFog", "FireBall", "Projectile", "ScoreboardManager", "LevelSequence", "Decal", "FakeSpotLight" };
 
 	FGizmo* Gizmo = nullptr;
 	int32 GizmoSelectedIndex = 0;
@@ -57,8 +59,8 @@ public:
 	{
 		AStaticMeshActor::StaticClass(),
 		ASkeletalMeshActor::StaticClass(),
-		AParticleActor::StaticClass(),
 		AParticleSystemActor::StaticClass(),
+		AParticleActor::StaticClass(),
 		ATextRenderActor::StaticClass(),
 		AExponentialHeightFogActor::StaticClass(),
 		AFireBallActor::StaticClass(),
