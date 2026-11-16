@@ -53,3 +53,11 @@ void FCrashHandler::Install()
 	SetUnhandledExceptionFilter(&UnHandledExceptionHandler);	// Handler 세팅
 }
 
+// noinline: 최적화로 호출한 쪽에 합쳐지면 덤프 콜스택에서 이 함수 이름이 사라진다
+__declspec(noinline) void FCrashHandler::CauseCrash()
+{
+	// volatile: 컴파일러가 "결과를 안 쓰는 쓰기"로 보고 지우지 못하게 한다
+	volatile int* NullPointer = nullptr;
+	*NullPointer = 0;   // 0xC0000005 Access Violation → UnHandledExceptionHandler
+}
+
