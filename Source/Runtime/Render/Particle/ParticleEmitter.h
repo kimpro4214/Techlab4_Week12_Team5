@@ -31,8 +31,13 @@ public:
 	int32 GetParticleSize() const { return ParticleSize; } 
 	int32 GetModuleOffset(const UParticleModule* Module) const { return ModuleOffsetMap.FindRef(Module); }
 
+	uint64 GetRequiredInstanceBytes() const { return RequiredInstanceBytes; }
+	const uint64* FindModuleInstanceOffset(const UParticleModule* Module) const { return ModuleInstanceOffsetMap.Find(Module); }
+
 private:
 	TArray<UParticleLODLevel*> LODLevels;
 	int32 ParticleSize = 0;
 	TMap<const UParticleModule*, int32> ModuleOffsetMap;
+	uint64 RequiredInstanceBytes = 0;
+	TMap<const UParticleModule*, uint64> ModuleInstanceOffsetMap;
 };

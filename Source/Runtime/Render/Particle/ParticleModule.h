@@ -45,7 +45,10 @@ public:
 
 	virtual uint32 RequiredBytes(const UParticleModuleTypeDataBase* TypeData) const { return 0; }
 	virtual uint32 GetParticlePayloadAlignment() const { return 1; }
+	virtual uint32 RequiredBytesPerInstance() const { return 0; }
+	virtual uint32 GetInstancePayloadAlignment() const { return 1; }
 
+	virtual void PrepPerInstanceBlock(FParticleEmitterInstance& Owner, void* InstanceData) {}
 protected:
 	bool bSpawnModule = false;
 	bool bUpdateModule = false;

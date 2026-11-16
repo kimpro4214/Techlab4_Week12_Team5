@@ -27,6 +27,8 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 Index) const
 
 void UParticleEmitter::CacheEmitterModuleInfo()
 {
+	RequiredInstanceBytes = 0;
+	ModuleInstanceOffsetMap.Reset();
 	ModuleOffsetMap.Reset();
 	ParticleSize = sizeof(FBaseParticle);
 
@@ -43,6 +45,14 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	{
 		if (!Module)
 			continue;
+
+		const uint32 InstanceBytes = Module->RequiredBytesPerInstance();
+		if (InstanceBytes > 0)
+		{
+			const uint64 Offset = FMemory::QuantizeSize(RequiredInstanceBytes, Module->GetInstancePayloadAlignment());
+			ModuleInstanceOffsetMap.Add(Module, Offset);
+			RequiredInstanceBytes = Offset + InstanceBytes;
+		}
 
 		const uint32 Bytes = Module->RequiredBytes(HighestLOD->GetTypeDataModule());
 		if (Bytes == 0)
