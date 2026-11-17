@@ -557,7 +557,7 @@ void UAssetManager::CreateParticleSpriteMaterial()
 {
 	UMaterial* SpriteMat = NewObject<UMaterial>();
 	SpriteMat->PSOType = EPSOType::ParticleSprite_Additive;
-	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/StarParticle.png"));
+	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/Circle.png"));
 	SpriteMat->BlendState = EBlendState::Additive;
 	SpriteMat->DepthStencilState = EDepthStencilState::ReadOnly;
 	SpriteMat->SamplerState = ESamplerState::LinearClamp;
