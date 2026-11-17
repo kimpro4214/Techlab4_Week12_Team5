@@ -3,15 +3,15 @@
 #include "UObject/Object.h"
 #include "UObject/Class.h"
 
-#include "RenderAsset.generated.h"
+#include "Asset.generated.h"
 
 UCLASS()
-class URenderAsset : public UObject
+class UAsset : public UObject
 {
 	GENERATED_BODY()
 public:
-	URenderAsset() = default;
-	virtual ~URenderAsset() = default;
+	UAsset() = default;
+	virtual ~UAsset() = default;
 
 	void SetPath(FString Path) { AssetPath = Path; }
 	const FString& GetPath() const { return AssetPath; }

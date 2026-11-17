@@ -69,7 +69,7 @@ public:
 	template <typename T>
 	static T* GetAssetByPath(const FString& Path)
 	{
-		URenderAsset** Found = Get().AssetMap.Find(Path);
+		UAsset** Found = Get().AssetMap.Find(Path);
 
 		if (Found == nullptr || *Found == nullptr || !(*Found)->IsA<T>())
 		{
@@ -78,7 +78,7 @@ public:
 		return Cast<T>(*Found);
 	}
 
-	void RegisterAsset(const FString& Key, URenderAsset* Asset);
+	void RegisterAsset(const FString& Key, UAsset* Asset);
 
 	//UStaticMesh* GetMesh(FString InName);
 	//UStaticMesh* GetMesh(EPrimitiveType Type); // 오버로드(수정 중)
@@ -120,7 +120,7 @@ private:
 	USkeletalMesh* CreateSkeletalMesh(FSkeletalMeshData&& MeshData, FString& OutError);
 
 	TMap<FString, FString> AssetPathMap;
-	TMap<FString, URenderAsset*> AssetMap;
+	TMap<FString, UAsset*> AssetMap;
 	// 빈 테이크 이름은 파일에서 처음으로 등록한 클립을 사용한다.
 	TMap<FString, UAnimSequence*> FirstFbxAnimations;
 	TMap<FString, USoundWave*> SoundMap;

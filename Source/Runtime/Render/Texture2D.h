@@ -1,7 +1,7 @@
 #pragma once
 
 #include <d3d11.h>
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "Render/RenderDevice.h"
 #include "Texture.h"
 #include "ImageLoader.h"
@@ -26,7 +26,7 @@ private:
 };
 
 UCLASS()
-class UTexture2D : public URenderAsset
+class UTexture2D : public UAsset
 {
 	GENERATED_BODY()
 	

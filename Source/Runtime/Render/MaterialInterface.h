@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "MaterialInterface.generated.h"
 
 UCLASS()
-class UMaterialInterface : public URenderAsset
+class UMaterialInterface : public UAsset
 {
 	GENERATED_BODY()
 public:

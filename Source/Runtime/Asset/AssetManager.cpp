@@ -348,7 +348,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	if (Extension == ".fbx")
 	{
 		// 메모리에 등록된 메시라면 디스크 접근과 타입 판별도 생략한다.
-		if (URenderAsset** CachedAsset = AssetMap.Find(Key); CachedAsset && *CachedAsset)
+		if (UAsset** CachedAsset = AssetMap.Find(Key); CachedAsset && *CachedAsset)
 		{
 			if (!Cast<UStaticMesh>(*CachedAsset) && !Cast<USkeletalMesh>(*CachedAsset))
 			{
@@ -373,7 +373,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 		}
 
 		FFbxBakeResult* BakedData = bHasBake ? &BakeResult : nullptr;
-		URenderAsset* Mesh = nullptr;
+		UAsset* Mesh = nullptr;
 		if (MeshType == EFbxMeshType::SkeletalMesh)
 		{
 			Mesh = LoadFbxSkeletalMesh(Key, Path, Error, BakedData);
@@ -572,14 +572,14 @@ void UAssetManager::Shutdown()
 }
 
 
-void UAssetManager::RegisterAsset(const FString& Key, URenderAsset* Asset)
+void UAssetManager::RegisterAsset(const FString& Key, UAsset* Asset)
 {
 	Asset->SetPath(Key);
 	AssetMap[Key] = Asset;
 }
 
 UTexture2D* UAssetManager::LoadTexture(const FString& InPath, bool GenerateMips) {
-	if (URenderAsset** Found{ AssetMap.Find(InPath) }) {
+	if (UAsset** Found{ AssetMap.Find(InPath) }) {
 		return Cast<UTexture2D>(*Found);
 	}
 
@@ -682,7 +682,7 @@ UStaticMesh* UAssetManager::LoadFbxStaticMesh(const FString& Key, const FString&
 	OutError.clear();
 
 	// 같은 Key로 등록된 메시가 있으면 기존 리소스를 재사용한다.
-	URenderAsset** CachedAsset = AssetMap.Find(Key);
+	UAsset** CachedAsset = AssetMap.Find(Key);
 	if (CachedAsset && *CachedAsset)
 	{
 		UStaticMesh* CachedMesh = Cast<UStaticMesh>(*CachedAsset);
@@ -821,7 +821,7 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 	OutError.clear();
 
 	// 같은 키로 등록된 메시가 있으면 임포트와 GPU 자원 생성을 생략한다.
-	URenderAsset** CachedAsset = AssetMap.Find(Key);
+	UAsset** CachedAsset = AssetMap.Find(Key);
 	if (CachedAsset && *CachedAsset)
 	{
 		USkeletalMesh* CachedMesh = Cast<USkeletalMesh>(*CachedAsset);
@@ -837,7 +837,7 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 	// 편집기 식별 경로의 대소문자·절대 경로 표기가 달라도 기존 공유 메시를 재사용한다.
 	for (const auto& [RegisteredKey, RegisteredPath] : AssetPathMap)
 	{
-		URenderAsset** Registered = AssetMap.Find(RegisteredKey);
+		UAsset** Registered = AssetMap.Find(RegisteredKey);
 		if (!Registered || !*Registered || !(*Registered)->IsA<USkeletalMesh>()) continue;
 		std::error_code Error;
 		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Cast<USkeletalMesh>(*Registered);
@@ -928,7 +928,7 @@ int32 UAssetManager::LoadFbxAnimations(const FString& Key, const FString& Path, 
 		const FString AnimKey = Key + "/" + Data.Name;
 
 		UAnimSequence* Sequence = nullptr;
-		if (URenderAsset* CachedAsset = AssetMap.FindRef(AnimKey))
+		if (UAsset* CachedAsset = AssetMap.FindRef(AnimKey))
 		{
 			HTR_LOG(Warning, "Asset key is already used: {}", AnimKey);
 			Sequence = Cast<UAnimSequence>(CachedAsset);

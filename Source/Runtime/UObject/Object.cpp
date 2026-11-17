@@ -192,7 +192,7 @@ namespace
 				}
 
 				const FString AssetPath = Field.get<FString>();
-				URenderAsset* Asset = nullptr;
+				UAsset* Asset = nullptr;
 
 				if (Property.Class && Property.Class->IsChildOf(UStaticMesh::StaticClass()))
 				{
@@ -200,7 +200,7 @@ namespace
 				}
 				else
 				{
-					Asset = UAssetManager::GetAssetByPath<URenderAsset>(AssetPath);
+					Asset = UAssetManager::GetAssetByPath<UAsset>(AssetPath);
 				}
 
 				// 못 찾으면 생성자가 넣어둔 기본값을 그대로 둔다.
@@ -216,7 +216,7 @@ namespace
 			else
 			{
 				// 경로가 없는 에셋(런타임에 만든 인스턴스 등)은 되찾을 방법이 없으니 null로 쓴다
-				URenderAsset* Asset = Cast<URenderAsset>(Value);
+				UAsset* Asset = Cast<UAsset>(Value);
 				if (Asset && !Asset->GetPath().empty())
 					Field = Asset->GetPath();
 				else

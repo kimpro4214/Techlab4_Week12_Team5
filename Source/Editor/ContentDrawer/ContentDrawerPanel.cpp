@@ -133,7 +133,7 @@ void FContentDrawerPanel::OnRender()
 				}
 				else // 파일인 경우
 				{
-					URenderAsset* Asset = UAssetManager::GetAssetByPath<URenderAsset>(PathString);
+					UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(PathString);
 					if (Asset && Asset->IsA<UTexture2D>())
 					{
 						TextureAsset = Cast<UTexture2D>(Asset);
@@ -214,7 +214,7 @@ void FContentDrawerPanel::OnRender()
 					{
 						// ScanAssets에서 등록한 것과 같은 Assets 기준 상대 경로를 사용한다.
 						const FString Key = Path.lexically_relative(AssetRootPath).generic_string();
-						URenderAsset* Asset = UAssetManager::GetAssetByPath<URenderAsset>(Key);
+						UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(Key);
 
 						if (!Asset)
 						{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "AnimationAsset.generated.h"
 
 class UAnimSequence;
@@ -32,7 +32,7 @@ struct FAnimExtractContext
 };
 
 UCLASS()
-class UAnimationAsset : public URenderAsset
+class UAnimationAsset : public UAsset
 {
 	GENERATED_BODY();
 
