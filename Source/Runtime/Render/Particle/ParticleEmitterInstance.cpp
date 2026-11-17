@@ -141,6 +141,7 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 	OutData.SimulationToWorld   = SimulationToWorld;
 	// 월드 공간 시뮬레이션이면 SimulationToWorld가 단위 행렬이라, 이미터 위치를 따로 계산해서 넘긴다
 	OutData.EmitterWorldOrigin  = SimulationToWorld.TransformPosition(EmitterToSimulation.GetOrigin());
+	OutData.Scale               = Component->GetWorldScale3D();
 	return true;
 }
 

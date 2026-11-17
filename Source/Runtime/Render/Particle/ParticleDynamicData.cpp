@@ -3,6 +3,7 @@
 #include "Render/RenderCommand.h"
 #include "Render/Material.h"
 #include <algorithm>
+#include <cmath>
 
 void FDynamicSpriteEmitterData::Init(int32 MaxParticles)
 {
@@ -77,12 +78,15 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
 			Source.ParticleData + Source.ParticleIndices[i] * Source.ParticleStride);
 
+		// 음수 스케일(미러링)이어도 사각형이 뒤집히지 않게 절댓값
+		const FVector2 Size(std::abs(Particle.Size.X * Source.Scale.X), std::abs(Particle.Size.Y * Source.Scale.Y));
+
 		for (int32 c = 0; c < 4; ++c)
 		{
 			FParticleSpriteVertex& Vertex = ScratchVertices[i * 4 + c];
 			Vertex.Position     = Particle.Location;
 			Vertex.RelativeTime = Particle.RelativeTime;
-			Vertex.Size         = FVector2(Particle.Size.X, Particle.Size.Y);
+			Vertex.Size         = Size;
 			Vertex.Corner       = Corners[c];
 			Vertex.Rotation     = Particle.Rotation;
 			Vertex.Color        = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, Particle.Color.A);

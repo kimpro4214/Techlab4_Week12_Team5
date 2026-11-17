@@ -31,6 +31,8 @@ struct FDynamicEmitterReplayDataBase
 	const uint16* ParticleIndices = nullptr;
 	FMatrix SimulationToWorld = FMatrix::Identity;
 	FVector EmitterWorldOrigin = FVector::ZeroVector;   // 반투명 패킷 정렬(이미터끼리 순서)용
+	// 컴포넌트 월드 스케일. 위치는 공간 변환에 스케일이 들어가지만 스프라이트 크기는 카메라 축으로 펼쳐서 따로 곱해야 한다
+	FVector Scale = FVector(1.0f, 1.0f, 1.0f);
 };
 
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
