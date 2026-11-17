@@ -4,6 +4,7 @@
 
 #include "Render/Particle/ParticleModuleLifetime.h"
 #include "UObject/Property.h"
+#include "UObject/UObjectGlobals.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
 #include "Render/Particle/ParticleModuleLocation.h"
@@ -219,6 +220,12 @@ UParticleSystem* UParticleSystem::CreateDefault()
 
 	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
 	Emitter->AddLODLevel(LODLevel);
+	UParticleLODLevel* FarLOD = Cast<UParticleLODLevel>(StaticDuplicateObject(LODLevel, Emitter, FName("LOD1")));
+	if (FarLOD)
+	{
+		FarLOD->GetSpawnModule()->SetRate(15.0f);
+		Emitter->AddLODLevel(FarLOD);
+	}
 	Emitter->CacheEmitterModuleInfo();   // 모듈을 다 넣은 뒤 Spawn/Update 목록 분류
 
 	UParticleSystem* System = NewObject<UParticleSystem>();
