@@ -9,7 +9,7 @@ class UParticleModuleVelocity : public UParticleModule
 public:
 	UParticleModuleVelocity() { bSpawnModule = true; }
 
-	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override;
+	void Spawn(const FSpawnContext& Context) override;
 
 	UPROPERTY(EditAnywhere) FVector StartVelocityMin = FVector(-20.0f, -20.0f, 50.0f);
 	UPROPERTY(EditAnywhere) FVector StartVelocityMax = FVector(20.0f, 20.0f, 100.0f);

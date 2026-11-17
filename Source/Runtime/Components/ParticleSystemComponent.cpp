@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "Components/ParticleSystemComponent.h"
+#include "Curves/CurveFloat.h"
 #include "Render/Particle/ParticleSystem.h"
 #include "Render/Particle/ParticleEmitter.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
@@ -48,6 +49,11 @@ namespace
 		UParticleModuleColorOverLife* ColorOverLife = NewObject<UParticleModuleColorOverLife>();
 		ColorOverLife->StartColor = FLinearColor(1.0f, 0.6f, 0.2f, 1.0f);
 		ColorOverLife->EndColor   = FLinearColor(1.0f, 0.1f, 0.0f, 0.0f);   // 붉어지며 사라진다
+		UCurveFloat* ColorBlendCurve = NewObject<UCurveFloat>();
+		ColorBlendCurve->AddKey(0.0f, 0.0f);
+		ColorBlendCurve->AddKey(0.75f, 0.0f);
+		ColorBlendCurve->AddKey(1.0f, 1.0f);
+		ColorOverLife->ColorBlendCurve = ColorBlendCurve;
 
 		UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
 		Size->StartSizeMin = FVector(0.2f, 0.2f, 0.2f);

@@ -1,7 +1,10 @@
 #include "EnginePCH.h"
+#include "Core/HAL/UnrealMemory.h"
+#include "Render/Particle/ParticleData.h"
 #include "Render/Particle/ParticleEmitter.h"
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleSpriteEmitterInstance.h"
+#include "Render/Particle/ParticleModule.h"
 
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
@@ -24,9 +27,40 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 Index) const
 
 void UParticleEmitter::CacheEmitterModuleInfo()
 {
+	RequiredInstanceBytes = 0;
+	ModuleInstanceOffsetMap.Reset();
+	ModuleOffsetMap.Reset();
+	ParticleSize = sizeof(FBaseParticle);
+
 	for (UParticleLODLevel* LODLevel : LODLevels)
 	{
-		if (LODLevel)
-			LODLevel->UpdateModuleLists();
+		if (LODLevel) LODLevel->UpdateModuleLists();
+	}
+
+	const UParticleLODLevel* HighestLOD = GetLODLevel(0);
+	if (!HighestLOD)
+		return;
+
+	for (const UParticleModule* Module : HighestLOD->GetModules())
+	{
+		if (!Module)
+			continue;
+
+		const uint32 InstanceBytes = Module->RequiredBytesPerInstance();
+		if (InstanceBytes > 0)
+		{
+			const uint64 Offset = FMemory::QuantizeSize(RequiredInstanceBytes, Module->GetInstancePayloadAlignment());
+			ModuleInstanceOffsetMap.Add(Module, Offset);
+			RequiredInstanceBytes = Offset + InstanceBytes;
+		}
+
+		const uint32 Bytes = Module->RequiredBytes(HighestLOD->GetTypeDataModule());
+		if (Bytes == 0)
+			continue;
+
+		const int32 Offset = static_cast<int32>(FMemory::QuantizeSize(ParticleSize, Module->GetParticlePayloadAlignment()));
+
+		ModuleOffsetMap.Add(Module, Offset);
+		ParticleSize = Offset + static_cast<int32>(Bytes);
 	}
 }

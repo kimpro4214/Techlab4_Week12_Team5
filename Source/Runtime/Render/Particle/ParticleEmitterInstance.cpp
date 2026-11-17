@@ -12,6 +12,7 @@
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
 	FreeParticleData();
+	FMemory::Free(InstanceData);
 }
 
 bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
@@ -32,7 +33,8 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 		return false;
 
 	// 칸 크기: 지금은 FBaseParticle뿐. 모듈별 Payload가 생기면 여기에 더해진다.
-	ParticleSize = sizeof(FBaseParticle);
+	ParticleSize = SpriteTemplate->GetParticleSize();
+	if (ParticleSize == 0) return false;
 	// 칸 간격을 16의 배수로 올린다 → 모든 칸의 시작 주소가 16바이트 정렬 (Address Align)
 	ParticleStride = static_cast<int32>(FMemory::QuantizeSize(ParticleSize, 16));
 
@@ -40,12 +42,38 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 	ParticleCounter = 0;
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
+	bSpawnFinished = false;
 
 	const int32 MaxParticles = std::clamp(Required->GetMaxParticles(), 1, 65535);
-	return AllocateParticleData(MaxParticles);
+	
+	FMemory::Free(InstanceData);
+	InstanceData = nullptr;
+
+	if (!AllocateParticleData(MaxParticles))
+		return false;
+
+	const uint64 InstanceBytes = SpriteTemplate->GetRequiredInstanceBytes();
+	if (InstanceBytes == 0)
+		return true;
+
+	InstanceData = static_cast<uint8*>(FMemory::Malloc(InstanceBytes));
+	if (!InstanceData)
+	{
+		FreeParticleData();
+		return false;
+	}
+
+	FMemory::Memzero(InstanceData, InstanceBytes);
+
+	for (UParticleModule* Module : CurrentLODLevel->GetModules())
+	{
+		if (uint8* Data = GetModuleInstanceData(Module))
+			Module->PrepPerInstanceBlock(*this, Data);
+	}
+	return true;
 }
 
-void FParticleEmitterInstance::Spawn(float DeltaTime)
+void FParticleEmitterInstance::Spawn(float DeltaTime, float SpawnDeltaTime)
 {
 	UParticleModuleSpawn* SpawnModule = CurrentLODLevel->GetSpawnModule();
 	if (!SpawnModule)
@@ -54,15 +82,21 @@ void FParticleEmitterInstance::Spawn(float DeltaTime)
 	// 초당 Rate개 → 이번 프레임 몫 = Rate × dt
 	// 예) Rate 30, dt 0.016 → 0.48개: 이번엔 0개, 다음 프레임 0.96, 그다음 1.44 → 1개 생성
 	const float SpawnRate = SpawnModule->GetRate() * SpawnModule->GetRateScale();
-	const float NewParticles = SpawnFraction + SpawnRate * DeltaTime;
+	const float OldFraction = SpawnFraction;
+	const float NewParticles = OldFraction + SpawnRate * SpawnDeltaTime;
 	const int32 Count = static_cast<int32>(NewParticles);
 	SpawnFraction = NewParticles - static_cast<float>(Count);
 
-	if (Count > 0)
-		SpawnParticles(Count, EmitterToSimulation.GetOrigin());   // UpdateTransforms가 매 Tick 갱신
+	if (Count > 0 && SpawnRate > 0.0f)
+	{
+		const float SpawnInterval = 1.0f / SpawnRate;
+		const float FirstSpawnTime = DeltaTime - (1.0f - OldFraction) * SpawnInterval;
+		SpawnParticles(Count, EmitterToSimulation.GetOrigin(), FirstSpawnTime, SpawnInterval);
+	}
 }
 
-void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& InitialLocation)
+void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& InitialLocation,
+	float FirstSpawnTime, float SpawnInterval)
 {
 	for (int32 i = 0; i < Count; ++i)
 	{
@@ -75,8 +109,16 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& Initia
 
 		PreSpawn(Particle, InitialLocation);
 
+		const float SpawnTime = std::max(0.0f, FirstSpawnTime - i * SpawnInterval);
 		for (UParticleModule* Module : CurrentLODLevel->GetSpawnModules())
-			Module->Spawn(this, 0, 0.0f, Particle);
+		{
+			const int32 Offset = SpriteTemplate->GetModuleOffset(Module);
+			Module->Spawn({ *this, Offset, SpawnTime, Particle });
+		}
+
+		Particle->Location += Particle->Velocity * SpawnTime;
+		Particle->Rotation += Particle->RotationRate * SpawnTime;
+		Particle->RelativeTime += Particle->OneOverMaxLifetime * SpawnTime;
 
 		++ActiveParticles;
 		++ParticleCounter;
@@ -117,6 +159,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	if (!CurrentLODLevel || !Component)
 		return;
 
+	const float FrameStartTime = EmitterTime;
 	EmitterTime += DeltaTime;
 
 	// 컴포넌트가 움직였을 수 있으므로 생성 위치/공간 변환을 먼저 갱신
@@ -125,8 +168,29 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	KillParticles();                     // 1. 지난 프레임에 수명이 다한 파티클 제거
 	ResetParticleParameters(DeltaTime);  // 2. Base값 복원 + 나이 증가
 	Tick_ModuleUpdate(DeltaTime);        // 3. Update 모듈이 Base값을 가공
-	Spawn(DeltaTime);                    // 4. 새 파티클 생성
-	Integrate(DeltaTime);                // 5. 속도 → 위치, 회전속도 → 회전
+	Integrate(DeltaTime);                // 4. 기존 파티클의 위치·회전 갱신
+	
+	// 5. 새 파티클은 SpawnTime만큼만 진행
+	if (bSpawnFinished)
+		return;
+	
+	const UParticleModuleRequired* Required = CurrentLODLevel->GetRequiredModule();
+	const int32 Loops = Required->GetEmitterLoops();
+	const float EndTime = Required->GetEmitterDuration() * Loops;
+
+	const float SpawnDeltaTime = Loops > 0 ? std::clamp(EndTime - FrameStartTime, 0.0f, DeltaTime) : DeltaTime;
+
+	if (SpawnDeltaTime > 0.0f) Spawn(DeltaTime, SpawnDeltaTime);
+	if (Loops > 0 && EmitterTime >= EndTime) bSpawnFinished = true;
+}
+
+uint8* FParticleEmitterInstance::GetModuleInstanceData(const UParticleModule* Module)
+{
+	if (!InstanceData)
+		return nullptr;
+
+	const uint64* Offset = SpriteTemplate->FindModuleInstanceOffset(Module);
+	return Offset ? InstanceData + *Offset : nullptr;
 }
 
 bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
@@ -147,7 +211,10 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime)
 {
 	for (UParticleModule* Module : CurrentLODLevel->GetUpdateModules())
-		Module->Update(this, 0, DeltaTime);
+	{
+		const int32 Offset = SpriteTemplate->GetModuleOffset(Module);
+		Module->Update({ *this, Offset, DeltaTime });
+	}
 }
 
 void FParticleEmitterInstance::Integrate(float DeltaTime)
