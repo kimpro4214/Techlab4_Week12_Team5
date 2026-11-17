@@ -4,6 +4,7 @@
 #include "Core/StatOverlay.h"
 #include "Render/SceneRenderer.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Core/Windows/WindowsCrashHandler.h"
 
 #include "Editor/Settings/SettingsPanel.h"
 
@@ -33,6 +34,7 @@ bool FOutputLogPanel::Init()
 	Commands.Add("CLEAR");
 	Commands.Add("STAT");
 	Commands.Add("CSM");
+	Commands.Add("CauseCrash");
 	Commands.Add("usegpuskinning");
 	Commands.Add("r.shadow.CacheWholeSceneShadows");
 
@@ -204,6 +206,12 @@ void FOutputLogPanel::ExecCommand(const FString& CommandLine)
 				USkeletalMeshComponent::IsGPUSkinningEnabled() ? "GPU" : "CPU");
 		}
 		ScrollToBottom = true;
+		return;
+	}
+	// 아래쪽의 무조건 return("Usage: CSM ...")보다 위에 있어야 실행된다
+	if (EqualsIgnoreCase(Command, "CauseCrash"))
+	{
+		FCrashHandler::CauseCrash();   // 돌아오지 않는다: 필터가 덤프를 쓰고 프로세스가 종료된다
 		return;
 	}
 	if (EqualsIgnoreCase(Command, "CSM"))
