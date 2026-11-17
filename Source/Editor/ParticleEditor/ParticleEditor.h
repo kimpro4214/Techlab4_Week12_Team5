@@ -28,6 +28,9 @@ public:
 	void RenderPreview() override;
 	void OnRender(bool) override {}
 	bool IsFocused() const override { return bFocused; }
+	bool IsDirty() const override;
+	bool CanSave() const override { return System && !IsClosing(); }
+	bool Save() override;
 
 	////////////////////////////////////////////////////////////
 	// 패널 상태 및 뷰포트 제어
@@ -55,6 +58,7 @@ public:
 	bool IsPaused() const { return PreviewScene.IsPaused(); }
 	float GetTimeScale() const { return PreviewScene.GetTimeScale(); }
 	int32 GetActiveParticleCount() const;
+	const FString& GetLastError() const { return LastError; }
 
 	bool IsViewportVisible() const { return bViewportVisible; }
 	bool IsRenderGrid() const { return bRenderGrid; }
@@ -73,14 +77,20 @@ protected:
 	TUniquePtr<IEditorTab> CreateTab() override;
 	bool InitializeResources() override;
 	void ShutdownResources() override;
+	bool DiscardChanges() override;
 
 private:
 	// 외부 참조 및 렌더링 콜백
 	UEngine* Engine = nullptr;
-	UParticleSystem* System = nullptr;
+	UParticleSystem* SourceSystem = nullptr;
 	UParticleSystemComponent* ParticleComponent = nullptr;
 	const FEditorSettings* Settings = nullptr;
 	FPreviewRenderer PreviewRenderer;
+
+	// 에디터가 소유하는 편집 복사본과 마지막 저장 기준
+	UParticleSystem* System = nullptr;
+	TArray<uint8> SavedSnapshot;
+	FString LastError;
 
 	// 에디터 전용 프리뷰 리소스
 	FPreviewScene PreviewScene;

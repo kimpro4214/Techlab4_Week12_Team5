@@ -23,6 +23,9 @@ void FParticleViewportPanel::DrawContent()
 	ImGui::SameLine();
 	ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
 
+	if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
+	if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
+
 	FEditorViewportClient* Client = Editor.GetViewportClient();
 	const ImVec2 Size = ImGui::GetContentRegionAvail();
 	if (!Client || Size.x < 1.0f || Size.y < 1.0f)

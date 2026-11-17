@@ -139,6 +139,21 @@ void UParticleSystem::AddEmitter(UParticleEmitter* InEmitter)
 	Emitters.Add(InEmitter);
 }
 
+void UParticleSystem::SwapEmitters(UParticleSystem& Other)
+{
+	if (this == &Other) return;
+
+	std::swap(Emitters, Other.Emitters);
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		Emitter->SetOuter(this);
+	}
+	for (UParticleEmitter* Emitter : Other.Emitters)
+	{
+		Emitter->SetOuter(&Other);
+	}
+}
+
 bool UParticleSystem::ValidateAsset(FString& OutError) const
 {
 	OutError.clear();

@@ -22,9 +22,13 @@ FParticleEditorTab::FParticleEditorTab(FParticleEditor& InEditor)
 
 void FParticleEditorTab::DrawMenuBar()
 {
-	if (ImGui::BeginMenu("Viewer"))
+	if (ImGui::BeginMenu("File"))
 	{
-		if (ImGui::MenuItem("Close Viewer"))
+		if (ImGui::MenuItem("Save", "Ctrl+S", false, ParticleEditor.CanSave()))
+		{
+			ParticleEditor.Save();
+		}
+		if (ImGui::MenuItem("Close Editor"))
 		{
 			ParticleEditor.Close();
 		}
@@ -89,4 +93,12 @@ void FParticleEditorTab::OnRender(bool bActive)
 			Panel->OnRender();
 		}
 	}
+
+	if (ParticleEditor.IsFocused() && !ImGui::GetIO().WantTextInput && !ImGui::IsAnyItemActive() &&
+		!ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup) &&
+		ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
+	{
+		ParticleEditor.Save();
+	}
+
 }
