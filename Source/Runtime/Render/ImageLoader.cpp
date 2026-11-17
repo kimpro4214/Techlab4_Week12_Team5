@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/StringUtils.h"
 #include "ImageLoader.h"
 #include "RenderCommand.h"
 #include "DDSTextureLoader11.h"
@@ -116,8 +117,12 @@ FImageData ImageLoader::LoadDDS(const FString& Path)
 		return FImageData();
 	}
 
-	const std::u8string UTF8Path{ Path.begin(), Path.end() };
-	const std::wstring FilePath{ std::filesystem::path{ UTF8Path }.wstring() };
+	FWideString FilePath;
+	if (!StringUtils::TryUtf8ToWide(Path, FilePath))
+	{
+		HTR_LOG(Error, "[DDS] Invalid UTF-8 path: {}", Path);
+		return FImageData();
+	}
 
 	ComPtr<ID3D11Resource> Resource{};
 	const HRESULT LoadResult{ DirectX::CreateDDSTextureFromFileEx(

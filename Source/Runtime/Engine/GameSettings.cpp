@@ -2,19 +2,10 @@
 #include "Engine/GameSettings.h"
 
 #include "Core/ConfigFile.h"
+#include "Core/StringUtils.h"
 
 namespace
 {
-	// 창 제목에 한글을 쓸 수 있게 UTF-8을 UTF-16으로 바꾼다.
-	std::wstring Utf8ToWide(const FString& Utf8)
-	{
-		if (Utf8.empty()) return {};
-		const int Length = MultiByteToWideChar(CP_UTF8, 0, Utf8.data(), static_cast<int>(Utf8.size()), nullptr, 0);
-		std::wstring Wide(Length, L'\0');
-		MultiByteToWideChar(CP_UTF8, 0, Utf8.data(), static_cast<int>(Utf8.size()), Wide.data(), Length);
-		return Wide;
-	}
-
 	// 문자열 값은 editor.ini가 저장하는 표기와 같다.
 	ERenderingPath ParseRenderingPath(const FString& Name, ERenderingPath Fallback)
 	{
@@ -61,7 +52,12 @@ FGameSettings FGameSettings::Load(const FString& Path)
 			return (Value > 0 || (bAllowZero && Value == 0)) ? static_cast<uint32>(Value) : Default;
 		};
 
-	Settings.WindowTitle = Utf8ToWide(Config.GetString("Window", "Title", "Hitori"));
+	const FString WindowTitle = Config.GetString("Window", "Title", "Hitori");
+	if (!StringUtils::TryUtf8ToWide(WindowTitle, Settings.WindowTitle))
+	{
+		HTR_LOG(Warning, "Invalid UTF-8 window title. Using default title.");
+	}
+
 	Settings.Width = GetUInt("Window", "ResolutionSizeX", Settings.Width, true);
 	Settings.Height = GetUInt("Window", "ResolutionSizeY", Settings.Height, true);
 	Settings.bBorderless = Config.GetBool("Window", "Borderless", Settings.bBorderless);

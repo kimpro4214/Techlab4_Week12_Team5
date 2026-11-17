@@ -12,7 +12,7 @@ struct FGameSettings
 	FString StartupMap = "Scenes/Demo_1_LightTypes.scene";   // [Game] GameDefaultMap
 	FString SkyPanorama = "Assets/SkySphere/IceEscapeSnowPanorama-v2.png";
 
-	std::wstring WindowTitle = L"Hitori";
+	FWideString WindowTitle = L"Hitori";
 	uint32 Width = 1600;
 	uint32 Height = 900;
 	bool bBorderless = false;
