@@ -2,11 +2,17 @@
 #include "Render/Particle/ParticleEmitter.h"
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleSpriteEmitterInstance.h"
+#include "Render/Particle/ParticleModuleTypeDataBase.h"
 
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
-	// 지금은 Sprite만 있다. Mesh 이미터가 생기면 TypeData 모듈이 인스턴스 종류를 고른다
-	FParticleEmitterInstance* Instance = new FParticleSpriteEmitterInstance();
+	// TypeData 모듈이 있으면 그 종류(Mesh 등)의 인스턴스를, 없으면 Sprite를 만든다
+	UParticleLODLevel* LODLevel = GetLODLevel(0);
+	UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
+
+	FParticleEmitterInstance* Instance = TypeData ? TypeData->CreateInstance() : nullptr;
+	if (!Instance)
+		Instance = new FParticleSpriteEmitterInstance();
 	if (!Instance->Init(this, Component))
 	{
 		delete Instance;   // Required/Spawn 누락 등

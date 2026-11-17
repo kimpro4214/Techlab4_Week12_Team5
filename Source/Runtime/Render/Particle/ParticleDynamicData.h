@@ -89,4 +89,18 @@ private:
 	TArray<FParticleOrder> DrawOrder;                    // 뷰마다 다시 채운다. 재사용
 };
 
+// 스태틱 메시 Emitter 용
+// 지금은 파티클 하나 × 메시 섹션 하나 = 패킷 하나로 그린다. 메시 자체 VB/IB를 쓰므로 GPU 버퍼를 따로 갖지 않는다
+struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
+{
+	FDynamicMeshEmitterReplayData Source;
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
+
+private:
+	// 파티클 하나의 메시 로컬 → 시뮬레이션 공간 행렬 (크기, 방향, 위치)
+	FMatrix BuildParticleMatrix(const FBaseParticle& Particle) const;
+};
+
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

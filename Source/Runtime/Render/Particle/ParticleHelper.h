@@ -7,8 +7,9 @@
 // 시뮬레이션 쪽 헤더, 렌더 헤더를 include 하지 않음
 
 class UMaterial;
+class UStaticMesh;
 
-// 이미터 안의 파티클을 그리는 순서. 반투명(AlphaBlend)은 뒤→앞으로 그려야 겹침이 맞는다
+// 이미터 안의 파티클을 그리는 순서. 반투명(AlphaBlend)은 뒤,앞으로 그려야 겹침이 맞는다
 // Additive는 더하는 순서와 결과가 같으므로 None으로 두면 된다
 enum class EParticleSortMode : uint8
 {
@@ -21,6 +22,13 @@ enum class EDynamicEmitterType : uint8
 {
 	Sprite,
 	Mesh,
+};
+
+// Mesh 파티클이 어느 쪽을 바라볼지
+enum class EParticleMeshAlignment : uint8
+{
+	None,       // 시뮬레이션 공간 축 그대로, 파티클 Rotation만큼 Z축으로 돈다
+	Velocity,   // 메시 X축이 진행 방향을 본다 (화살, 파편)
 };
 
 // 렌더 쪽이 읽을 이미터 스냅샷 
@@ -43,6 +51,12 @@ struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBas
 	UMaterial* Material = nullptr;
 	int32 MaxParticles = 0;   // GPU 버퍼 용량
 	EParticleSortMode SortMode = EParticleSortMode::None;
+};
+
+struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
+{
+	UStaticMesh* Mesh = nullptr;
+	EParticleMeshAlignment Alignment = EParticleMeshAlignment::None;
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟

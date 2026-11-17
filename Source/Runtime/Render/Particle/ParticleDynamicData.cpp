@@ -147,3 +147,85 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 	Packet.CameraToParticleDistance = Delta.Dot(Delta);   // 이미터끼리의 뒤→앞 순서
 	RenderQueue.Add(Packet);
 }
+
+FMatrix FDynamicMeshEmitterData::BuildParticleMatrix(const FBaseParticle& Particle) const
+{
+	// 행 벡터 규칙(v × M): 0~2행이 메시 X/Y/Z축(크기 포함), 3행이 위치
+	const FVector Up(0.0f, 0.0f, 1.0f);
+	FVector AxisX(1.0f, 0.0f, 0.0f);
+	FVector AxisY(0.0f, 1.0f, 0.0f);
+	FVector AxisZ = Up;
+
+	bool bAligned = false;
+	if (Source.Alignment == EParticleMeshAlignment::Velocity && Particle.Velocity.SizeSquared() > 1e-8f)
+	{
+		// X축을 진행 방향으로. 수직으로 날아가면 Up과 평행해서 외적이 0이 되므로 다른 기준축을 쓴다
+		AxisX = Particle.Velocity.Normalized();
+		FVector Side = FVector::Cross(Up, AxisX);
+		if (Side.SizeSquared() < 1e-6f)
+			Side = FVector::Cross(FVector(1.0f, 0.0f, 0.0f), AxisX);
+		AxisY = Side.Normalized();
+		AxisZ = FVector::Cross(AxisX, AxisY);
+		bAligned = true;
+	}
+
+	if (!bAligned)
+	{
+		// 진행 방향이 없으면 파티클 Rotation만큼 Z축으로 돌린다
+		const float S = std::sin(Particle.Rotation);
+		const float C = std::cos(Particle.Rotation);
+		AxisX = FVector( C, S, 0.0f);
+		AxisY = FVector(-S, C, 0.0f);
+	}
+
+	const FVector Size(Particle.Size.X * Source.Scale.X, Particle.Size.Y * Source.Scale.Y, Particle.Size.Z * Source.Scale.Z);
+	const FVector X = AxisX * Size.X;
+	const FVector Y = AxisY * Size.Y;
+	const FVector Z = AxisZ * Size.Z;
+	const FVector& P = Particle.Location;
+
+	return FMatrix(
+		FVector4(X.X, X.Y, X.Z, 0.0f),
+		FVector4(Y.X, Y.Y, Y.Z, 0.0f),
+		FVector4(Z.X, Z.Y, Z.Z, 0.0f),
+		FVector4(P.X, P.Y, P.Z, 1.0f));
+}
+
+void FDynamicMeshEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	UStaticMesh* Mesh = Source.Mesh;
+	const int32 Count = Source.ActiveParticleCount;
+	if (Count <= 0 || !Mesh)
+		return;
+
+	const TArray<FStaticMeshSection>& Sections = Mesh->GetMeshData().Sections;
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
+			Source.ParticleData + Source.ParticleIndices[i] * Source.ParticleStride);
+
+		// 메시 로컬 → 시뮬레이션 공간 → 월드
+		const FMatrix World = BuildParticleMatrix(Particle) * Source.SimulationToWorld;
+		const FMatrix* Model = RenderQueue.StoreWorldMatrix(World);
+
+		// 반투명 메시 머티리얼일 때 파티클끼리 뒤→앞으로 정렬되도록 파티클마다 거리를 넣는다
+		const FVector Delta = World.GetOrigin() - View.CameraPosition;
+		const float DistanceSq = Delta.Dot(Delta);
+
+		for (const FStaticMeshSection& Section : Sections)
+		{
+			UMaterial* Material = Mesh->GetMaterial(Section.MaterialSlotIndex);
+			if (!Material || Section.IndexCount == 0)
+				continue;
+
+			FRenderPacket& Packet = RenderQueue.AddDefaulted_GetRef();
+			Packet.Model                    = Model;
+			Packet.Mesh                     = Mesh;   // VB/IB는 메시 LOD0 것을 그대로 쓴다
+			Packet.Material                 = Material;
+			Packet.StartIndex               = Section.StartIndex;
+			Packet.IndexCount               = Section.IndexCount;
+			Packet.LODIndex                 = 0;
+			Packet.CameraToParticleDistance = DistanceSq;
+		}
+	}
+}
