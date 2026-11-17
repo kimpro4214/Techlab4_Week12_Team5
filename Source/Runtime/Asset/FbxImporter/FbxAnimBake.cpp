@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Asset/AssetUtils.h"
 #include "FbxAnimBake.h"
 #include "Engine/Classes/Animation/AnimTypes.h"
 
@@ -20,7 +21,7 @@ namespace
 
 	struct FAnimBakeHeader
 	{
-		char Magic[4] = { 'F', 'B', 'X', 'A' };
+		uint32 Magic = AssetUtils::MakeMagicNumber("FBXA");
 		uint32 Version = 2;
 		int64 SourceWriteTime = 0;
 		uint64 SourceFileSize = 0;
@@ -153,7 +154,7 @@ namespace
 			return false;
 		}
 
-		if (std::memcmp(Header.Magic, Expected.Magic, sizeof(Header.Magic)) != 0 || Header.Version != Expected.Version)
+		if (Header.Magic != Expected.Magic || Header.Version != Expected.Version)
 		{
 			return false;
 		}

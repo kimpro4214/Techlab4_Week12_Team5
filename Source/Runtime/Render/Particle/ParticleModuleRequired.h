@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/Particle/ParticleModule.h"
+#include "Render/Material.h"
 #include "ParticleModuleRequired.generated.h"
 
 class UMaterial;
@@ -30,16 +31,20 @@ public:
 	void SetEmitterLoops(int32 InLoops) { EmitterLoops = InLoops; }
 
 private:
+	UPROPERTY(EditAnywhere)
 	UMaterial* Material = nullptr;              // 렌더 단계에서 사용
 
 	// Payload 블록 크기가 이 값으로 정해진다. 인덱스가 uint16이라 65535를 넘을 수 없다.
+	UPROPERTY(EditAnywhere)
 	int32 MaxParticles = 500;
 	
 	// 컴포넌트 기준 로컬 오프셋
+	UPROPERTY(EditAnywhere)
 	FVector EmitterOrigin = FVector::ZeroVector; 	
 	
 	// true : 파티클이 컴포넌트 로컬 좌표로 저장된다 → 액터를 움직이면 파티클도 같이 움직인다
 	// false: 월드 좌표로 저장된다 → 이미 나온 파티클은 그 자리에 남는다
+	UPROPERTY(EditAnywhere)
 	bool bUseLocalSpace = false;
 
 	float EmitterDuration = 1.0f;

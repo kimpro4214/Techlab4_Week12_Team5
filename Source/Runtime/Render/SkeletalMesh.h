@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "Render/Buffer.h"
 #include "Render/SkeletalMeshData.h"
 #include "SkeletalMesh.generated.h"
 
 UCLASS()
-class USkeletalMesh : public URenderAsset
+class USkeletalMesh : public UAsset
 {
 	GENERATED_BODY()
 

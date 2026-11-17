@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Asset/AssetUtils.h"
+
 #include "Core/EngineString.h"
 #include "Core/Types.h"
 #include "Render/StaticMeshData.h"
@@ -16,7 +18,7 @@ enum class EFbxBakeMeshType : uint32
 
 struct FFbxBakeHeader
 {
-	char Magic[4] = { 'F', 'B', 'X', 'B' };
+	uint32 Magic = AssetUtils::MakeMagicNumber("FBXB");
 	// 저장 필드나 정점 등의 바이너리 구조가 바뀌면 올린다.
 	uint32 Version = 1;
 	EFbxBakeMeshType MeshType = EFbxBakeMeshType::StaticMesh;

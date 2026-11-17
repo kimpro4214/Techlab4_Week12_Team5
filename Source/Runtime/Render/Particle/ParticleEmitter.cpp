@@ -6,6 +6,22 @@
 #include "Render/Particle/ParticleSpriteEmitterInstance.h"
 #include "Render/Particle/ParticleModule.h"
 
+void UParticleEmitter::AddLODLevel(UParticleLODLevel* InLODLevel)
+{
+	if (!InLODLevel || LODLevels.Find(InLODLevel) >= 0)
+	{
+		return;
+	}
+
+	if (InLODLevel->GetOuter() && InLODLevel->GetOuter() != this)
+	{
+		return;
+	}
+
+	InLODLevel->SetOuter(this);
+	LODLevels.Add(InLODLevel);
+}
+
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
 	// 지금은 Sprite만 있다. Mesh 이미터가 생기면 TypeData 모듈이 인스턴스 종류를 고른다

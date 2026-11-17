@@ -51,6 +51,24 @@ bool FViewportsPanel::Init() {
 // 패널의 프레임 갱신 인터페이스이며 별도 계산은 하지 않는다.
 void FViewportsPanel::Tick(float DeltaTime) { (void)DeltaTime; }
 
+void FViewportsPanel::OnHidden()
+{
+	bHovered = false;
+	bFocused = false;
+	bStatResetButtonVisible = false;
+	bDraggingVerticalSplitter = false;
+	bDraggingHorizontalSplitter = false;
+	PendingHorizontalDrag = 0.0f;
+	PendingVerticalDrag = 0.0f;
+	bHasLayoutRequest = false;
+}
+
+void FViewportsPanel::SetInteractionEnabled(bool bEnabled)
+{
+	bInteractionEnabled = bEnabled;
+	if (!bEnabled) OnHidden();
+}
+
 // Core Rect에 맞춰 View 활성 상태와 타깃 크기를 갱신한다.
 void FViewportsPanel::SetView(const int32 ViewIndex, const FRect &Rect,
 			const bool bActive) {
@@ -83,6 +101,7 @@ FVector2 FViewportsPanel::GetLocalMousePosition() const {
 // 엔진 입력 처리는 ImGui NewFrame보다 먼저 실행되므로 현재 OS 커서로 버튼
 // 영역을 검사한다.
 bool FViewportsPanel::IsHovered() const {
+	if (!bInteractionEnabled) return false;
 	if (bStatResetButtonVisible && FStatOverlay::IsAnyEnabled()) {
 		POINT Cursor{};
 		if (::GetCursorPos(&Cursor) && Cursor.x >= StatResetButtonMin.x &&
@@ -127,10 +146,16 @@ bool FViewportsPanel::ConsumeLayoutRequest(ELayoutMode &OutMode,
 // View Texture와 Splitter·Layout·Preset UI를 그리고 요청을 기록한다.
 void FViewportsPanel::OnRender() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.0f, 0.0f});
-	ImGui::Begin("Viewports", nullptr,
+	if (!ImGui::Begin("Viewports", nullptr,
 			ImGuiWindowFlags_NoScrollbar |
 			ImGuiWindowFlags_NoScrollWithMouse |
-			ImGuiWindowFlags_NoTitleBar);
+			ImGuiWindowFlags_NoTitleBar))
+	{
+		OnHidden();
+		ImGui::End();
+		ImGui::PopStyleVar();
+		return;
+	}
 
 	ContentOrigin = ImGui::GetCursorScreenPos();
 	ContentSize = ImGui::GetContentRegionAvail();

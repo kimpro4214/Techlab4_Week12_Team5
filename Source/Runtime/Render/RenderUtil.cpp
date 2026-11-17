@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "RenderUtil.h"
+#include "Core/StringUtils.h"
 
 #include <algorithm>
 
@@ -55,7 +56,12 @@ FShaderByteCode RenderUtil::CompileShader(FString Path, const char* EntryPoint, 
 
 	FShaderByteCode ByteCode;
 
-	std::wstring WPath(Path.begin(), Path.end());
+	FWideString WPath;
+	if (!StringUtils::TryUtf8ToWide(Path, WPath))
+	{
+		HTR_LOG(Error, "[Shader] Invalid UTF-8 path: {}", Path);
+		return ByteCode;
+	}
 
 	//for (const auto& D : Defines)
 	//	Macros.push_back({ D.first.c_str(), D.second.c_str() });

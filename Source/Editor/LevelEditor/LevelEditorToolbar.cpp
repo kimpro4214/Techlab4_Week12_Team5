@@ -40,8 +40,8 @@ void FLevelEditorToolbar::Draw()
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8, 6 });
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, { 4, 4 });
-	const bool bOpen = ImGui::BeginViewportSideBar("##LevelEditorToolbar", ImGui::GetMainViewport(),
-		ImGuiDir_Up, Height, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
+	const bool bOpen = ImGui::BeginChild("##LevelEditorToolbar", ImVec2(0.0f, Height),
+		ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
 
 	if (bOpen)
 	{
@@ -49,7 +49,7 @@ void FLevelEditorToolbar::Draw()
 		ToolbarSeparator();
 		DrawPlayGroup();
 	}
-	ImGui::End();                       // Begin 결과와 관계없이 항상 End
+	ImGui::EndChild();                  // Begin 결과와 관계없이 항상 End
 	ImGui::PopStyleVar(2);
 }
 

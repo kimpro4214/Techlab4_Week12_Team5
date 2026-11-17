@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PrimitiveComponent.h"
+#include "Render/Particle/ParticleSystem.h"
 #include "ParticleSystemComponent.generated.h"
 
 class UParticleSystem;               // 정의: Render/Particle/ParticleSystem.h
@@ -27,6 +28,8 @@ public:
 
 	bool IsCompleted() const { return bHasCompleted; }
 
+	virtual void PostEditChangeProperty(const FProperty& Property) override;
+
 	void InitializeSystem();   // Template의 Emitter마다 Instance를 새로 만든다
 	void ResetSystem();        // Instance를 모두 지운다
 
@@ -36,6 +39,7 @@ public:
 	virtual void Deactivate() override;
 
 private:
+	UPROPERTY(EditAnywhere)
 	UParticleSystem* Template = nullptr;
 	TArray<FParticleEmitterInstance*> EmitterInstances;   // 이 컴포넌트가 소유
 

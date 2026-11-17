@@ -46,6 +46,13 @@ void FBinaryArchiveFormatter::LeaveField()
 void FBinaryArchiveFormatter::EnterArray(int32& NumElements)
 {
 	Inner << NumElements;
+	// 영속 애셋에서 손상된 개수로 거대한 배열을 할당하지 않는다.
+	if (Inner.IsError() || NumElements < 0 ||
+		(Inner.HasAnyPortFlags(EPropertyPortFlags::PPF_Asset) && NumElements > 1024 * 1024))
+	{
+		Inner.SetError();
+		NumElements = 0;
+	}
 }
 
 void FBinaryArchiveFormatter::LeaveArray()
@@ -79,6 +86,13 @@ void FBinaryArchiveFormatter::LeaveStreamElement()
 void FBinaryArchiveFormatter::EnterMap(int32& NumElements)
 {
 	Inner << NumElements;
+	// 영속 애셋에서 손상된 개수로 거대한 배열을 할당하지 않는다.
+	if (Inner.IsError() || NumElements < 0 ||
+		(Inner.HasAnyPortFlags(EPropertyPortFlags::PPF_Asset) && NumElements > 1024 * 1024))
+	{
+		Inner.SetError();
+		NumElements = 0;
+	}
 }
 
 void FBinaryArchiveFormatter::LeaveMap()

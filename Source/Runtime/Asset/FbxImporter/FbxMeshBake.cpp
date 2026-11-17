@@ -133,7 +133,7 @@ bool FFbxMeshBake::ReadHeader(std::ifstream& In, FFbxBakeHeader& OutHeader)
 	{
 		return false;
 	}
-	if (std::memcmp(Header.Magic, Expected.Magic, sizeof(Header.Magic)) != 0 || Header.Version != Expected.Version)
+	if (Header.Magic != Expected.Magic || Header.Version != Expected.Version)
 	{
 		return false;
 	}

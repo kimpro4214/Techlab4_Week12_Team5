@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "Render/Buffer.h"
 #include "Render/StaticMeshData.h"
 #include "Render/MeshRenderData.h"
@@ -19,7 +19,7 @@ struct FStaticMeshLODResource
 };
 
 UCLASS()
-class UStaticMesh : public URenderAsset
+class UStaticMesh : public UAsset
 {
 	GENERATED_BODY()
 public:

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Editor/EditorUI/EditorPanel.h"
-#include "Editor/Viewports/EditorViewportClient.h" 
+#include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/LevelViewportLayout.h"
 #include <functional>
 
@@ -22,6 +22,7 @@ public:
 	void Tick(float DeltaTime) override;
 	// 각 View Texture와 Splitter·Layout 조작 UI를 ImGui 패널에 그린다.
 	void OnRender() override;
+	void OnHidden() override;
 	const char *GetPanelName() const override { return "Viewports"; }
 
 	// Core가 계산한 View Rect에 맞춰 해당 클라이언트의 활성 상태와 크기를 갱신한다.
@@ -30,7 +31,8 @@ public:
 	FVector2 GetContentSize() const { return {ContentSize.x, ContentSize.y}; }
 	FVector2 GetLocalMousePosition() const;
 	bool IsHovered() const;
-	bool IsFocused() const { return bFocused; }
+	bool IsFocused() const { return bInteractionEnabled && bFocused; }
+	void SetInteractionEnabled(bool bEnabled);
 
 	float ConsumeHorizontalDrag();
 	float ConsumeVerticalDrag();
@@ -69,6 +71,7 @@ public:
 	}
 
 private:
+	bool bInteractionEnabled = true;
 	const FRenderer* Renderer = nullptr;
 	std::function<void(USkeletalMesh*, int32, const FVector2&)> OnDropSkeletalMesh;
 	int32 ActiveViewIndex = 0;

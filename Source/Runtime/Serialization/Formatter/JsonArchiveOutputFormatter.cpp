@@ -1,7 +1,7 @@
 #include "EnginePCH.h"
 #include "JsonArchiveOutputFormatter.h"
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 
 FJsonArchiveOutputFormatter::FJsonArchiveOutputFormatter(FArchive& InInner)
 	: Inner(InInner)
@@ -171,7 +171,7 @@ void FJsonArchiveOutputFormatter::Serialize(FName& Value)
 void FJsonArchiveOutputFormatter::Serialize(UObject*& Value)
 {
 	// 패키지가 없으므로 에셋 경로가 참조의 식별자 역할을 한다
-	URenderAsset* Asset = Cast<URenderAsset>(Value);
+	UAsset* Asset = Cast<UAsset>(Value);
 	if (Asset && !Asset->GetPath().empty())
 		Top() = Asset->GetPath();
 	else

@@ -52,5 +52,6 @@ public:
 protected:
 	bool bSpawnModule = false;
 	bool bUpdateModule = false;
+	UPROPERTY(EditAnywhere)
 	bool bEnabled = true;
 };

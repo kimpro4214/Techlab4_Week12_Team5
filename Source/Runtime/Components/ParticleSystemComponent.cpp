@@ -1,92 +1,13 @@
 #include "EnginePCH.h"
 #include "Components/ParticleSystemComponent.h"
-#include "Curves/CurveFloat.h"
 #include "Render/Particle/ParticleSystem.h"
 #include "Render/Particle/ParticleEmitter.h"
 #include "Render/Particle/ParticleEmitterInstance.h"
 #include "Render/Particle/ParticleLODLevel.h"
-#include "Render/Particle/ParticleModuleRequired.h"
-#include "Render/Particle/ParticleModuleSpawn.h"
 #include "Render/Particle/ParticleDynamicData.h"
-#include "Render/Particle/ParticleModuleLifetime.h"
-#include "Render/Particle/ParticleModuleLocation.h"
-#include "Render/Particle/ParticleModuleVelocity.h"
-#include "Render/Particle/ParticleModuleColor.h"
-#include "Render/Particle/ParticleModuleColorOverLife.h"
-#include "Render/Particle/ParticleModuleCollision.h"
-#include "Render/Particle/ParticleModuleSize.h"
 #include "Render/Material.h"
 #include "Asset/AssetManager.h"
 #include <algorithm>
-
-namespace
-{
-	// [임시] 에디터가 생기기 전까지 쓰는 테스트용 에셋. 모듈을 추가할 때마다 여기도 늘어난다
-	// 값은 이 엔진 단위(1 = 약 1m, SubUV 파티클 크기 1.2 정도)에 맞춘 것이다
-	UParticleSystem* CreateTestParticleSystem()
-	{
-		UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
-		Required->SetMaxParticles(300);
-		Required->SetMaterial(UAssetManager::GetAssetByPath<UMaterial>("ParticleSpriteMaterial"));
-
-		UParticleModuleSpawn* Spawn = NewObject<UParticleModuleSpawn>();
-		Spawn->SetRate(60.0f);
-
-		UParticleModuleLifetime* Lifetime = NewObject<UParticleModuleLifetime>();
-		Lifetime->MinLifetime = 1.0f;
-		Lifetime->MaxLifetime = 2.0f;
-
-		UParticleModuleLocation* Location = NewObject<UParticleModuleLocation>();
-		Location->StartLocationMin = FVector(-0.2f, -0.2f, 0.0f);
-		Location->StartLocationMax = FVector( 0.2f,  0.2f, 0.0f);
-
-		UParticleModuleVelocity* Velocity = NewObject<UParticleModuleVelocity>();
-		Velocity->StartVelocityMin = FVector(-0.3f, -0.3f, 1.0f);
-		Velocity->StartVelocityMax = FVector( 0.3f,  0.3f, 2.0f);
-
-		UParticleModuleColor* Color = NewObject<UParticleModuleColor>();
-		Color->StartColor = FLinearColor(1.0f, 0.6f, 0.2f, 1.0f);
-
-		UParticleModuleColorOverLife* ColorOverLife = NewObject<UParticleModuleColorOverLife>();
-		ColorOverLife->StartColor = FLinearColor(1.0f, 0.6f, 0.2f, 1.0f);
-		ColorOverLife->EndColor   = FLinearColor(1.0f, 0.1f, 0.0f, 0.0f);   // 붉어지며 사라진다
-		UCurveFloat* ColorBlendCurve = NewObject<UCurveFloat>();
-		ColorBlendCurve->AddKey(0.0f, 0.0f);
-		ColorBlendCurve->AddKey(0.75f, 0.0f);
-		ColorBlendCurve->AddKey(1.0f, 1.0f);
-		ColorOverLife->ColorBlendCurve = ColorBlendCurve;
-
-		UParticleModuleSize* Size = NewObject<UParticleModuleSize>();
-		Size->StartSizeMin = FVector(0.2f, 0.2f, 0.2f);
-		Size->StartSizeMax = FVector(0.4f, 0.4f, 0.4f);
-
-		UParticleLODLevel* LODLevel = NewObject<UParticleLODLevel>();
-		LODLevel->SetRequiredModule(Required);
-		LODLevel->SetSpawnModule(Spawn);
-		LODLevel->AddModule(Lifetime);
-		LODLevel->AddModule(Location);
-		LODLevel->AddModule(Velocity);
-		LODLevel->AddModule(Color);
-		LODLevel->AddModule(ColorOverLife);
-		LODLevel->AddModule(Size);
-		LODLevel->AddModule(NewObject<UParticleModuleCollision>());
-
-		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
-		Emitter->AddLODLevel(LODLevel);
-		Emitter->CacheEmitterModuleInfo();   // 모듈을 다 넣은 뒤 Spawn/Update 목록 분류
-
-		UParticleSystem* System = NewObject<UParticleSystem>();
-		System->AddEmitter(Emitter);
-		return System;
-	}
-
-	// 처음 필요할 때(첫 Tick) 한 번만 만든다. 생성자에서 만들면 엔진 초기화 전에 불릴 수 있다
-	UParticleSystem* GetTestParticleSystem()
-	{
-		static UParticleSystem* TestSystem = CreateTestParticleSystem();
-		return TestSystem;
-	}
-}
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
@@ -107,8 +28,6 @@ void UParticleSystemComponent::BeginPlay()
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate)
 {
-	if (Template == NewTemplate)
-		return;
 	Template = NewTemplate;
 	InitializeSystem();   // 에디터에서도 바로 반영되도록 BeginPlay 여부와 상관없이 다시 만든다
 }
@@ -129,6 +48,7 @@ void UParticleSystemComponent::InitializeSystem()
 	{
 		if (!Emitter)
 			continue;
+		Emitter->CacheEmitterModuleInfo();
 		if (FParticleEmitterInstance* Instance = Emitter->CreateInstance(this))
 			EmitterInstances.Add(Instance);
 	}
@@ -150,7 +70,10 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 
 	if (!Template)
-		Template = GetTestParticleSystem();   // [임시] 에디터가 생기면 지운다
+	{
+		FString Error;
+		Template = UAssetManager::Get().LoadParticleSystem("Assets/Particles/Default.particle", Error);
+	}
 
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
 	// 끄는 중에는 만들지 않는다: 첫 Tick 전에 Deactivate가 불렸는데 여기서 만들면 다시 뿜기 시작한다
@@ -238,4 +161,11 @@ void UParticleSystemComponent::Activate(bool bReset)
 
 	InitializeSystem();
 	Super::Activate(true);
+}
+
+void UParticleSystemComponent::PostEditChangeProperty(const FProperty& Property)
+{
+	Super::PostEditChangeProperty(Property);
+	if (Property.Name == "Template")
+		InitializeSystem();
 }

@@ -37,7 +37,7 @@ UWidget* FWidgetSerializer::LoadWidget(const json& Node)
 		return nullptr;
 	}
 
-	UWidget* Widget = NewObject<UWidget>(nullptr, Class);
+	TUniquePtr<UWidget> Widget(NewObject<UWidget>(nullptr, Class));
 	if (Node.contains("Properties"))
 	{
 		json Properties = Node["Properties"];        // Serialize가 non-const json&를 받는다
@@ -45,13 +45,13 @@ UWidget* FWidgetSerializer::LoadWidget(const json& Node)
 	}
 	Widget->OnLoaded();
 
-	if (UPanelWidget* Panel = Cast<UPanelWidget>(Widget); Panel && Node.contains("Children"))
+	if (UPanelWidget* Panel = Cast<UPanelWidget>(Widget.get()); Panel && Node.contains("Children"))
 	{
 		for (const json& ChildNode : Node["Children"])
 			if (UWidget* Child = LoadWidget(ChildNode))
 				Panel->AddChild(Child);
 	}
-	return Widget;
+	return Widget.release();
 }
 
 TMap<FString, json>& FWidgetAssetCache::GetMap()
@@ -83,7 +83,14 @@ const json* FWidgetAssetCache::Find(const FString& Path)
 
 void FWidgetAssetCache::Invalidate(const FString& Path)
 {
-	GetMap().Remove(Path);
+	// 매니저의 정규화된 절대 경로로 저장해도 런타임의 상대 경로 캐시를 갱신한다.
+	TArray<FString> Matches;
+	for (const auto& [CachedPath, Data] : GetMap())
+	{
+		std::error_code Error;
+		if (CachedPath == Path || fs::equivalent(CachedPath, Path, Error)) Matches.Add(CachedPath);
+	}
+	for (const FString& Match : Matches) GetMap().Remove(Match);
 }
 
 UUserWidget* CreateWidget(UWorld* World, const FString& AssetPath)
