@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UObject/Object.h"
+#include "Asset/Asset.h"
 #include "UObject/Property.h"
 #include "Render/Renderer.h"
 #include "Asset/LOD/StaticMeshLODGenerator.h"
@@ -80,6 +81,10 @@ public:
 
 	void RegisterAsset(const FString& Key, UAsset* Asset);
 
+	// .particle / .asset는 공통 바이너리 형식을 사용한다. 같은 경로는 한 번만 로드한다.
+	UAsset* LoadSerializedAsset(const FString& Path, UClass* ExpectedClass, FString& OutError);
+	UAsset* LoadAssetReference(const FString& Path, FString& OutError);
+
 	//UStaticMesh* GetMesh(FString InName);
 	//UStaticMesh* GetMesh(EPrimitiveType Type); // 오버로드(수정 중)
 
@@ -113,6 +118,9 @@ public:
 	static void ForEachObjStaticMesh(const std::function<void(const FString& Key, UStaticMesh& Mesh)>& Func);
 
 private:
+	void LoadSerializedAssets();
+	UAsset* LoadAndRegisterSerializedAsset(const FString& Key, UClass* ExpectedClass, FString& OutError);
+
 	// 슬롯의 색상과 텍스처 정보로 실제 재질을 생성한다.
 	TUniquePtr<UMaterial> CreateSkeletalMaterial(const FMeshMaterialSlot& Slot, FString& OutError);
 
@@ -121,6 +129,7 @@ private:
 
 	TMap<FString, FString> AssetPathMap;
 	TMap<FString, UAsset*> AssetMap;
+	TArray<FString> LoadingAssetPaths;
 	// 빈 테이크 이름은 파일에서 처음으로 등록한 클립을 사용한다.
 	TMap<FString, UAnimSequence*> FirstFbxAnimations;
 	TMap<FString, USoundWave*> SoundMap;

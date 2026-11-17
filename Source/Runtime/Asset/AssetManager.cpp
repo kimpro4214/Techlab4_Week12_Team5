@@ -1,4 +1,6 @@
 #include "EnginePCH.h"
+#include "Asset/AssetSerializer.h"
+#include "Asset/AssetUtils.h"
 #include "AssetManager.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
@@ -31,14 +33,6 @@
 
 namespace
 {
-	FString GetAssetExtension(const FString& Path) {
-		const std::u8string UTF8Path{ Path.begin(), Path.end() };
-		FString Extension{ std::filesystem::path{ UTF8Path }.extension().string() };
-		for (char& Character : Extension) {
-			Character = static_cast<char>(std::tolower(static_cast<unsigned char>(Character)));
-		}
-		return Extension;
-	}
 
 	UStaticMesh* CreateStaticMesh(const FStaticMeshData* MeshData)
 	{
@@ -295,6 +289,9 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateParticleMaterial();
 	Get().CreateParticleSpriteMaterial();
 	Get().CreateEditorArrowMaterial();
+
+	// 기본 머티리얼과 텍스처가 준비된 뒤 참조를 가진 애셋을 읽는다.
+	Get().LoadSerializedAssets();
 }
 
 void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgress& OnProgress)
@@ -317,10 +314,14 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 	const int32 Total = Files.Num();
 	for (int32 i = 0; i < Total; ++i)
 	{
-		FString Key = fs::relative(Files[i], AssetRoot).generic_string();
-		FString Path = Files[i].generic_string();
+		const std::u8string RelativePath = fs::relative(Files[i], AssetRoot).generic_u8string();
+		const std::u8string FilePath = Files[i].generic_u8string();
+		FString Key(RelativePath.begin(), RelativePath.end());
+		FString Path(FilePath.begin(), FilePath.end());
 		AssetPathMap.Add(Key, Path);
-		LoadAsset(Key, Path);
+		const FString Extension = AssetUtils::GetAssetExtension(Path);
+		if (!AssetUtils::IsSerializedAssetExtension(Extension))
+			LoadAsset(Key, Path);
 
 		if (OnProgress)
 		{
@@ -330,7 +331,14 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 }
 
 void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
-	const FString Extension{ GetAssetExtension(Path) };
+	const FString Extension{ AssetUtils::GetAssetExtension(Path) };
+	if (AssetUtils::IsSerializedAssetExtension(Extension))
+	{
+		FString Error;
+		if (!LoadSerializedAsset(Path, nullptr, Error))
+			HTR_LOG(Error, "Failed to load asset '{}': {}", Path, Error);
+		return;
+	}
 	if (Extension == ".png" || Extension == ".dds") {
 		if (UTexture2D* Texture{ LoadTexture(Path) }) {
 			AssetMap[Key] = Texture;
@@ -1063,4 +1071,83 @@ FLODGenerateResult UAssetManager::GenerateStaticMeshLODs(UStaticMesh& Mesh, cons
 	Mesh.ScreenThresholds = Request.ScreenThresholds;
 	Mesh.RebuildRenderData();
 	return Result;
+}
+
+void UAssetManager::LoadSerializedAssets()
+{
+	for (const auto& [Key, Path] : AssetPathMap)
+	{
+		if (!AssetUtils::IsSerializedAssetExtension(AssetUtils::GetAssetExtension(Path)))
+		{
+			continue;
+		}
+
+		FString Error;
+		if (!LoadSerializedAsset(Path, nullptr, Error))
+		{
+			HTR_LOG(Error, "Failed to load asset '{}': {}", Path, Error);
+		}
+	}
+}
+
+UAsset* UAssetManager::LoadSerializedAsset(const FString& Path, UClass* ExpectedClass, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+
+	// 이미 등록된 경로는 다시 읽지 않는다. 다른 타입을 요청한 경우에만 실패한다.
+	if (UAsset* Existing = AssetMap.FindRef(Key))
+	{
+		if (ExpectedClass && !Existing->IsA(ExpectedClass))
+		{
+			OutError = "Asset path is already registered with a different type: " + Key;
+			return nullptr;
+		}
+
+		return Existing;
+	}
+
+	// 외부 애셋을 재귀 로드하다 같은 경로로 돌아오면 순환 의존성이므로 중단한다.
+	if (LoadingAssetPaths.Find(Key) >= 0)
+	{
+		OutError = "Circular external asset dependency: " + Key;
+		return nullptr;
+	}
+
+	return LoadAndRegisterSerializedAsset(Key, ExpectedClass, OutError);
+}
+
+UAsset* UAssetManager::LoadAndRegisterSerializedAsset(const FString& Key, UClass* ExpectedClass, FString& OutError)
+{
+	LoadingAssetPaths.Add(Key);
+	UAsset* Asset = FAssetSerializer::Load(Key, ExpectedClass, OutError);
+	LoadingAssetPaths.RemoveLast();
+
+	// 완전히 복원된 객체만 공개하여 다른 로드가 미완성 애셋을 참조하지 않게 한다.
+	if (Asset)
+	{
+		RegisterAsset(Key, Asset);
+	}
+
+	return Asset;
+}
+
+
+UAsset* UAssetManager::LoadAssetReference(const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (UAsset* Existing = AssetMap.FindRef(Key))
+	{
+		return Existing;
+	}
+
+	// 기존 형식의 리소스는 초기 스캔에서 준비하고, 바이너리 애셋만 여기서 지연 로드한다.
+	if (AssetUtils::IsSerializedAssetExtension(AssetUtils::GetAssetExtension(Key)))
+	{
+		return LoadSerializedAsset(Key, nullptr, OutError);
+	}
+
+	OutError = "External asset is not registered: " + Key;
+	return nullptr;
 }

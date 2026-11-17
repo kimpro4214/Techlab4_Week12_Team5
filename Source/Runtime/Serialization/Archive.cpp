@@ -19,7 +19,8 @@ FArchive& operator<<(FArchive& Ar, FString& Value)
 	Ar << Num;
 	if (Ar.IsLoading())
 	{
-		if (Num < 0)
+		if (Ar.IsError() || Num < 0 ||
+			(Ar.TotalSize() >= 0 && Ar.Tell() >= 0 && Num > Ar.TotalSize() - Ar.Tell()))
 		{
 			Ar.SetError();
 			return Ar;

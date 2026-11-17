@@ -225,7 +225,8 @@ void FJsonArchiveInputFormatter::Serialize(UObject*& Value)
     if (!Read(AssetPath, "asset path"))
         return;
 
-    if (UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(AssetPath))
+    FString Error;
+    if (UAsset* Asset = UAssetManager::Get().LoadAssetReference(AssetPath, Error))
         Value = Asset;
     else
         HTR_LOG(Warning, "Load: asset '{}' not found, keeping default", AssetPath);
