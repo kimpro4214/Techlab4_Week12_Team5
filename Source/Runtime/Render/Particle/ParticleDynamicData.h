@@ -78,6 +78,15 @@ private:
 	int32 Capacity = 0;                                 // 버퍼가 담을 수 있는 최대 파티클 수
 	TUniquePtr<FIndexBuffer> IndexBuffer;               // 쿼드 인덱스는 변하지 않으니 Static, 모든 뷰가 공유
 	TArray<FParticleSpriteVertex> ScratchVertices;      // 정점 임시 배열. 매 프레임 할당하지 않도록 재사용
+
+	// 정렬은 시뮬레이션 배열을 건드리지 않고 (깊이, 활성 슬롯 번호)만 따로 정렬한다
+	struct FParticleOrder
+	{
+		float Depth;
+		int32 Slot;   // ParticleIndices의 몇 번째인지
+	};
+	void BuildDrawOrder(int32 Count, const FViewContext& View);
+	TArray<FParticleOrder> DrawOrder;                    // 뷰마다 다시 채운다. 재사용
 };
 
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

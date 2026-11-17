@@ -554,6 +554,16 @@ void UAssetManager::CreateParticleSpriteMaterial()
 	SpriteMat->SamplerState = ESamplerState::LinearClamp;
 	SpriteMat->ParamLayout = EMaterialParamLayout::None;
 	RegisterAsset("ParticleSpriteMaterial", SpriteMat);
+
+	// 연기처럼 뒤를 가리는 반투명. 겹치는 순서가 결과를 바꾸므로 Required의 SortMode와 같이 쓴다
+	UMaterial* TranslucentMat = NewObject<UMaterial>();
+	TranslucentMat->PSOType = EPSOType::ParticleSprite_AlphaBlend;
+	TranslucentMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/StarParticle.png"));
+	TranslucentMat->BlendState = EBlendState::AlphaBlend;
+	TranslucentMat->DepthStencilState = EDepthStencilState::ReadOnly;
+	TranslucentMat->SamplerState = ESamplerState::LinearClamp;
+	TranslucentMat->ParamLayout = EMaterialParamLayout::None;
+	RegisterAsset("ParticleSpriteMaterial_AlphaBlend", TranslucentMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

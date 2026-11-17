@@ -16,6 +16,7 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	SpriteData.eEmitterType = EDynamicEmitterType::Sprite;
 	SpriteData.Material     = CurrentLODLevel->GetRequiredModule()->GetMaterial();
 	SpriteData.MaxParticles = MaxActiveParticles;
+	SpriteData.SortMode     = CurrentLODLevel->GetRequiredModule()->GetSortMode();
 	return true;
 }
 

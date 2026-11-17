@@ -8,10 +8,13 @@
 
 class UMaterial;
 
-enum class EParticleSpawnType
+// 이미터 안의 파티클을 그리는 순서. 반투명(AlphaBlend)은 뒤→앞으로 그려야 겹침이 맞는다
+// Additive는 더하는 순서와 결과가 같으므로 None으로 두면 된다
+enum class EParticleSortMode : uint8
 {
 	None,
-	DistanceToView, // 카메라에서 먼 것부터 (Back-to-Front) 
+	ViewDepth,        // 카메라 전방축 기준 깊이. 화면에 평행한 면 단위라 직교 뷰에서도 맞다
+	DistanceToView,   // 카메라 위치까지의 거리. 카메라를 둘러싼 파티클(눈, 비)에 맞다
 };
 
 enum class EDynamicEmitterType : uint8
@@ -39,6 +42,7 @@ struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBas
 {
 	UMaterial* Material = nullptr;
 	int32 MaxParticles = 0;   // GPU 버퍼 용량
+	EParticleSortMode SortMode = EParticleSortMode::None;
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟

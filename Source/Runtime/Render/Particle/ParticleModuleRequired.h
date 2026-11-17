@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/Particle/ParticleModule.h"
+#include "Render/Particle/ParticleHelper.h"
 #include "ParticleModuleRequired.generated.h"
 
 class UMaterial;
@@ -17,11 +18,13 @@ public:
 	int32 GetMaxParticles() const { return MaxParticles; }
 	const FVector& GetEmitterOrigin() const { return EmitterOrigin; }
 	bool IsUseLocalSpace() const { return bUseLocalSpace; }
+	EParticleSortMode GetSortMode() const { return SortMode; }
 
 	void SetMaterial(UMaterial* InMaterial) { Material = InMaterial; }
 	void SetMaxParticles(int32 InMax) { MaxParticles = InMax; }
 	void SetEmitterOrigin(const FVector& InOrigin) { EmitterOrigin = InOrigin; }
 	void SetUseLocalSpace(bool bInLocal) { bUseLocalSpace = bInLocal; }
+	void SetSortMode(EParticleSortMode InMode) { SortMode = InMode; }
 
 private:
 	UMaterial* Material = nullptr;              // 렌더 단계에서 사용
@@ -35,4 +38,7 @@ private:
 	// true : 파티클이 컴포넌트 로컬 좌표로 저장된다 → 액터를 움직이면 파티클도 같이 움직인다
 	// false: 월드 좌표로 저장된다 → 이미 나온 파티클은 그 자리에 남는다
 	bool bUseLocalSpace = false;
+
+	// 이미터 안의 파티클 정렬. AlphaBlend 머티리얼일 때만 의미가 있다
+	EParticleSortMode SortMode = EParticleSortMode::None;
 };

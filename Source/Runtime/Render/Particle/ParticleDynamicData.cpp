@@ -56,6 +56,34 @@ FDynamicSpriteEmitterData::FViewResources* FDynamicSpriteEmitterData::AcquireVie
 	return Resources->VertexBuffer ? Resources : nullptr;
 }
 
+void FDynamicSpriteEmitterData::BuildDrawOrder(int32 Count, const FViewContext& View)
+{
+	DrawOrder.SetNum(Count, false);
+
+	if (Source.SortMode == EParticleSortMode::None)
+	{
+		for (int32 i = 0; i < Count; ++i)
+			DrawOrder[i] = { 0.0f, i };
+		return;
+	}
+
+	// 파티클 위치는 시뮬레이션 공간이라 월드로 옮긴 뒤 카메라와 비교한다
+	const bool bViewDepth = Source.SortMode == EParticleSortMode::ViewDepth;
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
+			Source.ParticleData + Source.ParticleIndices[i] * Source.ParticleStride);
+
+		const FVector Delta = Source.SimulationToWorld.TransformPosition(Particle.Location) - View.CameraPosition;
+		DrawOrder[i].Depth = bViewDepth ? Delta.Dot(View.CameraForward) : Delta.Dot(Delta);
+		DrawOrder[i].Slot  = i;
+	}
+
+	// 먼 것부터 그린다 (Back-to-Front)
+	std::sort(DrawOrder.begin(), DrawOrder.end(),
+		[](const FParticleOrder& A, const FParticleOrder& B) { return A.Depth > B.Depth; });
+}
+
 void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
 {
 	const int32 Count = std::min(Source.ActiveParticleCount, Capacity);
@@ -67,7 +95,10 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 	if (!Resources)
 		return;
 
-	// 1) 파티클 하나당 정점 4개로 펼친다. 실제 코너 위치 계산은 VS가 카메라 축으로 한다
+	// 1) 이 뷰에서 그릴 순서. 카메라가 뷰마다 다르므로 뷰마다 정렬한다
+	BuildDrawOrder(Count, View);
+
+	// 2) 파티클 하나당 정점 4개로 펼친다. 실제 코너 위치 계산은 VS가 카메라 축으로 한다
 	//    순서는 인덱스 패턴(0,1,2 / 0,2,3)과 맞물린다: 좌하 → 좌상 → 우상 → 우하
 	static const FVector2 Corners[4] = {
 		FVector2(-0.5f, -0.5f), FVector2(-0.5f, 0.5f), FVector2(0.5f, 0.5f), FVector2(0.5f, -0.5f) };
@@ -76,7 +107,7 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 	for (int32 i = 0; i < Count; ++i)
 	{
 		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
-			Source.ParticleData + Source.ParticleIndices[i] * Source.ParticleStride);
+			Source.ParticleData + Source.ParticleIndices[DrawOrder[i].Slot] * Source.ParticleStride);
 
 		// 음수 스케일(미러링)이어도 사각형이 뒤집히지 않게 절댓값
 		const FVector2 Size(std::abs(Particle.Size.X * Source.Scale.X), std::abs(Particle.Size.Y * Source.Scale.Y));
@@ -93,16 +124,16 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 		}
 	}
 
-	// 2) 이 뷰 전용 VB에 올린다 (Map WRITE_DISCARD)
+	// 3) 이 뷰 전용 VB에 올린다 (Map WRITE_DISCARD)
 	RenderCommand::UpdateBufferData(Resources->VertexBuffer.get(), ScratchVertices.GetData(),
 		static_cast<uint32>(Count * 4 * sizeof(FParticleSpriteVertex)));
 
-	// 3) 카메라 축과 블렌드 방식 상수 (b1)
+	// 4) 카메라 축과 블렌드 방식 상수 (b1)
 	View.GetBillboardAxes(Resources->Constants.CameraRight, Resources->Constants.CameraUp);
 	Resources->Constants.SoftCircle       = 0.0f;
 	Resources->Constants.PremultiplyAlpha = Source.Material->BlendState == EBlendState::Additive ? 1.0f : 0.0f;
 
-	// 4) 이미터 하나 = 패킷 하나 = DrawIndexed 한 번
+	// 5) 이미터 하나 = 패킷 하나 = DrawIndexed 한 번
 	const FVector Delta = Source.EmitterWorldOrigin - View.CameraPosition;
 
 	FRenderPacket Packet;
