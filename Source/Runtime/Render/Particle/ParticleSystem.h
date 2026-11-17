@@ -21,7 +21,12 @@ public:
 	virtual bool ValidateAsset(FString& OutError) const override;
 	virtual void PostLoadAsset() override;
 
+	float GetLOD1Distance() const { return LOD1Distance; }
+
 private:
 	UPROPERTY()
 	TArray<UParticleEmitter*> Emitters;
+
+	UPROPERTY()
+	float LOD1Distance = 6.0f;
 };

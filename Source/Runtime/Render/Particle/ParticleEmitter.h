@@ -35,6 +35,8 @@ public:
 	uint64 GetRequiredInstanceBytes() const { return RequiredInstanceBytes; }
 	const uint64* FindModuleInstanceOffset(const UParticleModule* Module) const { return ModuleInstanceOffsetMap.Find(Module); }
 
+	bool IsLODCompatible(int32 Index) const;
+
 private:
 	UPROPERTY()
 	TArray<UParticleLODLevel*> LODLevels;

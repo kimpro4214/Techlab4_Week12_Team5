@@ -64,6 +64,8 @@ struct FParticleEmitterInstance
 	void AddCollisionEvent(const FParticleCollisionEvent& Event) { CollisionEvents.Add(Event); }
 	const TArray<FParticleCollisionEvent>& GetCollisionEvents() const { return CollisionEvents; }
 
+	bool SetCurrentLODIndex(int32 Index);
+
 protected:
 	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
 	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);

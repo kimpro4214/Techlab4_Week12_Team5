@@ -7,6 +7,9 @@
 #include "Render/Particle/ParticleDynamicData.h"
 #include "Render/Material.h"
 #include "Asset/AssetManager.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
+#include "Engine/World.h"
 #include <algorithm>
 
 UParticleSystemComponent::UParticleSystemComponent()
@@ -83,8 +86,28 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한
 	DeltaTime = std::min(DeltaTime, 0.1f);
 
+	const UWorld* World = GetWorld();
+	const ACameraActor* MainCamera = World ? World->GetMainCamera() : nullptr;
+	const UCameraComponent* Camera = MainCamera ? MainCamera->GetCameraComponent() : nullptr;
+
+	const float CameraDistance = Camera ? (Camera->GetWorldLocation() - GetWorldLocation()).Length() : 0.0f;
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Camera && Template && Instance->SpriteTemplate->GetLODLevel(1)) 
+		{
+			const float FarDistance = Template->GetLOD1Distance();
+			const float ReturnDistance = std::max(0.0f, FarDistance - 1.0f);
+			const int32 CurrentLOD = Instance->CurrentLODLevelIndex;
+
+			const float SwitchDistance = (CurrentLOD == 0) ? FarDistance : ReturnDistance;
+			const int32 DesiredLOD = (CameraDistance >= SwitchDistance) ? 1 : 0;
+
+			if (DesiredLOD != CurrentLOD)
+				Instance->SetCurrentLODIndex(DesiredLOD);
+		}
 		Instance->Tick(DeltaTime);
+	}
 
 	// 시뮬레이션이 끝난 뒤 프레임당 한 번 렌더 데이터를 만든다
 	// 뷰마다 만들면 안 된다: GetDynamicData가 뷰 버퍼 인덱스를 처음으로 되돌린다

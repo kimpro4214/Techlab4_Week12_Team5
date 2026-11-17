@@ -316,3 +316,13 @@ void FParticleEmitterInstance::FreeParticleData()
 	ActiveParticles = 0;
 	MaxActiveParticles = 0;
 }
+
+bool FParticleEmitterInstance::SetCurrentLODIndex(int32 Index)
+{
+	if (!SpriteTemplate || !CurrentLODLevel || !SpriteTemplate->IsLODCompatible(Index))
+		return false;
+
+	CurrentLODLevelIndex = Index;
+	CurrentLODLevel = SpriteTemplate->GetLODLevel(Index);
+	return true;
+}
