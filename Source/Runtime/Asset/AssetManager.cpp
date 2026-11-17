@@ -294,6 +294,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateBillboardMaterial();
 	Get().CreateParticleMaterial();
 	Get().CreateParticleSpriteMaterial();
+	Get().CreateParticleMeshMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -564,6 +565,19 @@ void UAssetManager::CreateParticleSpriteMaterial()
 	TranslucentMat->SamplerState = ESamplerState::LinearClamp;
 	TranslucentMat->ParamLayout = EMaterialParamLayout::None;
 	RegisterAsset("ParticleSpriteMaterial_AlphaBlend", TranslucentMat);
+}
+
+// Mesh 파티클 인스턴싱 재질. Required의 Material로 넣으면 이미터 전체를 한 번에 그린다
+// 텍스처 없이 파티클 색 × 고정 방향광으로 칠한다
+void UAssetManager::CreateParticleMeshMaterial()
+{
+	UMaterial* MeshMat = NewObject<UMaterial>();
+	MeshMat->PSOType = EPSOType::ParticleMesh;
+	MeshMat->BlendState = EBlendState::Opaque;
+	MeshMat->DepthStencilState = EDepthStencilState::Default;
+	MeshMat->SamplerState = ESamplerState::LinearClamp;
+	MeshMat->ParamLayout = EMaterialParamLayout::None;
+	RegisterAsset("ParticleMeshMaterial", MeshMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

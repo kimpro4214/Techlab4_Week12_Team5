@@ -155,9 +155,9 @@ void RenderCommand::DrawIndexed(uint32 IndexCount, uint32 StartIndexLocation, in
 	RenderDevice->GetContext()->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
 }
 
-void RenderCommand::DrawInstance(uint32 IndexCount, uint32 StartIndexLocation, int32 BaseVertexLocation)
+void RenderCommand::DrawIndexedInstanced(uint32 IndexCount, uint32 InstanceCount, uint32 StartIndexLocation, int32 BaseVertexLocation)
 {
-	//RenderDevice->GetContext()->DrawInstanced();
+	RenderDevice->GetContext()->DrawIndexedInstanced(IndexCount, InstanceCount, StartIndexLocation, BaseVertexLocation, 0);
 }
 
 void RenderCommand::UpdateBufferData(FBuffer* InBuffer, const void* Data, uint32 DataSize)

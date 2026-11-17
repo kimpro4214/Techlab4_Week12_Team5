@@ -57,6 +57,9 @@ struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
 {
 	UStaticMesh* Mesh = nullptr;
 	EParticleMeshAlignment Alignment = EParticleMeshAlignment::None;
+	// Required의 Material. ParticleMesh 재질이면 인스턴싱으로, 아니면 메시 자체 재질로 파티클마다 그린다
+	UMaterial* Material = nullptr;
+	int32 MaxParticles = 0;   // 인스턴스 버퍼 용량
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟

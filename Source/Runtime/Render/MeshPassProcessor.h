@@ -35,6 +35,7 @@ struct FMeshDrawBatch
 		uint32 IndexCount = 0;
 		const void* ObjectKey = nullptr;
 		bool bOccludedByGpu = false;
+		uint32 InstanceCount = 0;   // 0이면 일반 DrawIndexed
 	};
 
 	FPipelineState Pipeline;
@@ -44,6 +45,7 @@ struct FMeshDrawBatch
 	FStructuredBuffer* SkinWeightBuffer = nullptr;
 	FStructuredBuffer* SkinningMatrixBuffer = nullptr;
 	bool bSkeletalMesh = false;
+	FStructuredBuffer* InstanceBuffer = nullptr;   // 인스턴스별 데이터 (VS t16)
 
 	TArray<FTextureBinding> Textures;
 	ESamplerState Sampler = ESamplerState::LinearClamp;

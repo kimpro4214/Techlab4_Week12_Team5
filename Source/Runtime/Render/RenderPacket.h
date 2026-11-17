@@ -27,6 +27,9 @@ struct FRenderPacket
 	uint32 Slot = InvalidObjectSlot;
 	uint8 LODIndex = 0;
 	bool bOccludedByGpu = false;
+	// 인스턴싱: InstanceCount > 0이면 InstanceBuffer(VS t16)를 바인딩하고 DrawIndexedInstanced로 그린다
+	FStructuredBuffer* InstanceBuffer = nullptr;
+	uint32 InstanceCount = 0;
 
 	FMeshGeometry GetGeometry() const
 	{

@@ -89,18 +89,41 @@ private:
 	TArray<FParticleOrder> DrawOrder;                    // 뷰마다 다시 채운다. 재사용
 };
 
-// 스태틱 메시 Emitter 용
-// 지금은 파티클 하나 × 메시 섹션 하나 = 패킷 하나로 그린다. 메시 자체 VB/IB를 쓰므로 GPU 버퍼를 따로 갖지 않는다
+// 인스턴스 하나(파티클 하나)의 데이터. ParticleMeshShader.hlsl의 FParticleMeshInstance와 같아야 한다 (80바이트)
+struct FParticleMeshInstance
+{
+	FMatrix  World;   // 메시 로컬 → 월드
+	FVector4 Color;
+};
+static_assert(sizeof(FParticleMeshInstance) == 80, "ParticleMeshShader.hlsl과 크기가 달라지면 안 된다");
+
+// 스태틱 메시 Emitter 용. 메시 자체 VB/IB를 쓴다
+// - Required 재질이 ParticleMesh이면: 인스턴스 버퍼에 파티클 행렬·색을 올리고 섹션마다 DrawIndexedInstanced 한 번
+// - 아니면: 메시 자체 재질(씬 조명)로 파티클 하나 × 섹션 하나 = 패킷 하나
 struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicMeshEmitterReplayData Source;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+
+	// 매 프레임 Source를 갱신한 직후 호출한다. 인스턴싱이면 인스턴스 버퍼를 채워 올린다
+	void Init();
+
 	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
 
 private:
+	bool UsesInstancing() const;
+
 	// 파티클 하나의 메시 로컬 → 시뮬레이션 공간 행렬 (크기, 방향, 위치)
 	FMatrix BuildParticleMatrix(const FBaseParticle& Particle) const;
+
+	void SubmitInstanced(FRenderQueue& RenderQueue, const FViewContext& View);
+	void SubmitPerParticle(FRenderQueue& RenderQueue, const FViewContext& View);
+
+	TUniquePtr<FStructuredBuffer> InstanceBuffer;   // 모든 뷰가 같이 쓴다 (행렬이 뷰와 무관)
+	int32 InstanceCapacity = 0;
+	int32 UploadedCount = 0;                        // 이번 프레임에 올린 인스턴스 수
+	TArray<FParticleMeshInstance> ScratchInstances; // 매 프레임 할당하지 않도록 재사용
 };
 
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

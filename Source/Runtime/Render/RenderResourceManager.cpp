@@ -49,6 +49,7 @@ constexpr FPipelineTableEntry PipelineTable[] =
 	{ EPSOType::SkeletalMesh_BoneWeight, "Resources/Shader/BoneWeightHeatmap.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidBack, EBlendState::Opaque, EDepthStencilState::Default },
 	{ EPSOType::ParticleSprite_Additive,   "Resources/Shader/ParticleSpriteShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::Additive,   EDepthStencilState::ReadOnly },
 	{ EPSOType::ParticleSprite_AlphaBlend, "Resources/Shader/ParticleSpriteShader.hlsl", EPrimitiveTopology::TriangleList, ERasterizerState::SolidNone, EBlendState::AlphaBlend, EDepthStencilState::ReadOnly },
+	{ EPSOType::ParticleMesh,              "Resources/Shader/ParticleMeshShader.hlsl",   EPrimitiveTopology::TriangleList, ERasterizerState::SolidBack, EBlendState::Opaque,     EDepthStencilState::Default },
 };
 
 static_assert(sizeof(PipelineTable) / sizeof(PipelineTable[0]) == static_cast<size_t>(EPSOType::Count));

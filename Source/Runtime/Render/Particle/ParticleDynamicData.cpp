@@ -191,7 +191,83 @@ FMatrix FDynamicMeshEmitterData::BuildParticleMatrix(const FBaseParticle& Partic
 		FVector4(P.X, P.Y, P.Z, 1.0f));
 }
 
+bool FDynamicMeshEmitterData::UsesInstancing() const
+{
+	return Source.Material && Source.Material->PSOType == EPSOType::ParticleMesh;
+}
+
+void FDynamicMeshEmitterData::Init()
+{
+	UploadedCount = 0;
+	if (!UsesInstancing() || !Source.Mesh)
+		return;
+
+	const int32 Count = std::min(Source.ActiveParticleCount, Source.MaxParticles);
+	if (Count <= 0)
+		return;
+
+	// 용량이 늘었을 때만 다시 만든다
+	if (!InstanceBuffer || Source.MaxParticles > InstanceCapacity)
+	{
+		InstanceCapacity = Source.MaxParticles;
+		InstanceBuffer = RenderCommand::CreateDynamicStructuredBuffer(
+			static_cast<uint32>(InstanceCapacity), static_cast<uint32>(sizeof(FParticleMeshInstance)));
+		if (!InstanceBuffer)
+			return;
+	}
+
+	ScratchInstances.SetNum(Count, false);
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
+			Source.ParticleData + Source.ParticleIndices[i] * Source.ParticleStride);
+
+		FParticleMeshInstance& Instance = ScratchInstances[i];
+		Instance.World = BuildParticleMatrix(Particle) * Source.SimulationToWorld;   // 메시 로컬 → 시뮬레이션 공간 → 월드
+		Instance.Color = FVector4(Particle.Color.R, Particle.Color.G, Particle.Color.B, Particle.Color.A);
+	}
+
+	RenderCommand::UpdateBufferData(InstanceBuffer.get(), ScratchInstances.GetData(),
+		static_cast<uint32>(Count * sizeof(FParticleMeshInstance)));
+	UploadedCount = Count;
+}
+
 void FDynamicMeshEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	if (UsesInstancing())
+		SubmitInstanced(RenderQueue, View);
+	else
+		SubmitPerParticle(RenderQueue, View);
+}
+
+void FDynamicMeshEmitterData::SubmitInstanced(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	UStaticMesh* Mesh = Source.Mesh;
+	if (UploadedCount <= 0 || !Mesh || !InstanceBuffer)
+		return;
+
+	// 행렬은 인스턴스 버퍼에 이미 월드로 들어 있다. 패킷 World(b2)는 쓰지 않는다
+	const FVector Delta = Source.EmitterWorldOrigin - View.CameraPosition;
+
+	// 섹션 하나 = 패킷 하나 = DrawIndexedInstanced 한 번 (파티클 수와 무관)
+	for (const FStaticMeshSection& Section : Mesh->GetMeshData().Sections)
+	{
+		if (Section.IndexCount == 0)
+			continue;
+
+		FRenderPacket& Packet = RenderQueue.AddDefaulted_GetRef();
+		Packet.Mesh                     = Mesh;
+		Packet.Material                 = Source.Material;
+		Packet.StartIndex               = Section.StartIndex;
+		Packet.IndexCount               = Section.IndexCount;
+		Packet.LODIndex                 = 0;
+		Packet.CameraToParticleDistance = Delta.Dot(Delta);
+		Packet.InstanceBuffer           = InstanceBuffer.get();
+		Packet.InstanceCount            = static_cast<uint32>(UploadedCount);
+	}
+}
+
+void FDynamicMeshEmitterData::SubmitPerParticle(FRenderQueue& RenderQueue, const FViewContext& View)
 {
 	UStaticMesh* Mesh = Source.Mesh;
 	const int32 Count = Source.ActiveParticleCount;

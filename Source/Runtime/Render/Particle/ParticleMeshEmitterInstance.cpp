@@ -24,6 +24,8 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	MeshData.eEmitterType = EDynamicEmitterType::Mesh;
 	MeshData.Mesh         = MeshTypeData->Mesh;
 	MeshData.Alignment    = MeshTypeData->Alignment;
+	MeshData.Material     = CurrentLODLevel->GetRequiredModule()->GetMaterial();
+	MeshData.MaxParticles = MaxActiveParticles;
 
 	// 로컬 공간이면 SimulationToWorld(=컴포넌트 행렬)에 이미 스케일이 들어 있다. 두 번 곱하지 않도록 1로 둔다
 	if (CurrentLODLevel->GetRequiredModule()->IsUseLocalSpace())
@@ -41,5 +43,8 @@ FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData()
 
 	if (!FillReplayData(DynamicData->Source))
 		return nullptr;
+
+	// 인스턴스 행렬은 뷰와 상관없으므로 프레임당 한 번만 만들어 올린다
+	DynamicData->Init();
 	return DynamicData.get();
 }

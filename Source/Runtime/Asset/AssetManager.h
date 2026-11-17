@@ -64,6 +64,7 @@ public:
 	void CreateBillboardMaterial();
 	void CreateParticleMaterial();
 	void CreateParticleSpriteMaterial();
+	void CreateParticleMeshMaterial();
 	void CreateEditorArrowMaterial();
 
 	template <typename T>

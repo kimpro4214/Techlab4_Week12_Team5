@@ -250,6 +250,11 @@ bool FMeshPassProcessor::Build(const FSceneView& View, const FRenderQueue& Queue
 
 		Batch.Items.Add(BuildItem(PacketWorld(Packet), View, Pass, Packet.Slot,
 			Packet.StartIndex, IndexCount, ObjectKey, Packet.bOccludedByGpu, !Packet.Proxy || Packet.Proxy->bReceiveShadow));
+		if (Packet.InstanceBuffer && Packet.InstanceCount > 0)
+		{
+			Batch.InstanceBuffer = Packet.InstanceBuffer;
+			Batch.Items.Last().InstanceCount = Packet.InstanceCount;
+		}
 		Out.Add(std::move(Batch));
 	}
 	return true;

@@ -16,6 +16,8 @@
 
 namespace
 {
+	// 인스턴싱 드로우의 인스턴스 데이터(StructuredBuffer). 다른 셰이더가 쓰지 않는 VS 슬롯
+	constexpr uint32 InstanceBufferSlot = 16;
 	constexpr uint32 PerObjectSlotConstants = 16;
 	constexpr uint32 MinPerObjectSlots = 1024;
 }
@@ -114,11 +116,19 @@ void FRenderer::DrawMeshes(std::span<const FMeshDrawBatch> Batches)
 		PreviousTextureCount = static_cast<uint32>(Batch.Textures.Num());
 		// CPU/GPU 모드 모두 SkeletalMesh 드로우만 측정한다. PS/래스터 비용도 포함한다.
 		const uint32 QueryIndex = Batch.bSkeletalMesh ? BeginSkinningDrawProfile() : ~0u;
+		if (Batch.InstanceBuffer)
+			RenderCommand::BindShaderResource(InstanceBufferSlot, Batch.InstanceBuffer, EShaderBindFlagBits::Vertex);
 		for (const FMeshDrawBatch::FItem& Item : Batch.Items)
 		{
 			BindObject(Batch, Item);
-			RenderCommand::DrawIndexed(Item.IndexCount, Item.StartIndex);
+			if (Item.InstanceCount > 0)
+				RenderCommand::DrawIndexedInstanced(Item.IndexCount, Item.InstanceCount, Item.StartIndex);
+			else
+				RenderCommand::DrawIndexed(Item.IndexCount, Item.StartIndex);
 		}
+		// 다음 배치가 이전 인스턴스 버퍼를 읽지 않도록 해제한다
+		if (Batch.InstanceBuffer)
+			RenderCommand::BindShaderResource(InstanceBufferSlot, static_cast<const FStructuredBuffer*>(nullptr), EShaderBindFlagBits::Vertex);
 		EndSkinningDrawProfile(QueryIndex);
 	}
 }
