@@ -116,6 +116,12 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate)
 void UParticleSystemComponent::InitializeSystem()
 {
 	ResetSystem();
+
+	// 인스턴스를 새로 만들면 새 생애가 시작된다 → 이전 생애의 끄는 중/완료 상태를 지운다
+	// 지우지 않으면 완료 후 다시 켜도 Tick 첫머리에서 return 해서 아무것도 나오지 않는다
+	bPendingDeactivate = false;
+	bHasCompleted = false;
+
 	if (!Template)
 		return;
 
@@ -139,13 +145,16 @@ void UParticleSystemComponent::ResetSystem()
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	if (bHasCompleted) return;
+
 	Super::TickComponent(DeltaTime);
 
 	if (!Template)
 		Template = GetTestParticleSystem();   // [임시] 에디터가 생기면 지운다
 
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
-	if (EmitterInstances.IsEmpty() && Template)
+	// 끄는 중에는 만들지 않는다: 첫 Tick 전에 Deactivate가 불렸는데 여기서 만들면 다시 뿜기 시작한다
+	if (EmitterInstances.IsEmpty() && Template && !bPendingDeactivate)
 		InitializeSystem();
 
 	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한
@@ -173,6 +182,23 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		HTR_LOG(Info, "[Particle] Emitters: {}, Active: {}, RenderData: {}, FirstEmitterRenderCount: {}",
 			EmitterInstances.Num(), GetNumActiveParticles(), EmitterRenderData.Num(), RenderParticles);
 	}
+
+	bool bAllCompleted = !EmitterInstances.IsEmpty(); 
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (!Instance->HasCompleted())
+		{
+			bAllCompleted = false;
+			break;
+		}
+	}
+	if (bAllCompleted)
+	{
+		bHasCompleted = true;
+		bPendingDeactivate = false;
+		EmitterRenderData.Reset();
+		Super::Deactivate(); 
+	}
 }
 
 void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
@@ -193,4 +219,23 @@ int32 UParticleSystemComponent::GetNumActiveParticles() const
 FBox UParticleSystemComponent::CalcLocalBounds() const
 {
 	return FBox{ FVector(-BoundsExtent, -BoundsExtent, -BoundsExtent), FVector(BoundsExtent, BoundsExtent, BoundsExtent) };
+}
+
+void UParticleSystemComponent::Deactivate()
+{
+	if (bPendingDeactivate) return;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		Instance->StopSpawning();
+	}
+	bPendingDeactivate = true;
+}
+
+void UParticleSystemComponent::Activate(bool bReset)
+{
+	bool IsEmitting = (EmitterInstances.Num() != 0 && !bPendingDeactivate && !bHasCompleted);
+	if (IsEmitting && !bReset) return;
+
+	InitializeSystem();
+	Super::Activate(true);
 }
