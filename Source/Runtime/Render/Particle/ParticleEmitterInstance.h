@@ -61,6 +61,9 @@ struct FParticleEmitterInstance
 	void StopSpawning() { bSpawnFinished = true; }
 	bool HasCompleted() const { return bSpawnFinished && ActiveParticles == 0; }
 
+	void AddCollisionEvent(const FParticleCollisionEvent& Event) { CollisionEvents.Add(Event); }
+	const TArray<FParticleCollisionEvent>& GetCollisionEvents() const { return CollisionEvents; }
+
 protected:
 	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
 	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);
@@ -80,4 +83,5 @@ protected:
 
 private:
 	bool bSpawnFinished = false;
+	TArray<FParticleCollisionEvent> CollisionEvents;
 };

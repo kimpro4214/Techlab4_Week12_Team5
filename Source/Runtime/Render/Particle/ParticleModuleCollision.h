@@ -9,7 +9,12 @@ class UParticleModuleCollision : public UParticleModule
 	GENERATED_BODY()
 
 public:
-	UParticleModuleCollision() { bUpdateModule = true; }
+	UParticleModuleCollision()
+	{
+		bSpawnModule = true;
+		bUpdateModule = true;
+	}
 
+	void Spawn(const FSpawnContext& Context) override;
 	void Update(const FUpdateContext& Context) override;
 };

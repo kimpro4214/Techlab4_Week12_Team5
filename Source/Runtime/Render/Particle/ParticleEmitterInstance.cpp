@@ -17,6 +17,7 @@ FParticleEmitterInstance::~FParticleEmitterInstance()
 
 bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent)
 {
+	CollisionEvents.Reset();
 	if (!InTemplate || !InComponent)
 		return false;
 
@@ -108,6 +109,7 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& Initia
 		DECLARE_PARTICLE_PTR(Particle, ParticleDataBlock.ParticleData + ParticleStride * CurrentIndex);
 
 		PreSpawn(Particle, InitialLocation);
+		Particle->ParticleId = ParticleCounter++;
 
 		const float SpawnTime = std::max(0.0f, FirstSpawnTime - i * SpawnInterval);
 		for (UParticleModule* Module : CurrentLODLevel->GetSpawnModules())
@@ -116,12 +118,15 @@ void FParticleEmitterInstance::SpawnParticles(int32 Count, const FVector& Initia
 			Module->Spawn({ *this, Offset, SpawnTime, Particle });
 		}
 
+		// Spawn 모듈에서 수명을 다한 입자로 표시하면 활성 목록에 넣지 않는다.
+		if (Particle->RelativeTime >= 1.0f)
+			continue;
+
 		Particle->Location += Particle->Velocity * SpawnTime;
 		Particle->Rotation += Particle->RotationRate * SpawnTime;
 		Particle->RelativeTime += Particle->OneOverMaxLifetime * SpawnTime;
 
 		++ActiveParticles;
-		++ParticleCounter;
 	}
 }
 
@@ -156,6 +161,7 @@ void FParticleEmitterInstance::UpdateTransforms()
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
+	CollisionEvents.Reset();
 	if (!CurrentLODLevel || !Component)
 		return;
 

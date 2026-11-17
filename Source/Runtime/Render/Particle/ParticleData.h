@@ -21,6 +21,7 @@ struct FBaseParticle
 	FVector BaseSize = FVector(1.0f, 1.0f, 1.0f); // Spawn 모듈이 정한 기준 크기
 	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	FLinearColor BaseColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	uint32 ParticleId = 0; // 파티클 고유 ID. Spawn 시 증가하는 카운터를 부여한다
 };
 
 // 파티클 데이터 + 인덱스를 한 번의 할당으로 보관하는 블록
@@ -32,4 +33,13 @@ struct FParticleDataContainer
 	int32 ParticleIndicesNumShorts = 0; // 인덱스 개수 (= MAX)
 	uint8* ParticleData = nullptr; // 블록 시작 주소
 	uint16* ParticleIndices = nullptr; // 파티클 인덱스 배열. 
+};
+
+struct FParticleCollisionEvent
+{
+	uint32 ParticleId = 0;
+	uint32 HitComponentId = 0;
+	FVector WorldPosition;
+	FVector WorldNormal;
+	FVector IncomingWorldVelocity;
 };
