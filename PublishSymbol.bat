@@ -78,8 +78,17 @@ if errorlevel 1 (
 )
 
 rem 최종 기록이 완료된 pdb와 exe를 SymbolServer에 등록, sysmstore.exe 이용
+rem symstore는 실패하면 0이 아닌 종료 코드를 돌려준다. 하나라도 실패하면 Done을 찍지 않고 멈춘다
 "%DBGTOOLS%\symstore.exe" add /f "%PDB%" /s "%SYM_LOCAL%" /t Hitori /v %VERSION%
+if errorlevel 1 (
+    echo [Publish] symstore failed to store %PDB%.
+    exit /b 1
+)
 "%DBGTOOLS%\symstore.exe" add /f "%EXE%" /s "%SYM_LOCAL%" /t Hitori /v %VERSION%
+if errorlevel 1 (
+    echo [Publish] symstore failed to store %EXE%.
+    exit /b 1
+)
 
 echo [Publish] Done: %VERSION%
 endlocal
