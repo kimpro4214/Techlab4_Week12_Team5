@@ -19,19 +19,42 @@ void FBoneHierarchyPanel::DrawBoneTreeNode(int32 BoneIndex)
 	const auto& Skeleton = Editor.GetReferenceSkeleton();
 	const auto& Children = Editor.GetBoneChildren();
 	const bool bLeaf = Children[BoneIndex].IsEmpty();
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-		ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-	if (bLeaf) Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	if (BoneIndex == Editor.GetSelectedBoneIndex()) Flags |= ImGuiTreeNodeFlags_Selected;
+
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow
+		| ImGuiTreeNodeFlags_OpenOnDoubleClick
+		| ImGuiTreeNodeFlags_SpanAvailWidth
+		| ImGuiTreeNodeFlags_DefaultOpen;
+
+	if (bLeaf)
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	if (BoneIndex == Editor.GetSelectedBoneIndex())
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
 	const bool bChanged = Skeleton.RawRefBonePose[BoneIndex] != Editor.GetPreviewPose().LocalPose[BoneIndex];
 	const FString Name = Skeleton.RawRefBoneInfo[BoneIndex].Name.ToString() + (bChanged ? " *" : "");
+
 	ImGui::PushID(BoneIndex);
 	const bool bOpen = ImGui::TreeNodeEx("##Bone", Flags, "%s", Name.c_str());
-	if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) Editor.SelectBone(BoneIndex);
+
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen())
+	{
+		Editor.SelectBone(BoneIndex);
+	}
+
 	if (bOpen && !bLeaf)
 	{
-		for (int32 Child : Children[BoneIndex]) DrawBoneTreeNode(Child);
+		for (int32 Child : Children[BoneIndex])
+		{
+			DrawBoneTreeNode(Child);
+		}
+
 		ImGui::TreePop();
 	}
+
 	ImGui::PopID();
 }
