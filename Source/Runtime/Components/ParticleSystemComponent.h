@@ -25,10 +25,15 @@ public:
 	void SetTemplate(UParticleSystem* NewTemplate);
 	UParticleSystem* GetTemplate() const { return Template; }
 
+	bool IsCompleted() const { return bHasCompleted; }
+
 	void InitializeSystem();   // Template의 Emitter마다 Instance를 새로 만든다
 	void ResetSystem();        // Instance를 모두 지운다
 
 	int32 GetNumActiveParticles() const;   // 모든 Emitter의 활성 파티클 합 (Stat/디버그용)
+	
+	virtual void Activate(bool bReset = false) override;
+	virtual void Deactivate() override;
 
 private:
 	UParticleSystem* Template = nullptr;
@@ -42,4 +47,7 @@ private:
 	float BoundsExtent = 10.0f;
 
 	float DebugLogTimer = 0.0f;   // [임시] 1초마다 활성 수 로그. 렌더가 붙으면 지운다
+
+	bool bPendingDeactivate = false;
+	bool bHasCompleted = false;
 };
