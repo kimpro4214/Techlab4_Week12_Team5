@@ -18,6 +18,8 @@ enum class EDynamicEmitterType : uint8
 {
 	Sprite,
 	Mesh,
+	Ribbon,
+	Beam
 };
 
 // 렌더 쪽이 읽을 이미터 스냅샷 
@@ -37,6 +39,14 @@ struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBas
 {
 	UMaterial* Material = nullptr;
 	int32 MaxParticles = 0;   // GPU 버퍼 용량
+};
+
+struct FDynamicRibbonEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
+{
+	UMaterial* Material = nullptr;
+	int32 MaxParticles = 0;						// 렌더 쪽 버퍼 용량
+	const uint16* OrderedSlots = nullptr;       // ParticleIndices를 생성 순서대로 정렬한것, Particle을 Spawn 순서대로 정렬함
+	int32 OrderedSlotCount = 0;					// Slot에 있는 Particle 개수, 총 이어야 할 점의 개수
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟
