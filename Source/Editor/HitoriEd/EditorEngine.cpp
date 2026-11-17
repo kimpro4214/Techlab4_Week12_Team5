@@ -46,6 +46,7 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
+#include "Editor/ParticleEditor/ParticleEditor.h"
 #include "Editor/AnimationSequenceEditor/AnimationSequenceEditor.h"
 #include "Editor/UIEditor/UIEditor.h"
 #include "UObject/UObjectIterator.h"
@@ -198,6 +199,20 @@ bool UEditorEngine::Init()
 	{
 		return MakeUnique<FUIEditor>(Manager, Key, UIRenderer.get());
 	});
+	EditorManager->RegisterFactory("Particle", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
+	{
+		FString Error;
+		UParticleSystem* System = UAssetManager::Get().LoadParticleSystem(Key.AssetPath, Error);
+		if (!System)
+		{
+			HTR_LOG(Error, "Cannot open particle '{}': {}", Key.AssetPath, Error);
+			return nullptr;
+		}
+
+		return MakeUnique<FParticleEditor>(this, Manager, Key, System, &SettingsPanel->GetSettings(),
+			[this](FParticleEditor& Editor) { RenderParticlePreview(Editor); });
+	});
+	ContentDrawerPanel->SetOpenParticleCallback([this](const FString& Path) { EditorManager->OpenEditor({ "Particle", Path, "" }); });
 	EditorManager->RegisterFactory("StaticMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		FString Error;
@@ -1107,6 +1122,59 @@ void UEditorEngine::RenderAnimationSequencePreview(FAnimationSequenceEditor& Edi
 }
 
 void UEditorEngine::RenderStaticMeshPreview(FStaticMeshEditor& Editor)
+{
+
+	UWorld* PreviewWorld = Editor.GetPreviewWorld();
+	FEditorViewportClient* PreviewClient = Editor.GetViewportClient();
+	if (!PreviewWorld ||
+		!PreviewClient ||
+		PreviewClient->GetWidth() == 0 ||
+		PreviewClient->GetHeight() == 0 ||
+		!PreviewClient->GetColorTarget()) return;
+
+	FSceneRenderOptions Options;
+	BuildSceneRenderOptions(PreviewClient, false, Options);
+
+	const FSceneView SceneView = PreviewClient->CalcSceneView();
+
+	FSceneRenderer SceneRenderer(PreviewWorld, SceneView, PreviewClient->GetRenderData());
+	SceneRenderer.InitViews(Renderer, Options);
+
+	FSceneViewTargets& Targets = PreviewClient->GetViewTargets();
+	RenderScene(Targets, SceneView, SceneRenderer, PreviewWorld, Options,
+		[this, &Editor, &SceneView, &Targets](FSceneOverlayCallbacks& Overlays)
+		{
+			if (Editor.IsRenderGrid())
+			{
+				const FViewportSettings ViewportSettings
+				{
+					.StartX = 0,
+					.StartY = 0,
+					.Width = Targets.SceneColor->GetWidth(),
+					.Height = Targets.SceneColor->GetHeight(),
+					.MinDepth = 0.0f,
+					.MaxDepth = 1.0f,
+				};
+
+				Overlays.EditorGrid = [this, &SceneView, ViewportSettings]
+					{
+						GridRenderer->OnRenderBatchGrid(
+							SceneView.ViewProjectionMatrix,
+							SceneView.ViewLocation,
+							SceneView.ViewForward,
+							EGridPlane::XY,
+							static_cast<float>(SettingsPanel->GetSettings().GridSpacing),
+							SceneView.bIsPerspective,
+							ViewportSettings);
+					};
+			}
+
+
+			Overlays.bClearEditorDepth = true;
+		});
+}
+
+void UEditorEngine::RenderParticlePreview(FParticleEditor& Editor)
 {
 
 	UWorld* PreviewWorld = Editor.GetPreviewWorld();

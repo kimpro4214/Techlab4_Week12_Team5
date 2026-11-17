@@ -53,6 +53,7 @@ class FBlendSpacePanel;
 class FAnimationStateMachinePanel;
 class FSkeletalMeshEditor;
 class FStaticMeshEditor;
+class FParticleEditor;
 class FAnimationSequenceEditor;
 
 inline constexpr int32 InvalidViewIndex = -1;
@@ -150,6 +151,7 @@ private:
 	bool IsSimulatingInEditor() const;
 
 	void RenderStaticMeshPreview(FStaticMeshEditor& Editor);
+	void RenderParticlePreview(FParticleEditor& Editor);
 	void RenderSkeletalMeshPreview(FSkeletalMeshEditor& Editor);
 	bool IsLevelEditorInputEnabled() const;
 	void RenderAnimationSequencePreview(FAnimationSequenceEditor& Editor);

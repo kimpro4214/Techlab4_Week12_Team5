@@ -202,6 +202,10 @@ void FContentDrawerPanel::OnRender()
 					{
 						CurrentPath /= Path.filename(); // 하위 폴더로 이동
 					}
+					else if ((Path.extension() == ".particle" || Path.extension() == ".PARTICLE") && OnOpenParticle)
+					{
+						OnOpenParticle(PathString);
+					}
 					else if (Path.extension() == ".widget" && OnOpenWidget)
 					{
 						OnOpenWidget(PathString);

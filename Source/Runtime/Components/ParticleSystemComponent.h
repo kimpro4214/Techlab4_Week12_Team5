@@ -31,6 +31,8 @@ public:
 	virtual void PostEditChangeProperty(const FProperty& Property) override;
 
 	void InitializeSystem();   // Template의 Emitter마다 Instance를 새로 만든다
+	// 시뮬레이션을 진행하지 않고 현재 입자의 렌더 데이터와 뷰 버퍼를 갱신한다.
+	void RefreshRenderData();
 	void ResetSystem();        // Instance를 모두 지운다
 
 	virtual void Activate(bool bReset = false) override;

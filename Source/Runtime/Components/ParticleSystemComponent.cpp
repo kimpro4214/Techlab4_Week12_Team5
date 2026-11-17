@@ -141,6 +141,11 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	}
 }
 
+void UParticleSystemComponent::RefreshRenderData()
+{
+	SendRenderDynamicData();
+}
+
 void UParticleSystemComponent::UpdateComponentBounds()
 {
 	FBox NewBounds;
