@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Editor/EditorUI/EditorPanel.h"
+#include "Core/Delegate/Delegate.h"
 
 #include <filesystem>
-#include <functional>
 
 namespace fs = std::filesystem;
 
@@ -19,24 +19,20 @@ public:
 	const char* GetPanelName() const override { return "Content Drawer"; }
 	void RenderFolderTree(const fs::path& Path, fs::path& SelectedPath);
 
-	// .widget 파일을 더블클릭하면 불린다 (UI 에디터가 연다).
-	void SetOpenWidgetCallback(std::function<void(const FString&)> InCallback) { OnOpenWidget = std::move(InCallback); }
-	void SetCreateWidgetCallback(std::function<void(const FString&)> InCallback) { OnCreateWidget = std::move(InCallback); }
+	////////////////////////////////////////////////////////////
+	// 에셋 열기 및 생성 요청
+	////////////////////////////////////////////////////////////
 
-	void SetOpenParticleCallback(std::function<void(const FString&)> InCallback) { OnOpenParticle = std::move(InCallback); }
-	void SetOpenStaticCallback(std::function<void(const FString&)> InCallback) { OnOpenStatic = std::move(InCallback); }
-	void SetOpenSkeletalCallback(std::function<void(const FString&)> InCallback) { OnOpenSkeletal = std::move(InCallback); }
-	void SetOpenAnimationCallback(std::function<void(UAnimSequence*, USkeletalMesh*)> InCallback) { OnOpenAnimation = std::move(InCallback); }
+	TDelegate<const FString&> OnOpenWidget;
+	TDelegate<const FString&> OnCreateWidget;
+	TDelegate<const FString&> OnOpenStatic;
+	TDelegate<const FString&> OnOpenParticle;
+	TDelegate<const FString&> OnOpenSkeletal;
+	TDelegate<UAnimSequence*, USkeletalMesh*> OnOpenAnimation;
 
 private:
 	void DrawAnimationAssets(const fs::path& FbxPath, float ThumbnailSize);
 
-	std::function<void(const FString&)> OnOpenWidget;
-	std::function<void(const FString&)> OnCreateWidget;
-	std::function<void(const FString&)> OnOpenStatic;
-	std::function<void(const FString&)> OnOpenParticle;
-	std::function<void(const FString&)> OnOpenSkeletal;
-	std::function<void(UAnimSequence*, USkeletalMesh*)> OnOpenAnimation;
 	char NewAssetName[64] = "NewWidget";
 	bool bOpenCreateWidget = false;
 

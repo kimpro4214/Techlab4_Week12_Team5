@@ -212,7 +212,7 @@ bool UEditorEngine::Init()
 		return MakeUnique<FParticleEditor>(this, Manager, Key, System, &SettingsPanel->GetSettings(),
 			[this](FParticleEditor& Editor) { RenderParticlePreview(Editor); });
 	});
-	ContentDrawerPanel->SetOpenParticleCallback([this](const FString& Path) { EditorManager->OpenEditor({ "Particle", Path, "" }); });
+	ContentDrawerPanel->OnOpenParticle.Add([this](const FString& Path) { EditorManager->OpenEditor({ "Particle", Path, "" }); });
 	EditorManager->RegisterFactory("StaticMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		FString Error;
@@ -225,7 +225,7 @@ bool UEditorEngine::Init()
 		return MakeUnique<FStaticMeshEditor>(this, Manager, Key, Mesh, &SettingsPanel->GetSettings(),
 			[this](FStaticMeshEditor& Editor) { RenderStaticMeshPreview(Editor); });
 	});
-	ContentDrawerPanel->SetOpenStaticCallback([this](const FString& Path) { EditorManager->OpenEditor({ "StaticMesh", Path, "" }); });
+	ContentDrawerPanel->OnOpenStatic.Add([this](const FString& Path) { EditorManager->OpenEditor({ "StaticMesh", Path, "" }); });
 	EditorManager->RegisterFactory("SkeletalMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		std::error_code Error;
@@ -254,16 +254,16 @@ bool UEditorEngine::Init()
 			[this](FAnimationSequenceEditor& Editor) { RenderAnimationSequencePreview(Editor); });
 	});
 
-	ContentDrawerPanel->SetCreateWidgetCallback([this](const FString& Path)
+	ContentDrawerPanel->OnCreateWidget.Add([this](const FString& Path)
 	{
 		if (FUIEditor::CreateAssetFile(Path)) EditorManager->OpenEditor({ "UI", Path, "" });
 	});
-	ContentDrawerPanel->SetOpenWidgetCallback([this](const FString& Path) { EditorManager->OpenEditor({ "UI", Path, "" }); });
-	ContentDrawerPanel->SetOpenSkeletalCallback([this](const FString& Path)
+	ContentDrawerPanel->OnOpenWidget.Add([this](const FString& Path) { EditorManager->OpenEditor({ "UI", Path, "" }); });
+	ContentDrawerPanel->OnOpenSkeletal.Add([this](const FString& Path)
 	{
 		EditorManager->OpenEditor({ "SkeletalMesh", Path, "" });
 	});
-	ContentDrawerPanel->SetOpenAnimationCallback([this](UAnimSequence* Sequence, USkeletalMesh* Mesh)
+	ContentDrawerPanel->OnOpenAnimation.Add([this](UAnimSequence* Sequence, USkeletalMesh* Mesh)
 	{
 		if (!Sequence || !Mesh) return;
 		const FString& Path = Sequence->GetPath();

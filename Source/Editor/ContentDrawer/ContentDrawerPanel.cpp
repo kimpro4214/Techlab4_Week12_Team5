@@ -75,9 +75,9 @@ void FContentDrawerPanel::OnRender()
 			if (bExists) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "A file with this name already exists.");
 
 			ImGui::BeginDisabled(bExists || NewAssetName[0] == '\0');
-			if (ImGui::Button("Create") && OnCreateWidget)
+			if (ImGui::Button("Create") && OnCreateWidget.IsBound())
 			{
-				OnCreateWidget(Target.generic_string());   // "Assets/UI/GameOver.widget" 형식
+				OnCreateWidget.Broadcast(Target.generic_string());   // "Assets/UI/GameOver.widget" 형식
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndDisabled();
@@ -202,17 +202,17 @@ void FContentDrawerPanel::OnRender()
 					{
 						CurrentPath /= Path.filename(); // 하위 폴더로 이동
 					}
-					else if ((Path.extension() == ".particle" || Path.extension() == ".PARTICLE") && OnOpenParticle)
+					else if ((Path.extension() == ".particle" || Path.extension() == ".PARTICLE") && OnOpenParticle.IsBound())
 					{
-						OnOpenParticle(PathString);
+						OnOpenParticle.Broadcast(PathString);
 					}
-					else if (Path.extension() == ".widget" && OnOpenWidget)
+					else if (Path.extension() == ".widget" && OnOpenWidget.IsBound())
 					{
-						OnOpenWidget(PathString);
+						OnOpenWidget.Broadcast(PathString);
 					}
-					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic)
+					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic.IsBound())
 					{
-						OnOpenStatic(PathString);
+						OnOpenStatic.Broadcast(PathString);
 					}
 					else if (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					{
@@ -227,14 +227,14 @@ void FContentDrawerPanel::OnRender()
 						else if (Asset->IsA<USkeletalMesh>())
 						{
 							// 실제 SkeletalMesh일 때만 해당 편집기를 연다.
-							if (OnOpenSkeletal)
+							if (OnOpenSkeletal.IsBound())
 							{
-								OnOpenSkeletal(PathString);
+								OnOpenSkeletal.Broadcast(PathString);
 							}
 						}
 						else if (Asset->IsA<UStaticMesh>())
 						{
-							if (OnOpenStatic) OnOpenStatic(PathString);
+							if (OnOpenStatic.IsBound()) OnOpenStatic.Broadcast(PathString);
 						}
 						else
 						{
@@ -281,8 +281,8 @@ void FContentDrawerPanel::DrawAnimationAssets(const fs::path& FbxPath, float Thu
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("Animation: %s\nSource: %s", Clip.DisplayName.c_str(), FbxPath.generic_string().c_str());
-			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && OnOpenAnimation)
-				OnOpenAnimation(Clip.Sequence, Mesh);
+			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && OnOpenAnimation.IsBound())
+				OnOpenAnimation.Broadcast(Clip.Sequence, Mesh);
 		}
 		ImGui::PopID();
 	}
