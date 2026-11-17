@@ -10,6 +10,7 @@
 #include "Render/Particle/ParticleModuleVelocity.h"
 #include "Render/Particle/ParticleModuleColor.h"
 #include "Render/Particle/ParticleModuleColorOverLife.h"
+#include "Render/Particle/ParticleModuleCollision.h"
 #include "Render/Particle/ParticleModuleSize.h"
 #include "Asset/AssetManager.h"
 #include <cmath>
@@ -214,6 +215,7 @@ UParticleSystem* UParticleSystem::CreateDefault()
 	LODLevel->AddModule(Color);
 	LODLevel->AddModule(ColorOverLife);
 	LODLevel->AddModule(Size);
+	LODLevel->AddModule(NewObject<UParticleModuleCollision>());
 
 	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
 	Emitter->AddLODLevel(LODLevel);
