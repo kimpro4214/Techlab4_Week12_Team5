@@ -7,6 +7,7 @@
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
 #include "Render/Particle/ParticleDynamicData.h"
+#include "Engine/ParticleSystemSceneProxy.h"
 #include "Render/Particle/ParticleModuleLifetime.h"
 #include "Render/Particle/ParticleModuleLocation.h"
 #include "Render/Particle/ParticleModuleVelocity.h"
@@ -122,8 +123,9 @@ void UParticleSystemComponent::InitializeSystem()
 
 void UParticleSystemComponent::ResetSystem()
 {
-	// 렌더 데이터는 인스턴스가 소유한다 → 인스턴스보다 먼저 비워서 지워진 메모리를 Submit하지 않게 한다
-	EmitterRenderData.Reset();
+	// 렌더 데이터는 인스턴스가 소유한다 → Proxy가 들고 있는 포인터를 먼저 비워서 지워진 메모리를 Submit하지 않게 한다
+	if (FParticleSystemSceneProxy* Proxy = GetParticleSceneProxy())
+		Proxy->ResetDynamicData();
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 		delete Instance;
 	EmitterInstances.Reset();
@@ -146,32 +148,35 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 		Instance->Tick(DeltaTime);
 
-	// 시뮬레이션이 끝난 뒤 프레임당 한 번 렌더 데이터를 만든다
+	SendRenderDynamicData();
+}
+
+FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
+{
+	return new FParticleSystemSceneProxy(this);
+}
+
+FParticleSystemSceneProxy* UParticleSystemComponent::GetParticleSceneProxy() const
+{
+	// CreateSceneProxy가 항상 FParticleSystemSceneProxy를 만드므로 static_cast로 충분하다
+	return static_cast<FParticleSystemSceneProxy*>(GetSceneProxy());
+}
+
+void UParticleSystemComponent::SendRenderDynamicData()
+{
+	// 렌더 상태가 아직 없으면(등록 전) 넘길 곳이 없다. 다음 Tick에 다시 만든다
+	FParticleSystemSceneProxy* Proxy = GetParticleSceneProxy();
+	if (!Proxy)
+		return;
+
+	// 시뮬레이션이 끝난 뒤 프레임당 한 번만 만든다
 	// 뷰마다 만들면 안 된다: GetDynamicData가 뷰 버퍼 인덱스를 처음으로 되돌린다
-	EmitterRenderData.Reset();
+	Proxy->ResetDynamicData();
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (FDynamicEmitterDataBase* Data = Instance->GetDynamicData())
-			EmitterRenderData.Add(Data);
+			Proxy->AddDynamicData(Data);
 	}
-
-	// [임시] 렌더 전까지 시뮬레이션을 로그로 확인한다
-	DebugLogTimer += DeltaTime;
-	if (DebugLogTimer >= 1.0f)
-	{
-		DebugLogTimer = 0.0f;
-		const int32 RenderParticles = EmitterRenderData.IsEmpty()
-			? 0 : EmitterRenderData[0]->GetSource().ActiveParticleCount;
-		HTR_LOG(Info, "[Particle] Emitters: {}, Active: {}, RenderData: {}, FirstEmitterRenderCount: {}",
-			EmitterInstances.Num(), GetNumActiveParticles(), EmitterRenderData.Num(), RenderParticles);
-	}
-}
-
-void UParticleSystemComponent::SubmitToRenderQueue(FRenderQueue& RenderQueue, const FViewContext& ViewContext)
-{
-	// 뷰포트(4분할 등)마다 한 번씩 불린다
-	for (FDynamicEmitterDataBase* Data : EmitterRenderData)
-		Data->Submit(RenderQueue, ViewContext);
 }
 
 int32 UParticleSystemComponent::GetNumActiveParticles() const
