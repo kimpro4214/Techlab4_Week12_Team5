@@ -2,6 +2,7 @@
 
 #include "UObject/Object.h"
 #include "UObject/Class.h"
+#include "Render/Particle/ParticleLODLevel.h"
 #include "Containers/Map.h"
 #include "ParticleEmitter.generated.h"
 
@@ -22,7 +23,7 @@ public:
 
 	const TArray<UParticleLODLevel*>& GetLODLevels() const { return LODLevels; }
 	UParticleLODLevel* GetLODLevel(int32 Index) const;
-	void AddLODLevel(UParticleLODLevel* InLODLevel) { if (InLODLevel) LODLevels.Add(InLODLevel); }
+	void AddLODLevel(UParticleLODLevel* InLODLevel);
 
 	// 모듈 구성이 바뀐 뒤 호출. 모든 LOD의 모듈 목록을 다시 분류한다 
 	// 나중에 모듈별 Payload가 생기면 ParticleSize 계산도 여기서 한다.
@@ -35,6 +36,7 @@ public:
 	const uint64* FindModuleInstanceOffset(const UParticleModule* Module) const { return ModuleInstanceOffsetMap.Find(Module); }
 
 private:
+	UPROPERTY()
 	TArray<UParticleLODLevel*> LODLevels;
 	int32 ParticleSize = 0;
 	TMap<const UParticleModule*, int32> ModuleOffsetMap;

@@ -21,6 +21,7 @@ class USkeletalMesh;
 class UMaterial;
 class USoundWave;
 class UAnimSequence;
+class UParticleSystem;
 struct FMeshMaterialSlot;
 struct FSkeletalMeshData;
 struct FFbxBakeResult;
@@ -83,7 +84,9 @@ public:
 
 	// .particle / .asset는 공통 바이너리 형식을 사용한다. 같은 경로는 한 번만 로드한다.
 	UAsset* LoadSerializedAsset(const FString& Path, UClass* ExpectedClass, FString& OutError);
+	UParticleSystem* LoadParticleSystem(const FString& Path, FString& OutError);
 	UAsset* LoadAssetReference(const FString& Path, FString& OutError);
+	bool SaveParticleSystem(UParticleSystem* System, const FString& Path, FString& OutError);
 
 	//UStaticMesh* GetMesh(FString InName);
 	//UStaticMesh* GetMesh(EPrimitiveType Type); // 오버로드(수정 중)
@@ -120,6 +123,7 @@ public:
 private:
 	void LoadSerializedAssets();
 	UAsset* LoadAndRegisterSerializedAsset(const FString& Key, UClass* ExpectedClass, FString& OutError);
+	bool ValidateParticleSavePath(UParticleSystem* System, const FString& Key, FString& OutError) const;
 
 	// 슬롯의 색상과 텍스처 정보로 실제 재질을 생성한다.
 	TUniquePtr<UMaterial> CreateSkeletalMaterial(const FMeshMaterialSlot& Slot, FString& OutError);

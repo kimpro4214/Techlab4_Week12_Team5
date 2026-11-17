@@ -19,7 +19,10 @@ public:
 	void SetBurstCount(int32 InCount) { BurstCount = InCount; }
 
 private:
+	UPROPERTY(EditAnywhere)
 	float Rate = 20.0f;      // 초당 생성 수
+	UPROPERTY(EditAnywhere)
 	float RateScale = 1.0f;  // Rate × RateScale = 실제 초당 생성 수
+	UPROPERTY(EditAnywhere)
 	int32 BurstCount = 0;    // Emitter 시작 시 한 번에 생성할 수
 };

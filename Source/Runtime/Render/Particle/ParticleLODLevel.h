@@ -2,6 +2,8 @@
 
 #include "UObject/Object.h"
 #include "UObject/Class.h"
+#include "Render/Particle/ParticleModuleRequired.h"
+#include "Render/Particle/ParticleModuleSpawn.h"
 #include "ParticleLODLevel.generated.h"
 
 class UParticleModule;
@@ -24,22 +26,27 @@ public:
 	const TArray<UParticleModule*>& GetSpawnModules() const { return SpawnModules; }
 	const TArray<UParticleModule*>& GetUpdateModules() const { return UpdateModules; }
 
-	void SetRequiredModule(UParticleModuleRequired* InModule) { RequiredModule = InModule; }
-	void SetSpawnModule(UParticleModuleSpawn* InModule) { SpawnModule = InModule; }
+	void SetRequiredModule(UParticleModuleRequired* InModule);
+	void SetSpawnModule(UParticleModuleSpawn* InModule);
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InModule) { TypeDataModule = InModule; }
-	void AddModule(UParticleModule* InModule) { if (InModule) Modules.Add(InModule); }
+	void AddModule(UParticleModule* InModule);
 
 	// Modules를 용도별로 나눠 SpawnModules / UpdateModules에 캐시한다.
 	// 모듈을 추가·삭제, 활성화 변경한 뒤에는 다시 호출해야 한다.
 	void UpdateModuleLists();
 
 private:
+	UPROPERTY()
 	int32 Level = 0;
+	UPROPERTY()
 	bool bEnabled = true;
 
+	UPROPERTY()
 	UParticleModuleRequired* RequiredModule = nullptr;
+	UPROPERTY()
 	UParticleModuleSpawn* SpawnModule = nullptr;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;   // nullptr이면 Sprite Emitter
+	UPROPERTY()
 	TArray<UParticleModule*>     Modules;                    // 에디터에 보이는 순서 그대로
 
 	// 실행용 캐시 (Modules에서 파생)

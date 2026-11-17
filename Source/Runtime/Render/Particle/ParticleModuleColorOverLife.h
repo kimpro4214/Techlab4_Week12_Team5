@@ -17,5 +17,5 @@ public:
 
 	UPROPERTY(EditAnywhere) FLinearColor StartColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	UPROPERTY(EditAnywhere) FLinearColor EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 0.0f);
-	UCurveFloat* ColorBlendCurve = nullptr;
+	UPROPERTY(EditAnywhere) UCurveFloat* ColorBlendCurve = nullptr;
 };

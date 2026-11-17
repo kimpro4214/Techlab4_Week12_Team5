@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Asset/AssetSerializer.h"
 #include "Asset/AssetUtils.h"
+#include "Render/Particle/ParticleSystem.h"
 #include "AssetManager.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
@@ -1094,6 +1095,10 @@ UAsset* UAssetManager::LoadSerializedAsset(const FString& Path, UClass* Expected
 {
 	OutError.clear();
 	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (!ExpectedClass && AssetUtils::GetAssetExtension(Key) == ".particle")
+	{
+		ExpectedClass = UParticleSystem::StaticClass();
+	}
 
 	// 이미 등록된 경로는 다시 읽지 않는다. 다른 타입을 요청한 경우에만 실패한다.
 	if (UAsset* Existing = AssetMap.FindRef(Key))
@@ -1132,6 +1137,11 @@ UAsset* UAssetManager::LoadAndRegisterSerializedAsset(const FString& Key, UClass
 	return Asset;
 }
 
+UParticleSystem* UAssetManager::LoadParticleSystem(const FString& Path, FString& OutError)
+{
+	UAsset* Asset = LoadSerializedAsset(Path, UParticleSystem::StaticClass(), OutError);
+	return Cast<UParticleSystem>(Asset);
+}
 
 UAsset* UAssetManager::LoadAssetReference(const FString& Path, FString& OutError)
 {
@@ -1150,4 +1160,47 @@ UAsset* UAssetManager::LoadAssetReference(const FString& Path, FString& OutError
 
 	OutError = "External asset is not registered: " + Key;
 	return nullptr;
+}
+
+bool UAssetManager::ValidateParticleSavePath(UParticleSystem* System, const FString& Key, FString& OutError) const
+{
+	if (AssetUtils::GetAssetExtension(Key) != ".particle")
+	{
+		OutError = "Particle asset extension must be .particle";
+		return false;
+	}
+
+	UAsset* Existing = AssetMap.FindRef(Key);
+	if (Existing && Existing != System)
+	{
+		OutError = "Another asset already uses this path: " + Key;
+		return false;
+	}
+
+	// 기존 경로를 바꾸면 해당 경로를 참조하는 씬과 캐시가 서로 달라지므로 별도 복사로 처리해야 한다.
+	if (System && !System->GetPath().empty() && System->GetPath() != Key)
+	{
+		OutError = "Save a copy before assigning a different path to a registered asset";
+		return false;
+	}
+
+	return true;
+}
+
+bool UAssetManager::SaveParticleSystem(UParticleSystem* System, const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (!ValidateParticleSavePath(System, Key, OutError))
+	{
+		return false;
+	}
+
+	if (!FAssetSerializer::Save(System, Key, OutError))
+	{
+		return false;
+	}
+
+	RegisterAsset(Key, System);
+	return true;
 }
