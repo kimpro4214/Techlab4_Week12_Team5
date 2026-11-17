@@ -223,7 +223,7 @@ UParticleSystem* UParticleSystem::CreateDefault()
 	UParticleLODLevel* FarLOD = Cast<UParticleLODLevel>(StaticDuplicateObject(LODLevel, Emitter, FName("LOD1")));
 	if (FarLOD)
 	{
-		FarLOD->GetSpawnModule()->SetRate(15.0f);
+		FarLOD->GetSpawnModule()->SetRate(5.0f);
 		Emitter->AddLODLevel(FarLOD);
 	}
 	Emitter->CacheEmitterModuleInfo();   // 모듈을 다 넣은 뒤 Spawn/Update 목록 분류
