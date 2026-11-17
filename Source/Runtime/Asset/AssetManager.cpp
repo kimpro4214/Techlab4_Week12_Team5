@@ -656,6 +656,15 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 		return Cached;
 	}
 
+	// 경로 별칭으로 요청한 경우에도 기존 공유 메시를 사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : Get().AssetPathMap)
+	{
+		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
+		if (!Registered) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
+	}
+
 	TUniquePtr<FStaticMeshData> Data = FObjImporter::LoadStaticMeshData(Path);
 	UStaticMesh* Mesh = CreateStaticMesh(Data.get());   // Data가 nullptr이면 nullptr 반환
 	if (!Mesh)
@@ -664,6 +673,7 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 	}
 
 	Get().RegisterAsset(Key, Mesh);
+	Get().AssetPathMap.Add(Key, Path);
 	return Mesh;
 }
 
@@ -682,6 +692,15 @@ UStaticMesh* UAssetManager::LoadFbxStaticMesh(const FString& Key, const FString&
 		}
 
 		return CachedMesh;
+	}
+
+	// 경로 별칭으로 요청한 경우에도 기존 공유 메시를 사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : Get().AssetPathMap)
+	{
+		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
+		if (!Registered) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
 	}
 
 	FStaticMeshData MeshData;

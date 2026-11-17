@@ -105,6 +105,12 @@ void FEditorManager::Tick(float DeltaTime)
 	}
 }
 
+bool FEditorManager::IsLevelEditorInputEnabled() const
+{
+	// 메인 선택 탭과 분리된 에셋 패널의 키보드 포커스는 별개다.
+	return bInitialized && !bShuttingDown && LevelEditorTab && LevelEditorTab->IsActive() && !HasFocusedAssetEditor();
+}
+
 bool FEditorManager::HasFocusedAssetEditor() const
 {
 	for (const auto& Editor : Editors)

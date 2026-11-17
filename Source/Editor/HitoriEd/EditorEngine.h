@@ -49,8 +49,10 @@
 
 #include "EditorEngine.generated.h"
 
+class FBlendSpacePanel;
 class FAnimationStateMachinePanel;
 class FSkeletalMeshEditor;
+class FStaticMeshEditor;
 class FAnimationSequenceEditor;
 
 inline constexpr int32 InvalidViewIndex = -1;
@@ -147,6 +149,7 @@ private:
 	bool IsPlayingView(int32 ViewIndex) const { return PlayWorld && ViewIndex == PIEViewIndex && !bIsPaused && !IsSimulatingInEditor(); }
 	bool IsSimulatingInEditor() const;
 
+	void RenderStaticMeshPreview(FStaticMeshEditor& Editor);
 	void RenderSkeletalMeshPreview(FSkeletalMeshEditor& Editor);
 	bool IsLevelEditorInputEnabled() const;
 	void RenderAnimationSequencePreview(FAnimationSequenceEditor& Editor);
@@ -162,6 +165,7 @@ private:
 	FSwapchain* MainWindowSC = nullptr;
 	FRenderer* Renderer = nullptr;
 
+	bool bEditorShutdown = false;
 	TUniquePtr<FEditorManager> EditorManager;
 	FLevelEditorTab* LevelEditorTab = nullptr;
 
@@ -190,10 +194,12 @@ private:
 	FSettingsPanel* SettingsPanel = nullptr;
 	FSequencerPanel* SequencerPanel = nullptr;
 	FAnimationStateMachinePanel* AnimationStateMachinePanel = nullptr;
+	FBlendSpacePanel* BlendSpacePanel = nullptr;
 	FViewportsPanel* ViewportsPanel = nullptr;
 	FSplitRatio ViewportSplitRatio{0.5f, 0.5f};
 	ELayoutMode ViewportLayoutMode = ELayoutMode::QuadSplit;
 	int32 SingleViewportIndex = 0;
+	int32 CapturedViewportIndex = -1;
 	TArray<FEditorViewportClient*> AllViewportClients;
 	FOutlinerPanel* OutlinerPanel = nullptr;
 	FContentDrawerPanel* ContentDrawerPanel = nullptr;
@@ -239,19 +245,4 @@ private:
 	void OpenScene();
 	void SaveCurrentScene();
 	void SaveSceneAs();
-
-	void CreatePIESession();
-	void StopPIESession();
-	void DrawPIEWindows();
-
-
-	void UpdateInputOwner();
-	void DispatchGameInput(float DeltaTime);
-	FGameViewportClient* FindPIEGameClient(int32 PIEInstance) const;
-
-	int32 InputOwnerPIEInstance = -1;
-	bool bGameMouseCaptured = false;
-	int32 PendingFocusedPIEInstance = -1;
-	int32 PendingWheelDelta = 0;
-
 };

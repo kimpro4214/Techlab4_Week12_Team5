@@ -21,7 +21,7 @@ bool FEditorControlsPanel::Init()
 // Space 입력으로 기즈모 편집 모드를 순환한다.
 void FEditorControlsPanel::Tick(float DeltaTime)
 {
-	if (ImGui::GetIO().WantTextInput)
+	if (ImGui::GetIO().WantTextInput || ImGui::IsAnyItemActive())
 		return;
 
 	if (GizmoInputBlockedQuery && GizmoInputBlockedQuery())

@@ -22,6 +22,7 @@ public:
 	void Tick(float DeltaTime) override;
 	// 각 View Texture와 Splitter·Layout 조작 UI를 ImGui 패널에 그린다.
 	void OnRender() override;
+	void OnHidden() override;
 	const char *GetPanelName() const override { return "Viewports"; }
 
 	// Core가 계산한 View Rect에 맞춰 해당 클라이언트의 활성 상태와 크기를 갱신한다.
@@ -31,7 +32,7 @@ public:
 	FVector2 GetLocalMousePosition() const;
 	bool IsHovered() const;
 	bool IsFocused() const { return bInteractionEnabled && bFocused; }
-	void SetInteractionEnabled(bool bEnabled) { bInteractionEnabled = bEnabled; }
+	void SetInteractionEnabled(bool bEnabled);
 
 	float ConsumeHorizontalDrag();
 	float ConsumeVerticalDrag();

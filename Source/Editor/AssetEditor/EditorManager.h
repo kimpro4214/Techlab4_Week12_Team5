@@ -31,6 +31,7 @@ public:
 	IEditorTab* GetMainSelectedTab() const { return TabContainer.GetMainSelectedTab(); }
 	IEditorTab* GetFocusedTab() const { return TabContainer.GetFocusedTab(); }
 	bool HasFocusedAssetEditor() const;
+	bool IsLevelEditorInputEnabled() const;
 
 	void AddEditorTab(IEditorTab* Tab) { TabContainer.AddTab(Tab); }
 	void RemoveEditorTab(IEditorTab* Tab) { TabContainer.RemoveTab(Tab); }

@@ -35,12 +35,10 @@ void FLevelEditorTab::OnRender(bool bActive)
 		ImGui::DockSpace(DockSpaceId, ImVec2(0.0f, 0.0f), Flags);
 	}
 
-	if (bActive)
+	for (auto& Panel : Panels)
 	{
-		for (auto& Panel : Panels)
-		{
-			if (Panel->IsOpen()) Panel->OnRender();
-		}
+		if (bActive && Panel->IsOpen()) Panel->OnRender();
+		else Panel->OnHidden();
 	}
 }
 

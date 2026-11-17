@@ -206,6 +206,10 @@ void FContentDrawerPanel::OnRender()
 					{
 						OnOpenWidget(PathString);
 					}
+					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic)
+					{
+						OnOpenStatic(PathString);
+					}
 					else if (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					{
 						// ScanAssets에서 등록한 것과 같은 Assets 기준 상대 경로를 사용한다.
@@ -226,8 +230,7 @@ void FContentDrawerPanel::OnRender()
 						}
 						else if (Asset->IsA<UStaticMesh>())
 						{
-							// StaticMesh 전용 편집기를 추가하면 이 분기에 연결한다.
-							HTR_LOG(Info, "StaticMesh selected '{}': no dedicated editor is available.", Key);
+							if (OnOpenStatic) OnOpenStatic(PathString);
 						}
 						else
 						{
