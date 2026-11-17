@@ -8,6 +8,8 @@ namespace FPropertyEditor
 {
 	// DetailsPanel.cpp의 DrawProperty를 그대로 옮긴다 (값이 바뀌면 PostEditChangeProperty 호출).
 	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont = nullptr);
+	// 속성을 편집하고 값이 변경되었는지 반환합니다.
+	bool EditProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont = nullptr);
 	// 기반 클래스부터 CPF_Edit 속성을 CollapsingHeader로 묶어 그린다 (DetailsPanel의 루프를 옮김).
 	void DrawObjectProperties(UObject* Object, ImFont* CustomFont = nullptr);
 }

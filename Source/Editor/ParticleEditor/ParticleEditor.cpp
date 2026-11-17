@@ -53,7 +53,7 @@ void FParticleEditor::Tick(float DeltaTime)
 	CameraInput = {};
 
 	// 분리된 뷰포트를 포함해 실제로 표시되는 동안만 시뮬레이션한다.
-	PreviewScene.Tick(bViewportVisible ? DeltaTime : 0.0f);
+	PreviewScene.Tick(bViewportVisible && bPreviewValid ? DeltaTime : 0.0f);
 }
 
 void FParticleEditor::RenderPreview()
@@ -160,10 +160,51 @@ void FParticleEditor::FocusSystem()
 
 void FParticleEditor::Restart()
 {
-	if (ParticleComponent)
+	RefreshSystem();
+}
+
+////////////////////////////////////////////////////////////
+// 이미터·모듈 선택 및 변경 반영
+////////////////////////////////////////////////////////////
+
+void FParticleEditor::SelectEmitter(int32 Index)
+{
+	SelectedEmitterIndex = System && System->GetEmitters().IsValidIndex(Index) ? Index : -1;
+	SelectedModule = nullptr;
+}
+
+void FParticleEditor::SelectModule(int32 EmitterIndex, UParticleModule* Module)
+{
+	SelectEmitter(EmitterIndex);
+	UParticleEmitter* Emitter = GetSelectedEmitter();
+	const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+	if (!LOD || !Module) return;
+
+	if (Module == LOD->GetRequiredModule() || Module == LOD->GetSpawnModule() ||
+		LOD->GetModules().Find(Module) >= 0)
 	{
-		ParticleComponent->Activate(true);
+		SelectedModule = Module;
 	}
+}
+
+UParticleEmitter* FParticleEditor::GetSelectedEmitter() const
+{
+	return System && System->GetEmitters().IsValidIndex(SelectedEmitterIndex)
+		? System->GetEmitters()[SelectedEmitterIndex] : nullptr;
+}
+
+bool FParticleEditor::RefreshSystem()
+{
+	if (!System || !ParticleComponent) return false;
+
+	// 캐시와 메모리 배치를 바꾸기 전에 기존 인스턴스를 해제합니다.
+	ParticleComponent->ResetSystem();
+	bPreviewValid = System->ValidateAsset(LastError);
+	if (!bPreviewValid) return false;
+
+	ParticleComponent->Activate(true);
+	LastError.clear();
+	return true;
 }
 
 ////////////////////////////////////////////////////////////
@@ -213,6 +254,7 @@ bool FParticleEditor::InitializeResources()
 	}
 
 	ParticleComponent->SetTemplate(System);
+	SelectEmitter(System->GetEmitters().IsEmpty() ? -1 : 0);
 	PreviewScene.Tick(0.0f);
 	FocusSystem();
 
@@ -228,6 +270,7 @@ void FParticleEditor::ShutdownResources()
 	ParticleComponent = nullptr;
 	PreviewScene.Release();
 
+	SelectEmitter(-1);
 	delete System;
 	System = nullptr;
 	SourceSystem = nullptr;
@@ -244,8 +287,10 @@ bool FParticleEditor::DiscardChanges()
 
 	// 복원할 객체를 준비한 뒤 교체하여 복원 실패 시 편집 상태를 유지합니다.
 	if (ParticleComponent) ParticleComponent->SetTemplate(nullptr);
+	SelectEmitter(-1);
 	delete System;
 	System = Restored.release();
+	bPreviewValid = true;
 	if (ParticleComponent) ParticleComponent->SetTemplate(System);
 
 	LastError.clear();

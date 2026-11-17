@@ -1114,6 +1114,14 @@ namespace FPropertyEditor
 		::DrawProperty(Object, Property, CustomFont);
 	}
 
+	bool EditProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
+	{
+		if (!Object || !DrawPropertyValue(Object, Object, Property, CustomFont)) return false;
+
+		Object->PostEditChangeProperty(Property);
+		return true;
+	}
+
 	void DrawObjectProperties(UObject* Object, ImFont* CustomFont)
 	{
 		DrawProperties(Object, CustomFont);

@@ -9,6 +9,8 @@
 class UEngine;
 class UParticleSystem;
 class UParticleSystemComponent;
+class UParticleEmitter;
+class UParticleModule;
 struct FEditorSettings;
 
 class FParticleEditor : public FAssetEditor
@@ -48,8 +50,19 @@ public:
 
 	void SetPaused(bool bPaused) { PreviewScene.SetPaused(bPaused); }
 	void Restart();
-	void Step() { PreviewScene.Step(); }
+	void Step() { if (bPreviewValid) PreviewScene.Step(); }
 	void SetTimeScale(float Value) { PreviewScene.SetTimeScale(Value); }
+
+	////////////////////////////////////////////////////////////
+	// 이미터·모듈 선택 및 변경 반영
+	////////////////////////////////////////////////////////////
+
+	void SelectEmitter(int32 Index);
+	void SelectModule(int32 EmitterIndex, UParticleModule* Module);
+	UParticleEmitter* GetSelectedEmitter() const;
+	UParticleModule* GetSelectedModule() const { return SelectedModule; }
+	int32 GetSelectedEmitterIndex() const { return SelectedEmitterIndex; }
+	bool RefreshSystem();
 
 	////////////////////////////////////////////////////////////
 	// Getter / Setter
@@ -91,6 +104,11 @@ private:
 	UParticleSystem* System = nullptr;
 	TArray<uint8> SavedSnapshot;
 	FString LastError;
+
+	// 선택은 편집 복사본 안의 LOD 0에만 적용합니다.
+	int32 SelectedEmitterIndex = -1;
+	UParticleModule* SelectedModule = nullptr;
+	bool bPreviewValid = true;
 
 	// 에디터 전용 프리뷰 리소스
 	FPreviewScene PreviewScene;

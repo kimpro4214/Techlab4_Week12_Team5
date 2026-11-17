@@ -16,7 +16,6 @@ void FParticleViewportPanel::DrawContent()
 	ImGui::BeginDisabled(!Editor.IsPaused());
 	if (ImGui::Button("Step")) Editor.Step();
 	ImGui::EndDisabled();
-	ImGui::SameLine();
 	ImGui::SetNextItemWidth(100.0f);
 	float TimeScale = Editor.GetTimeScale();
 	if (ImGui::SliderFloat("Speed", &TimeScale, 0.1f, 4.0f, "%.1fx")) Editor.SetTimeScale(TimeScale);

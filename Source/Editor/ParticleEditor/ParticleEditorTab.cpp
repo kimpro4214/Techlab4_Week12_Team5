@@ -2,6 +2,8 @@
 #include "ParticleEditorTab.h"
 #include "ParticleEditor.h"
 #include "Panels/ParticleViewportPanel.h"
+#include "Panels/ParticleDetailsPanel.h"
+#include "Panels/ParticleEmittersPanel.h"
 
 FParticleEditorTab::FParticleEditorTab(FParticleEditor& InEditor)
 	: FAssetEditorTab(InEditor)
@@ -9,10 +11,12 @@ FParticleEditorTab::FParticleEditorTab(FParticleEditor& InEditor)
 {
 	// 탭의 부모 창이 달라져도 애셋별 도킹 ID를 유지합니다.
 	const ImGuiID AssetId = ImHashStr(InEditor.GetKey().GetTabId().c_str());
-	DockSpaceId = ImHashStr("ParticleDockSpace", 0, AssetId);
+	DockSpaceId = ImHashStr("ParticleDockSpaceV2", 0, AssetId);
 	PanelClassId = ImHashStr("ParticlePanelClass", 0, AssetId);
 
 	Panels.Add(MakeUnique<FParticleViewportPanel>(InEditor));
+	Panels.Add(MakeUnique<FParticleDetailsPanel>(InEditor));
+	Panels.Add(MakeUnique<FParticleEmittersPanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -52,7 +56,14 @@ void FParticleEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2&
 {
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
-	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), InDockSpaceId);
+	ImGuiID EmittersId = InDockSpaceId;
+	ImGuiID LeftId = ImGui::DockBuilderSplitNode(EmittersId, ImGuiDir_Left, 0.25f, nullptr, &EmittersId);
+	ImGuiID ViewportId = LeftId;
+	const ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Down, 0.5f, nullptr, &ViewportId);
+
+	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
+	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), DetailsId);
+	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), EmittersId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
