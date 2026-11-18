@@ -20,7 +20,6 @@ struct FParticleSpriteVertex
 };
 static_assert(sizeof(FParticleSpriteVertex) == 52, "ParticleSpriteShader.hlsl VS_INPUT과 맞춰야 한다");
 
-
 // ParticleSpriteShader.hlsl의 cbuffer ParticleSprite(b1)과 바이트 단위로 같아야 한다.
 struct FParticleSpriteConstants
 {
@@ -31,6 +30,23 @@ struct FParticleSpriteConstants
 };
 static_assert(sizeof(FParticleSpriteConstants) == 32, "ParticleSpriteShader.hlsl cbuffer ParticleSprite과 맞춰야 한다");
 
+struct FParticleStripVertex
+{
+	FVector Position;			// 띠(Ribbon/Beam)를 그릴때는 두께가 있어야 하므로 두께의 중심, 좌우 양점의 중심
+	float U;					// UV 좌표의 U, 띠와 평행한 텍스쳐 좌표
+	FVector FlowDirection;		// 띠가 진행하는 방향
+	float Width;				// 띠의 두께
+	FVector4 Color;				// 색깔
+	float Side;				// 중심기준 L / R 여부, L = -1, R = +1, V는 해당 값을 통해 계산함
+};
+static_assert(sizeof(FParticleStripVertex) == 52, "ParticleStripShader.hlsl VS_INPUT과 맞춰야 한다");
+
+struct FParticleStripConstants
+{
+	FVector CameraPosition = FVector(0.0f, 0.0f, 0.0f);   //	카메라 위치
+	float PremultiplyAlpha = 0.0f;   //  1이면 rgb에 알파를 곱한다 (Additive가 One/One이라 필요)
+};
+static_assert(sizeof(FParticleStripConstants) == 16, "ParticleStripShader.hlsl cbuffer ParticleStrip과 맞춰야 한다");
 
 // ReplayData(Source)를 받아 렌더 패킷을 만들어서 렌더 큐로 전달
 struct FDynamicEmitterDataBase
@@ -78,6 +94,40 @@ private:
 	int32 Capacity = 0;                                 // 버퍼가 담을 수 있는 최대 파티클 수
 	TUniquePtr<FIndexBuffer> IndexBuffer;               // 쿼드 인덱스는 변하지 않으니 Static, 모든 뷰가 공유
 	TArray<FParticleSpriteVertex> ScratchVertices;      // 정점 임시 배열. 매 프레임 할당하지 않도록 재사용
+};
+
+// Ribbon / Beam의 Dynamic EmitterData 
+struct FDynamicStripEmitterData : public FDynamicEmitterDataBase
+{
+	FDynamicStripEmitterReplayDataBase Source;
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	virtual int32 GetDynamicVertexStride() const { return sizeof(FParticleStripVertex); }
+
+	// 매 프레임 Source를 갱신한 직후 호출한다. 버퍼 용량을 맞추고, 뷰 버퍼 사용 위치를 처음으로 되돌린다.
+	void Init(int32 MaxParticles);
+
+	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
+private:
+
+	// 뷰 하나가 쓰는 GPU 자원.
+	// 한 프레임에 여러 뷰가 제출된 뒤 한꺼번에 그려질 수 있으므로, 버퍼 하나를 뷰마다 덮어쓰면 안 된다.
+	struct FViewResources
+	{
+		TUniquePtr<FVertexBuffer> VertexBuffer;   // D3D11_USAGE_DYNAMIC + CPU_ACCESS_WRITE
+		FParticleStripConstants  Constants;      // 렌더 패킷이 포인터로 참조하므로 프레임 동안 살아있어야 한다
+	};
+
+	void BuildIndexBuffer(int32 MaxParticles);
+	FViewResources* AcquireViewResources();
+
+	static constexpr int32 MaxViewsPerFrame = 8;
+
+	TArray<TUniquePtr<FViewResources>> ViewResources;  // 배열이 커져도 주소가 안 바뀌도록 포인터로 보관
+	int32 NextViewIndex = 0;
+	int32 Capacity = 0;                                 // 버퍼가 담을 수 있는 최대 파티클 수
+	TUniquePtr<FIndexBuffer> IndexBuffer;               // 쿼드 인덱스는 변하지 않으니 Static, 모든 뷰가 공유
+	TArray<FParticleStripVertex> ScratchVertices;      // 정점 임시 배열. 매 프레임 할당하지 않도록 재사용
 };
 
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

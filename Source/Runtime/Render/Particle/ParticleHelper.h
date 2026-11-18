@@ -41,15 +41,24 @@ struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBas
 	int32 MaxParticles = 0;   // GPU 버퍼 용량
 };
 
-struct FDynamicRibbonEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
+// 띠(Beam / Ribbon)를 이루는 점 하나
+// 좌표는 시뮬레이션 공간이다. 월드 변환은 부모의 SimulationToWorld로 한다 (Sprite와 같은 규칙)
+struct FParticleStripPoint
 {
-	UMaterial* Material = nullptr;
-	int32 MaxParticles = 0;						// 렌더 쪽 버퍼 용량
-	const uint16* OrderedSlots = nullptr;       // ParticleIndices를 생성 순서대로 정렬한것, Particle을 Spawn 순서대로 정렬함
-	int32 OrderedSlotCount = 0;					// Slot에 있는 Particle 개수, 총 이어야 할 점의 개수
+	FVector      Position = FVector::ZeroVector;   // 띠 중심선 위의 점
+	float        Width = 1.0f;                     // 이 점에서의 띠 폭
+	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 };
 
-// inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟
+struct FDynamicStripEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
+{
+	UMaterial* Material = nullptr;
+	int32 MaxPoints = 0;                     // 렌더 쪽 버퍼 용량 (한 프레임에 나올 수 있는 최대 점 수)
+	TArray<FParticleStripPoint> Points;      // 모든 줄의 점을 순서대로 이어 붙인 것
+	TArray<int32> StripPointCounts;          // 한 띠에 해당하는 점 개수. 합계 = Points.Num()
+};
+
+// inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재한다
 inline float ParticleRandom()
 {
 	static std::mt19937 Generator(std::random_device{}());

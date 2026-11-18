@@ -112,3 +112,61 @@ void FDynamicSpriteEmitterData::Submit(FRenderQueue& RenderQueue, const FViewCon
 	Packet.CameraToParticleDistance = Delta.Dot(Delta);   // 이미터끼리의 뒤→앞 순서
 	RenderQueue.Add(Packet);
 }
+
+void FDynamicStripEmitterData::Init(int32 MaxParticles)
+{
+	// 이번 프레임의 뷰 버퍼를 처음부터 다시 쓴다
+	NextViewIndex = 0;
+
+	if (MaxParticles <= Capacity)
+		return;
+
+	// 용량이 늘었으면 버퍼를 새 크기로 다시 만든다. VB는 AcquireViewResources에서 필요할 때 만든다
+	Capacity = MaxParticles;
+	ViewResources.Reset();
+	BuildIndexBuffer(Capacity);
+}
+
+FDynamicStripEmitterData::FViewResources* FDynamicStripEmitterData::AcquireViewResources()
+{
+	if (NextViewIndex >= MaxViewsPerFrame)
+		return nullptr;
+
+	// 처음 보는 뷰 번호면 그 뷰 전용 VB를 만든다. 이후 프레임부터는 재사용
+	if (NextViewIndex >= ViewResources.Num())
+	{
+		TUniquePtr<FViewResources> NewResources = MakeUnique<FViewResources>();
+		NewResources->VertexBuffer = RenderCommand::CreateDynamicVertexBuffer(
+			static_cast<uint32>(Capacity * 2 * sizeof(FParticleStripVertex)),
+			static_cast<uint32>(sizeof(FParticleStripVertex)));
+		ViewResources.Add(std::move(NewResources));
+	}
+
+	FViewResources* Resources = ViewResources[NextViewIndex++].get();
+	return Resources->VertexBuffer ? Resources : nullptr;
+}
+
+void FDynamicStripEmitterData::BuildIndexBuffer(int32 MaxParticles)
+{
+	if (MaxParticles < 2) { IndexBuffer.reset(); return; }
+
+	TArray<uint32> Indices;
+	Indices.SetNum((MaxParticles-1) * 6);			// 맨 끝 선에 대한 처리 (MaxParticles-1)
+	for (int32 i = 0; i < (MaxParticles - 1); ++i)
+	{
+		const uint32 Base = static_cast<uint32>(i) * 2;				// Sprite와 유사하지만 Ribbon의 경우 두개의 삼각형이 한개의 선을 공유하므로
+		Indices[i * 6 + 0] = Base + 0;
+		Indices[i * 6 + 1] = Base + 1;
+		Indices[i * 6 + 2] = Base + 3;
+		Indices[i * 6 + 3] = Base + 0;
+		Indices[i * 6 + 4] = Base + 3;
+		Indices[i * 6 + 5] = Base + 2;
+	}
+	IndexBuffer = RenderCommand::CreateStaticIndexBuffer(Indices.GetData(), static_cast<uint32>((MaxParticles - 1) * 6));
+}
+
+
+void FDynamicStripEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	// TODO(5단계): Source.Points를 StripPointCounts 줄 단위로 읽어 점마다 정점 2개(L/R)를 채워 VB 업로드 후 패킷 추가
+}
