@@ -82,7 +82,8 @@ void UParticleEmitter::CacheEmitterModuleInfo(int32 LODIndex)
 	if (!ActiveLOD)
 		return;
 
-	for (const UParticleModule* Module : ActiveLOD->GetModules())
+	const TArray<UParticleModule*>& ActiveModules = ActiveLOD->GetModules();
+	for (const UParticleModule* Module : ActiveModules)
 	{
 		if (!Module)
 			continue;
@@ -105,15 +106,19 @@ void UParticleEmitter::CacheEmitterModuleInfo(int32 LODIndex)
 		ParticleSize = Offset + static_cast<int32>(Bytes);
 	}
 
-	for (int32 LODIndex = 1; LODIndex < LODLevels.Num(); ++LODIndex)
+	// 호환성 검사는 LOD 0 기준이므로 LOD 0의 오프셋만 다른 LOD에 공유한다.
+	if (LODIndex != 0)
+		return;
+
+	for (int32 TargetLODIndex = 1; TargetLODIndex < LODLevels.Num(); ++TargetLODIndex)
 	{
-		if (!IsLODCompatible(LODIndex))
+		if (!IsLODCompatible(TargetLODIndex))
 			continue;
 
-		const TArray<UParticleModule*>& TargetModules = LODLevels[LODIndex]->GetModules();
-		for (int32 Slot = 0; Slot < BaseModules.Num(); ++Slot)
+		const TArray<UParticleModule*>& TargetModules = LODLevels[TargetLODIndex]->GetModules();
+		for (int32 Slot = 0; Slot < ActiveModules.Num(); ++Slot)
 		{
-			const UParticleModule* BaseModule = BaseModules[Slot];
+			const UParticleModule* BaseModule = ActiveModules[Slot];
 			const UParticleModule* TargetModule = TargetModules[Slot];
 			if (const int32* ParticleOffset = ModuleOffsetMap.Find(BaseModule))
 				ModuleOffsetMap.Add(TargetModule, *ParticleOffset);
