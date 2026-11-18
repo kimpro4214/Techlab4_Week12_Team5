@@ -5,7 +5,6 @@
             "Actors": [
                 {
                     "Class": "AParticleSystemActor",
-                    "Name": "BounceParticles",
                     "Components": [
                         {
                             "Class": "USceneComponent",
@@ -13,10 +12,25 @@
                             "Parent": "",
                             "Properties": {
                                 "Transform": {
-                                    "Location": { "X": 0.0, "Y": -1.6, "Z": 0.15 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": -1.600000023841858,
+                                        "Z": 0.15000000596046448
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
                             }
                         },
                         {
@@ -24,15 +38,43 @@
                             "Name": "ParticleSystemComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "Template": "Particles/bonobono.particle"
+                                "Template": "Assets/Particles/Collision.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
                             }
                         }
                     ],
-                    "Properties": {}
+                    "Name": "BounceParticles",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 },
                 {
                     "Class": "AParticleSystemActor",
-                    "Name": "FreeParticles",
                     "Components": [
                         {
                             "Class": "USceneComponent",
@@ -40,10 +82,25 @@
                             "Parent": "",
                             "Properties": {
                                 "Transform": {
-                                    "Location": { "X": 0.0, "Y": 1.6, "Z": 0.15 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 1.600000023841858,
+                                        "Z": 0.15000000596046448
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
                             }
                         },
                         {
@@ -51,15 +108,43 @@
                             "Name": "ParticleSystemComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "Template": "Particles/bonobono.particle"
+                                "Template": "Assets/Particles/Collision_No.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
                             }
                         }
                     ],
-                    "Properties": {}
+                    "Name": "FreeParticles",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 },
                 {
                     "Class": "AStaticMeshActor",
-                    "Name": "BlockingCeiling",
                     "Components": [
                         {
                             "Class": "USceneComponent",
@@ -67,70 +152,59 @@
                             "Parent": "",
                             "Properties": {
                                 "Transform": {
-                                    "Location": { "X": 0.0, "Y": -1.6, "Z": 1.2 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": -0.10000000149011612
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
                             }
                         },
                         {
                             "Class": "UStaticMeshComponent",
                             "Name": "UStaticMeshComponent",
-                            "Parent": "DefaultSceneRoot",
                             "OverrideMaterials": [],
+                            "Parent": "DefaultSceneRoot",
                             "Properties": {
                                 "StaticMesh": "Cube",
                                 "Transform": {
-                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 1.3, "Y": 1.6, "Z": 0.2 }
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 5.199999809265137,
+                                        "Y": 12.0,
+                                        "Z": 0.20000000298023224
+                                    }
                                 },
-                                "bBlockComponent": false
-                            }
-                        },
-                        {
-                            "Class": "UBoxComponent",
-                            "Name": "CeilingCollider",
-                            "Parent": "DefaultSceneRoot",
-                            "Properties": {
-                                "BoxExtent": { "X": 0.65, "Y": 0.8, "Z": 0.1 },
-                                "bBlockComponent": true,
-                                "bDrawOnlyIfSelected": true,
-                                "bGenerateOverlapEvents": false
-                            }
-                        }
-                    ],
-                    "Properties": { "bActorEnableCollision": true }
-                },
-                {
-                    "Class": "AStaticMeshActor",
-                    "Name": "TestFloor",
-                    "Components": [
-                        {
-                            "Class": "USceneComponent",
-                            "Name": "DefaultSceneRoot",
-                            "Parent": "",
-                            "Properties": {
-                                "Transform": {
-                                    "Location": { "X": 0.0, "Y": 0.0, "Z": -0.1 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
-                                }
-                            }
-                        },
-                        {
-                            "Class": "UStaticMeshComponent",
-                            "Name": "UStaticMeshComponent",
-                            "Parent": "DefaultSceneRoot",
-                            "OverrideMaterials": [],
-                            "Properties": {
-                                "StaticMesh": "Cube",
-                                "Transform": {
-                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
-                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
-                                    "Scale": { "X": 2.6, "Y": 6.0, "Z": 0.2 }
-                                },
-                                "bBlockComponent": false
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
                             }
                         },
                         {
@@ -138,35 +212,123 @@
                             "Name": "FloorCollider",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "BoxExtent": { "X": 1.3, "Y": 3.0, "Z": 0.1 },
+                                "BoxExtent": {
+                                    "X": 1.2999999523162842,
+                                    "Y": 3.0,
+                                    "Z": 0.10000000149011612
+                                },
+                                "ShapeColor": 4286105710,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 2.0,
+                                        "Y": 2.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
                                 "bBlockComponent": true,
+                                "bCastShadow": false,
                                 "bDrawOnlyIfSelected": true,
-                                "bGenerateOverlapEvents": false
+                                "bGenerateOverlapEvents": false,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
                             }
                         }
                     ],
-                    "Properties": { "bActorEnableCollision": true }
+                    "Name": "TestFloor",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 },
                 {
                     "Class": "AActor",
-                    "Name": "TestLight",
                     "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
                         {
                             "Class": "UDirectionalLightComponent",
                             "Name": "UDirectionalLightComponent",
                             "Parent": "DefaultSceneRoot",
                             "Properties": {
-                                "Intensity": 0.8,
+                                "AngularRadiusDegrees": 3.0,
+                                "CascadeDistributionExponent": 3.0,
+                                "CascadeTransitionFraction": 0.10000000149011612,
+                                "DynamicShadowCascades": 4,
+                                "DynamicShadowDistanceMovableLight": 1000.0,
+                                "Intensity": 0.800000011920929,
+                                "LightColor": 4294967295,
+                                "ShadowBias": 0.5,
+                                "ShadowDistanceFadeoutFraction": 0.10000000149011612,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowSharpen": 0.0,
+                                "ShadowSlopeBias": 0.5,
                                 "Transform": {
-                                    "Location": { "X": -2.0, "Y": 0.0, "Z": 4.0 },
-                                    "Rotation": { "Pitch": 55.0, "Roll": 0.0, "Yaw": 35.0 },
-                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                    "Location": {
+                                        "X": -2.0,
+                                        "Y": 0.0,
+                                        "Z": 4.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 55.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 35.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
                                 },
-                                "bCastShadows": false
+                                "bAutoActivate": true,
+                                "bCastShadows": false,
+                                "bHiddenInGame": false,
+                                "bVisible": true
                             }
                         }
                     ],
-                    "Properties": {}
+                    "Name": "TestLight",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
                 }
             ],
             "Properties": {}
