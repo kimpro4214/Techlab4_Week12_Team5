@@ -37,6 +37,8 @@ FParticleEditor::~FParticleEditor()
 
 void FParticleEditor::Tick(float DeltaTime)
 {
+	if (!bViewportVisible) EndOriginGizmoDrag();
+
 	if (bViewportVisible && ViewportClient.GetWorld())
 	{
 		FViewportCameraState Camera{
@@ -158,7 +160,29 @@ void FParticleEditor::SetViewportState(uint32 Width, uint32 Height, const FViewp
 
 void FParticleEditor::FocusSystem()
 {
-	ViewportClient.FocusBounds(FBox{ FVector(-2.0f, -2.0f, 0.0f), FVector(2.0f, 2.0f, 4.0f) });
+	const FVector Origin = ParticleComponent ? ParticleComponent->GetWorldLocation() : FVector::ZeroVector;
+	ViewportClient.FocusBounds(FBox{ Origin + FVector(-2.0f, -2.0f, 0.0f), Origin + FVector(2.0f, 2.0f, 4.0f) });
+}
+
+void FParticleEditor::SetOriginGizmoEnabled(bool bEnabled)
+{
+	OriginGizmo = FGizmo{};
+	OriginGizmoTarget.SetTarget(bEnabled ? ParticleComponent : nullptr);
+	if (OriginGizmoTarget.GetTarget())
+	{
+		OriginGizmo.SetSpace(EGizmoSpace::World);
+		OriginGizmo.SetTarget(&OriginGizmoTarget);
+	}
+}
+
+void FParticleEditor::UpdateOriginGizmo(const FVector2& LocalMouse, bool bMouseDown)
+{
+	if (!IsOriginGizmoEnabled() || !ViewportClient.GetWidth() || !ViewportClient.GetHeight()) return;
+
+	OriginGizmo.Update(ViewportClient.DeprojectScreenToWorld(LocalMouse), LocalMouse,
+		ViewportClient.GetViewProjectionMatrix(), static_cast<int32>(ViewportClient.GetWidth()),
+		static_cast<int32>(ViewportClient.GetHeight()), bMouseDown, ViewportClient.GetViewLocation(),
+		!ViewportClient.IsPerspective());
 }
 
 ////////////////////////////////////////////////////////////
@@ -525,6 +549,7 @@ bool FParticleEditor::InitializeResources()
 
 void FParticleEditor::ShutdownResources()
 {
+	SetOriginGizmoEnabled(false);
 	BeginUIFrame();
 	ViewportClient.SetWorld(nullptr);
 	ViewportClient.GetViewTargets().Reset();

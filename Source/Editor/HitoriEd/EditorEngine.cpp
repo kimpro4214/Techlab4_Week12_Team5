@@ -1232,6 +1232,15 @@ void UEditorEngine::RenderParticlePreview(FParticleEditor& Editor)
 			}
 
 
+			if (Editor.IsOriginGizmoEnabled())
+			{
+				Overlays.EditorGizmo = [this, &Editor, &SceneView]
+					{
+						GizmoRenderer->OnRender(Editor.GetOriginGizmo(), SceneView.ViewProjectionMatrix,
+							SceneView.ViewLocation, !SceneView.bIsPerspective);
+					};
+			}
+
 			Overlays.bClearEditorDepth = true;
 		});
 }
