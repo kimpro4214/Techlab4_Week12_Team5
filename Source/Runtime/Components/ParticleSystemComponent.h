@@ -74,6 +74,8 @@ private:
 	bool bPendingDeactivate = false;
 	bool bHasCompleted = false;
 	bool bSystemInitialized = false;
+	// 인스턴스를 만들 때 쓴 Template. 씬 로드처럼 Template만 바뀐 경우를 Tick에서 알아채 다시 만든다
+	UParticleSystem* InitializedTemplate = nullptr;
 
 	// 에디터가 소유한 프리뷰 컴포넌트에서만 설정합니다.
 	int32 EmitterLODIndex = 0;

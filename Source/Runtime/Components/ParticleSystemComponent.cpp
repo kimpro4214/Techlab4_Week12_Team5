@@ -71,6 +71,7 @@ void UParticleSystemComponent::InitializeSystem()
 		return;
 
 	bSystemInitialized = true;
+	InitializedTemplate = Template;
 	for (UParticleEmitter* Emitter : Template->GetEmitters())
 	{
 		const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(EmitterLODIndex) : nullptr;
@@ -108,7 +109,9 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
 	// 끄는 중에는 만들지 않는다: 첫 Tick 전에 Deactivate가 불렸는데 여기서 만들면 다시 뿜기 시작한다
-	if (!bSystemInitialized && Template && !bPendingDeactivate)
+	// 씬 로드는 생성자가 기본 Template으로 만든 뒤 Template 값만 덮어쓰므로, 바뀌었으면 다시 만든다
+	const bool bTemplateChanged = bSystemInitialized && Template != InitializedTemplate;
+	if ((!bSystemInitialized || bTemplateChanged) && Template && !bPendingDeactivate)
 		InitializeSystem();
 
 	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한

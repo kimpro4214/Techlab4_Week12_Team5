@@ -1,0 +1,221 @@
+{
+    "Version": 4,
+    "World": {
+        "PersistentLevel": {
+            "Actors": [
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "Showcase_Sprite",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": -7.5, "Z": 0.1 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/Showcase_Sprite.particle"
+                            }
+                        }
+                    ],
+                    "Properties": { "bActorEnableCollision": false }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "Showcase_Mesh",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": -3.5, "Z": 0.1 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/Showcase_Mesh.particle"
+                            }
+                        }
+                    ],
+                    "Properties": { "bActorEnableCollision": false }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "Showcase_Beam",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.5 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/Showcase_Beam.particle"
+                            }
+                        }
+                    ],
+                    "Properties": { "bActorEnableCollision": false }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "Showcase_Ribbon",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 7.5, "Z": 0.4 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/Showcase_Ribbon.particle",
+                                "Transform": {
+                                    "Location": { "X": 1.2, "Y": 0.0, "Z": 0.0 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "URotatingMovementComponent",
+                            "Name": "RotatingMovement",
+                            "Parent": "",
+                            "Properties": {
+                                "RotationRate": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 200.0 },
+                                "PivotTranslation": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+                                "bRotaionInLocalSpace": true
+                            }
+                        }
+                    ],
+                    "Properties": { "bActorEnableCollision": false }
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "Showcase_Floor",
+                    "Components": [
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "OverrideMaterials": [],
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": -0.1 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 6.0, "Y": 20.0, "Z": 0.2 }
+                                },
+                                "bBlockComponent": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "Showcase_BeamStartPillar",
+                    "Components": [
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "OverrideMaterials": [],
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.25 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 0.3, "Y": 0.3, "Z": 0.5 }
+                                },
+                                "bBlockComponent": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "Showcase_BeamEndPillar",
+                    "Components": [
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "OverrideMaterials": [],
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 3.0, "Z": 1.0 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 0.3, "Y": 0.3, "Z": 2.0 }
+                                },
+                                "bBlockComponent": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AActor",
+                    "Name": "Showcase_Light",
+                    "Components": [
+                        {
+                            "Class": "UDirectionalLightComponent",
+                            "Name": "UDirectionalLightComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Intensity": 0.6,
+                                "Transform": {
+                                    "Location": { "X": -3.0, "Y": 0.0, "Z": 5.0 },
+                                    "Rotation": { "Pitch": 55.0, "Roll": 0.0, "Yaw": 25.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                },
+                                "bCastShadows": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                }
+            ],
+            "Properties": {}
+        },
+        "Properties": {}
+    }
+}
