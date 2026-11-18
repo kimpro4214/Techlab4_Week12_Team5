@@ -1,18 +1,15 @@
 #include "EnginePCH.h"
 #include "Core/FileUtils.h"
 
-namespace
+std::filesystem::path FFileUtils::ToNativePath(FStringView Path)
 {
-	std::filesystem::path ToNativePath(const FString& Path)
-	{
-		return std::filesystem::path(std::u8string(Path.begin(), Path.end()));
-	}
+	return std::filesystem::path(std::u8string(Path.begin(), Path.end()));
+}
 
-	FString ToUTF8String(const std::filesystem::path& Path)
-	{
-		const std::u8string UTF8Path = Path.generic_u8string();
-		return FString(UTF8Path.begin(), UTF8Path.end());
-	}
+FString FFileUtils::ToUTF8String(const std::filesystem::path& Path)
+{
+	const std::u8string UTF8Path = Path.generic_u8string();
+	return FString(UTF8Path.begin(), UTF8Path.end());
 }
 
 FString FFileUtils::NormalizePath(const FString& Path)

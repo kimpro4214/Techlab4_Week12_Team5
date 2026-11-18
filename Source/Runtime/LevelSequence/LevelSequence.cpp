@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "LevelSequence/LevelSequence.h"
 
+#include "Core/FileUtils.h"
 #include "MovieScene/MovieScene.h"
 #include "Engine/World.h"
 #include "Engine/Level.h"
@@ -80,7 +81,7 @@ bool ULevelSequence::SaveToFile(const FString& Path) const
 	Root["BindingReferences"] = std::move(References);
 
 	std::error_code Error;
-	const fs::path FilePath(Path);
+	const fs::path FilePath = FFileUtils::ToNativePath(Path);
 	if (FilePath.has_parent_path()) fs::create_directories(FilePath.parent_path(), Error);
 	std::ofstream File(FilePath);
 	if (!File) return false;
@@ -91,7 +92,7 @@ bool ULevelSequence::SaveToFile(const FString& Path) const
 
 bool ULevelSequence::LoadFromFile(const FString& Path)
 {
-	std::ifstream File(Path);
+	std::ifstream File(FFileUtils::ToNativePath(Path));
 	if (!File) return false;
 	const nlohmann::json Root = nlohmann::json::parse(File, nullptr, false);
 	if (Root.is_discarded() || !Root.is_object() || Root.value("Type", FString()) != "LevelSequence") return false;

@@ -1,5 +1,6 @@
 ﻿#include "EnginePCH.h"
 #include "JsonArchive.h"
+#include "Core/FileUtils.h"
 
 #include "Engine/World.h"
 #include "Engine/Level.h"
@@ -84,30 +85,22 @@ bool FJsonArchive::SaveWorld(UWorld* World, const FString& Path)
 	if (!SaveWorldToBytes(World, Bytes))
 		return false;
 
-	std::ofstream File(Path, std::ios::binary);
-	if (!File.is_open())
-		return false;
-	File.write(reinterpret_cast<const char*>(Bytes.GetData()), Bytes.Num());
-	return !File.fail();
+	FString Error;
+	if (FFileUtils::WriteAllBytesAtomic(Path, Bytes, Error)) return true;
+
+	HTR_LOG(Error, "{}", Error);
+	return false;
 }
 
 bool FJsonArchive::LoadWorld(UWorld* World, const FString& Path)
 {
-	if (!std::filesystem::exists(Path))
+	TArray<uint8> Bytes;
+	FString Error;
+	if (!FFileUtils::ReadAllBytes(Path, Bytes, Error))
 	{
-		HTR_LOG(Warning, "{} is Not Exist!", Path);
+		HTR_LOG(Warning, "{}", Error);
 		return false;
 	}
-
-	std::ifstream File(Path, std::ios::binary);
-	if (!File.is_open())
-		return false;
-
-	TArray<uint8> Bytes;
-	Bytes.SetNum(static_cast<int32>(std::filesystem::file_size(Path)));
-	File.read(reinterpret_cast<char*>(Bytes.GetData()), Bytes.Num());
-	if (File.fail())
-		return false;
 
 	return LoadWorldFromBytes(World, Bytes);
 }

@@ -28,6 +28,7 @@
 #include "UObject/UObjectIterator.h"
 #include "GameFramework/Actor.h"
 #include "Core/EngineLog.h"
+#include "Core/FileUtils.h"
 
 #include "Editor/HitoriEd/EditorFileUtils.h"
 #include "Script/LuaScriptManager.h"
@@ -280,12 +281,12 @@ namespace
 
 	FString GetAssetDisplayName(const FString& Path)
 	{
-		fs::path AssetPath(Path);
+		const fs::path AssetPath = FFileUtils::ToNativePath(Path);
 		if (AssetPath.stem() == "Atlas")
 		{
-			return AssetPath.parent_path().filename().string();
+			return FFileUtils::ToUTF8String(AssetPath.parent_path().filename());
 		}
-		return AssetPath.stem().string();
+		return FFileUtils::ToUTF8String(AssetPath.stem());
 	}
 
 	void DrawFontSlot(UObject* Owner, UFont** FontPtr)

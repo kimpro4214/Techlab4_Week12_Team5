@@ -3,6 +3,7 @@
 #include "Asset/AssetUtils.h"
 #include "Render/Particle/ParticleSystem.h"
 #include "AssetManager.h"
+#include "Core/FileUtils.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
 #include "Render/SkeletalMesh.h"
@@ -123,12 +124,12 @@ namespace
 
 	FString MakeAssetKey(const FString& Path)
 	{
-		const fs::path FsPath(Path);
+		const fs::path FsPath = FFileUtils::ToNativePath(Path);
 		if (!FsPath.empty() && *FsPath.begin() == "Assets")
 		{
-			return fs::relative(FsPath, "Assets").generic_string();
+			return FFileUtils::ToUTF8String(fs::relative(FsPath, "Assets"));
 		}
-		return FsPath.generic_string();
+		return FFileUtils::ToUTF8String(FsPath);
 	}
 
 	// 임포터가 만든 데이터를 UAnimSequence로 감싼다.
@@ -301,7 +302,7 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 {
 	if (!fs::exists(AssetRoot))
 	{
-		HTR_LOG(Error, "Asset root not found: {}", AssetRoot.generic_string());
+		HTR_LOG(Error, "Asset root not found: {}", FFileUtils::ToUTF8String(AssetRoot));
 		return;
 	}
 
@@ -317,10 +318,8 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 	const int32 Total = Files.Num();
 	for (int32 i = 0; i < Total; ++i)
 	{
-		const std::u8string RelativePath = fs::relative(Files[i], AssetRoot).generic_u8string();
-		const std::u8string FilePath = Files[i].generic_u8string();
-		FString Key(RelativePath.begin(), RelativePath.end());
-		FString Path(FilePath.begin(), FilePath.end());
+		const FString Key = FFileUtils::ToUTF8String(fs::relative(Files[i], AssetRoot));
+		const FString Path = FFileUtils::ToUTF8String(Files[i]);
 		AssetPathMap.Add(Key, Path);
 		const FString Extension = AssetUtils::GetAssetExtension(Path);
 		if (!AssetUtils::IsSerializedAssetExtension(Extension))
@@ -348,7 +347,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 		}
 	}
 	if (Extension == ".json") {
-		const FString TexturePath{ fs::path{ Path }.replace_extension(".png").string() };
+		const FString TexturePath = FFileUtils::ToUTF8String(FFileUtils::ToNativePath(Path).replace_extension(".png"));
 		if (UFont* Font{ LoadFontAtlas(Path, TexturePath) }) {
 			AssetMap[Key] = Font;
 		}
@@ -703,12 +702,13 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 	}
 
 	// 경로 별칭으로 요청한 경우에도 기존 공유 메시를 사용한다.
+	const fs::path NativePath = FFileUtils::ToNativePath(Path);
 	for (const auto& [RegisteredKey, RegisteredPath] : Get().AssetPathMap)
 	{
 		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
 		if (!Registered) continue;
 		std::error_code Error;
-		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
+		if (fs::equivalent(NativePath, FFileUtils::ToNativePath(RegisteredPath), Error) && !Error) return Registered;
 	}
 
 	TUniquePtr<FStaticMeshData> Data = FObjImporter::LoadStaticMeshData(Path);
@@ -746,7 +746,8 @@ UStaticMesh* UAssetManager::LoadFbxStaticMesh(const FString& Key, const FString&
 		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
 		if (!Registered) continue;
 		std::error_code Error;
-		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
+		if (fs::equivalent(FFileUtils::ToNativePath(Path), FFileUtils::ToNativePath(RegisteredPath), Error) && !Error)
+			return Registered;
 	}
 
 	FStaticMeshData MeshData;
@@ -804,16 +805,20 @@ UAnimSequence* UAssetManager::LoadFbxAnimSequence(const FString& Path, FString& 
 		if (UAnimSequence* Cached = Cast<UAnimSequence>(AssetMap.FindRef(AnimKey))) return Cached;
 	}
 
+	const fs::path NativePath = FFileUtils::ToNativePath(Path);
+	const fs::path AssetPath = fs::path("Assets") / FFileUtils::ToNativePath(Key);
+	const bool bFileExists = fs::exists(NativePath);
+	const fs::path& RequestedPath = bFileExists ? NativePath : AssetPath;
+
 	// 에디터 키의 절대 경로/대소문자 정규화 이후에도 기존 클립을 재사용한다.
 	for (const auto& [RegisteredKey, RegisteredAsset] : AssetMap)
 	{
 		UAnimSequence* Cached = Cast<UAnimSequence>(RegisteredAsset);
 		if (!Cached || Name.empty()) continue;
-		const fs::path ClipPath(RegisteredKey);
-		if (!Name.empty() && ClipPath.filename().string() != Name) continue;
+		const fs::path ClipPath = FFileUtils::ToNativePath(RegisteredKey);
+		if (FFileUtils::ToUTF8String(ClipPath.filename()) != Name) continue;
 		const fs::path RegisteredPath = fs::path("Assets") / ClipPath.parent_path();
 		std::error_code Error;
-		const fs::path RequestedPath = fs::exists(Path) ? fs::path(Path) : fs::path("Assets") / Key;
 		if (fs::equivalent(RequestedPath, RegisteredPath, Error) && !Error) return Cached;
 	}
 
@@ -824,10 +829,9 @@ UAnimSequence* UAssetManager::LoadFbxAnimSequence(const FString& Path, FString& 
 		{
 			DiskPath = *MappedPath;
 		}
-		else if (!fs::exists(DiskPath))
+		else if (!bFileExists && fs::exists(AssetPath))
 		{
-			const FString Candidate = (fs::path("Assets") / Key).generic_string();
-			if (fs::exists(Candidate)) DiskPath = Candidate;
+			DiskPath = FFileUtils::ToUTF8String(AssetPath);
 		}
 		LoadFbxAnimations(Key, DiskPath, OutError);
 		if (!OutError.empty()) return nullptr;
@@ -881,12 +885,14 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 	}
 
 	// 편집기 식별 경로의 대소문자·절대 경로 표기가 달라도 기존 공유 메시를 재사용한다.
+	const fs::path NativePath = FFileUtils::ToNativePath(Path);
 	for (const auto& [RegisteredKey, RegisteredPath] : AssetPathMap)
 	{
 		UAsset** Registered = AssetMap.Find(RegisteredKey);
 		if (!Registered || !*Registered || !(*Registered)->IsA<USkeletalMesh>()) continue;
 		std::error_code Error;
-		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Cast<USkeletalMesh>(*Registered);
+		if (fs::equivalent(NativePath, FFileUtils::ToNativePath(RegisteredPath), Error) && !Error)
+			return Cast<USkeletalMesh>(*Registered);
 	}
 
 	FSkeletalMeshData MeshData;
@@ -917,11 +923,12 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 		}
 	}
 
-	const FString PosePath = fs::path(Path).replace_extension(".pose").generic_string();
+	fs::path PosePath = NativePath;
+	PosePath.replace_extension(".pose");
 	if (fs::exists(PosePath))
 	{
 		FString PoseError;
-		if (!LoadPoseFile(MeshData, PosePath, PoseError))
+		if (!LoadPoseFile(MeshData, FFileUtils::ToUTF8String(PosePath), PoseError))
 		{
 			HTR_LOG(Warning, "Failed to load pose override for '{}': {}", Path, PoseError);
 		}
@@ -1048,7 +1055,7 @@ void UAssetManager::ForEachObjStaticMesh(const std::function<void(const FString&
 {
 	for (auto& [Key, Asset] : Get().AssetMap)
 	{
-		if (!Asset || !Asset->IsA<UStaticMesh>() || !fs::path(Key).extension().string().ends_with(".obj"))
+		if (!Asset || !Asset->IsA<UStaticMesh>() || FFileUtils::GetExtension(Key) != ".obj")
 			continue;
 		Func(Key, *Cast<UStaticMesh>(Asset));
 	}

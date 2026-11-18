@@ -2,12 +2,12 @@
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditorTab.h"
 #include "Asset/AssetManager.h"
+#include "Asset/AssetUtils.h"
 #include "Components/StaticMeshComponent.h"
+#include "Core/FileUtils.h"
 #include "Editor/Settings/SettingsPanel.h"
 #include "Engine/World.h"
 #include "Render/Mesh.h"
-
-#include <cctype>
 
 FStaticMeshEditor::FStaticMeshEditor(UEngine* InEngine, FEditorManager& InManager, const FAssetEditorKey& InKey,
 	UStaticMesh* InMesh, const FEditorSettings* InSettings, FPreviewRenderer InRenderer)
@@ -24,9 +24,7 @@ FStaticMeshEditor::~FStaticMeshEditor()
 UStaticMesh* FStaticMeshEditor::LoadMesh(const FString& Path, FString& OutError)
 {
 	OutError.clear();
-	FString Extension = fs::path(Path).extension().string();
-	std::transform(Extension.begin(), Extension.end(), Extension.begin(),
-		[](unsigned char Character) { return static_cast<char>(std::tolower(Character)); });
+	const FString Extension = AssetUtils::GetAssetExtension(Path);
 	if (Extension == ".obj")
 	{
 		UStaticMesh* Loaded = UAssetManager::LoadObjStaticMesh(Path);
@@ -36,8 +34,8 @@ UStaticMesh* FStaticMeshEditor::LoadMesh(const FString& Path, FString& OutError)
 	if (Extension == ".fbx")
 	{
 		std::error_code Error;
-		const fs::path Relative = fs::relative(Path, "Assets", Error);
-		if (!Error) return UAssetManager::Get().LoadFbxStaticMesh(Relative.generic_string(), Path, OutError);
+		const fs::path Relative = fs::relative(FFileUtils::ToNativePath(Path), "Assets", Error);
+		if (!Error) return UAssetManager::Get().LoadFbxStaticMesh(FFileUtils::ToUTF8String(Relative), Path, OutError);
 		OutError = Error.message();
 		return nullptr;
 	}

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/FileUtils.h"
 #include "SkeletalPoseFile.h"
 
 #include "Render/SkeletalMeshData.h"
@@ -54,7 +55,7 @@ namespace
 
 bool LoadPoseFile(FSkeletalMeshData& Data, const FString& PosePath, FString& OutError)
 {
-	std::ifstream In(PosePath);
+	std::ifstream In(FFileUtils::ToNativePath(PosePath));
 	if (!In)
 	{
 		OutError = "Failed to open pose file: " + PosePath;
@@ -118,18 +119,20 @@ bool SavePoseFile(const FReferenceSkeleton& Skeleton, const TArray<FTransform>& 
 	File["Bones"] = std::move(Bones);
 
 	// 임시 파일에 쓰다가 성공하면 교체
-	const FString TempPath = Path + ".tmp";
+	const auto Target = FFileUtils::ToNativePath(Path);
+	auto TempPath = Target;
+	TempPath += L".tmp";
 	{
 		std::ofstream Out(TempPath, std::ios::trunc);
 		if (!Out || !(Out << File.dump(2)))
 		{
-			OutError = "Failed to open temporary file for writing: " + TempPath;
+			OutError = "Failed to open temporary file for writing: " + FFileUtils::ToUTF8String(TempPath);
 			return false;
 		}
 	}
 
 	std::error_code ErrorCode;
-	std::filesystem::rename(TempPath, Path, ErrorCode);
+	std::filesystem::rename(TempPath, Target, ErrorCode);
 	if (ErrorCode)
 	{
 		OutError = "Cannot replace pose file: " + ErrorCode.message();

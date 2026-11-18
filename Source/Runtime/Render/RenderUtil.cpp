@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "RenderUtil.h"
+#include "Core/FileUtils.h"
 #include "Core/StringUtils.h"
 
 #include <algorithm>
@@ -84,9 +85,10 @@ FShaderByteCode RenderUtil::CompileShader(FString Path, const char* EntryPoint, 
 
 void RenderUtil::SaveByteCode(FString CsoPath, const FShaderByteCode& ByteCode)
 {
-	fs::create_directories(fs::path(CsoPath).parent_path());
-	std::ofstream Out(CsoPath, std::ios::binary);
-	if (!Out) { fs::remove(CsoPath); return; }
+	const fs::path Path = FFileUtils::ToNativePath(CsoPath);
+	fs::create_directories(Path.parent_path());
+	std::ofstream Out(Path, std::ios::binary);
+	if (!Out) { fs::remove(Path); return; }
 	Out.write(reinterpret_cast<const char*>(ByteCode.GetData()), ByteCode.GetSize());
 }
 
@@ -94,7 +96,7 @@ FShaderByteCode RenderUtil::LoadByteCode(const FString& CsoPath)
 {
 	FShaderByteCode Result;
 
-	std::ifstream In(CsoPath, std::ios::binary | std::ios::ate);
+	std::ifstream In(FFileUtils::ToNativePath(CsoPath), std::ios::binary | std::ios::ate);
 	if (!In) return Result;
 
 	const std::streamsize Size = In.tellg();
@@ -111,7 +113,7 @@ FShaderByteCode RenderUtil::LoadByteCode(const FString& CsoPath)
 
 FString RenderUtil::GetCsoPath(const FString& ShaderPath, EShaderType ShaderType, const D3D_SHADER_MACRO* Macros)
 {
-	const fs::path Rel = fs::relative(ShaderPath, "Resources/Shader");
+	const fs::path Rel = fs::relative(FFileUtils::ToNativePath(ShaderPath), "Resources/Shader");
 	const char* Suffix = GetShaderPrefix(ShaderType);
 	FString MacroSuffix;
 	while (Macros && Macros->Name)
@@ -126,8 +128,9 @@ FString RenderUtil::GetCsoPath(const FString& ShaderPath, EShaderType ShaderType
 #else
 	fs::path Out = fs::path("Intermediate/Shaders/Release") / Rel.parent_path();
 #endif
-	Out /= Rel.stem().generic_string() + MacroSuffix.c_str() + Suffix;
-	return Out.generic_string();
+	fs::path Filename = Rel.stem();
+	Filename += FFileUtils::ToNativePath(MacroSuffix + Suffix);
+	return FFileUtils::ToUTF8String(Out / Filename);
 }
 
 namespace
@@ -159,7 +162,8 @@ namespace
 			const size_t Open = Line.find('"', Directive);
 			const size_t Close = Open == std::string::npos ? std::string::npos : Line.find('"', Open + 1);
 			if (Close == std::string::npos) continue;
-			if (!GetLatestSourceTime(Normalized.parent_path() / Line.substr(Open + 1, Close - Open - 1), Visited, InOutLatest))
+			const fs::path Include = FFileUtils::ToNativePath(std::string_view(Line).substr(Open + 1, Close - Open - 1));
+			if (!GetLatestSourceTime(Normalized.parent_path() / Include, Visited, InOutLatest))
 				return false;
 		}
 		return true;
@@ -171,13 +175,14 @@ namespace
 bool RenderUtil::IsCsoUpToDate(const FString& ShaderPath, const FString& CsoPath)
 {
 	std::error_code Ec;
-	if (!fs::exists(CsoPath, Ec)) return false;
-	const auto CsoTime = fs::last_write_time(CsoPath, Ec);
+	const fs::path NativeCsoPath = FFileUtils::ToNativePath(CsoPath);
+	if (!fs::exists(NativeCsoPath, Ec)) return false;
+	const auto CsoTime = fs::last_write_time(NativeCsoPath, Ec);
 	if (Ec) return false;
 
 	std::vector<fs::path> Visited;
 	fs::file_time_type LatestSource = fs::file_time_type::min();
-	if (!GetLatestSourceTime(fs::path(ShaderPath), Visited, LatestSource)) return false;
+	if (!GetLatestSourceTime(FFileUtils::ToNativePath(ShaderPath), Visited, LatestSource)) return false;
 
 	return CsoTime > LatestSource;
 }

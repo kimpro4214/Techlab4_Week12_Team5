@@ -2,20 +2,12 @@
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
+#include "Core/FileUtils.h"
 #include "Core/StringUtils.h"
 #include "Text/Font.h"
 #include "Render/Mesh.h"
 #include "Render/SkeletalMesh.h"
 #include "Editor/HitoriEd/EditorDragDrop.h"
-
-namespace
-{
-	FString ToUtf8Path(const fs::path& Path)
-	{
-		const std::u8string Utf8Path = Path.generic_u8string();
-		return FString(Utf8Path.begin(), Utf8Path.end());
-	}
-}
 
 bool FContentDrawerPanel::Init()
 {
@@ -49,7 +41,7 @@ void FContentDrawerPanel::OnRender()
 	ImGui::BeginChild("FolderTreeView", ImVec2(treeViewWidth, 0));
 	{
 		// 루트 노드
-		if (ImGui::TreeNodeEx(AssetRootPath.string().c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth |
+		if (ImGui::TreeNodeEx(FFileUtils::ToUTF8String(AssetRootPath).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth |
 			(AssetRootPath == CurrentPath ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_DrawLinesToNodes))
 		{
 			if (ImGui::IsItemClicked())
@@ -92,14 +84,18 @@ void FContentDrawerPanel::OnRender()
 		if (ImGui::BeginPopupModal("Create Widget", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::InputText("Name", NewAssetName, sizeof(NewAssetName));
-			const fs::path Target = CurrentPath / (FString(NewAssetName) + ".widget");
-			const bool bExists = fs::exists(Target);
+			FWideString WideName;
+			const bool bValidName = NewAssetName[0] != '\0' && StringUtils::TryUtf8ToWide(NewAssetName, WideName);
+			const fs::path Target = CurrentPath / (WideName + L".widget");
+			std::error_code PathError;
+			const bool bExists = bValidName && fs::exists(Target, PathError);
 			if (bExists) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "A file with this name already exists.");
+			if (PathError) ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Could not check the destination path.");
 
-			ImGui::BeginDisabled(bExists || NewAssetName[0] == '\0');
+			ImGui::BeginDisabled(!bValidName || bExists || PathError);
 			if (ImGui::Button("Create") && OnCreateWidget.IsBound())
 			{
-				OnCreateWidget.Broadcast(Target.generic_string());   // "Assets/UI/GameOver.widget" 형식
+				OnCreateWidget.Broadcast(FFileUtils::ToUTF8String(Target));
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndDisabled();
@@ -137,8 +133,8 @@ void FContentDrawerPanel::OnRender()
 
 				ImGui::TableNextColumn();
 
-				const FString PathString = ToUtf8Path(Path);
-				const FString FilenameString = ToUtf8Path(Path.filename());
+				const FString PathString = FFileUtils::ToUTF8String(Path);
+				const FString FilenameString = FFileUtils::ToUTF8String(Path.filename());
 				const bool bIsParticle = !bIsDirectory && AssetUtils::GetAssetExtension(PathString) == ".particle";
 
 				ImGui::PushID(PathString.c_str()); // 각 위젯에 고유 ID 부여
@@ -209,9 +205,9 @@ void FContentDrawerPanel::OnRender()
 					&& ImGui::BeginDragDropSource())
 				{
 					// 시작 시 로드한 에셋과 같은 키를 사용해 공유 리소스를 재사용한다.
-					const FString Key = Path.lexically_relative(AssetRootPath).generic_string();
+					const FString Key = FFileUtils::ToUTF8String(Path.lexically_relative(AssetRootPath));
 					FString LoadError;
-					USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(Key, Path.generic_string(), LoadError);
+					USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(Key, PathString, LoadError);
 					if (Mesh)
 					{
 						ImGui::SetDragDropPayload(EditorDragDrop::SkeletalMesh, &Mesh, sizeof(Mesh));
@@ -237,16 +233,16 @@ void FContentDrawerPanel::OnRender()
 					}
 					else if (Path.extension() == ".widget" && OnOpenWidget.IsBound())
 					{
-						OnOpenWidget.Broadcast(Path.generic_string());
+						OnOpenWidget.Broadcast(PathString);
 					}
 					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic.IsBound())
 					{
-						OnOpenStatic.Broadcast(Path.generic_string());
+						OnOpenStatic.Broadcast(PathString);
 					}
 					else if (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					{
 						// ScanAssets에서 등록한 것과 같은 Assets 기준 상대 경로를 사용한다.
-						const FString Key = Path.lexically_relative(AssetRootPath).generic_string();
+						const FString Key = FFileUtils::ToUTF8String(Path.lexically_relative(AssetRootPath));
 						UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(Key);
 
 						if (!Asset)
@@ -258,12 +254,12 @@ void FContentDrawerPanel::OnRender()
 							// 실제 SkeletalMesh일 때만 해당 편집기를 연다.
 							if (OnOpenSkeletal.IsBound())
 							{
-								OnOpenSkeletal.Broadcast(Path.generic_string());
+								OnOpenSkeletal.Broadcast(PathString);
 							}
 						}
 						else if (Asset->IsA<UStaticMesh>())
 						{
-							if (OnOpenStatic.IsBound()) OnOpenStatic.Broadcast(Path.generic_string());
+							if (OnOpenStatic.IsBound()) OnOpenStatic.Broadcast(PathString);
 						}
 						else
 						{
@@ -272,7 +268,7 @@ void FContentDrawerPanel::OnRender()
 					}
 				}
 				if (bIsFbx)
-					ImGui::TextWrapped("[Mesh] %s", ToUtf8Path(Path.stem()).c_str());
+					ImGui::TextWrapped("[Mesh] %s", FFileUtils::ToUTF8String(Path.stem()).c_str());
 				else
 					ImGui::TextWrapped("%s", FilenameString.c_str());
 
@@ -321,7 +317,7 @@ void FContentDrawerPanel::DrawCreateParticlePopup()
 	ImGui::BeginDisabled(!bCanCreate);
 	if ((ImGui::Button("Create") || bSubmit) && bCanCreate)
 	{
-		OnCreateParticle.Broadcast(ToUtf8Path(Target), ParticleCreateError);
+		OnCreateParticle.Broadcast(FFileUtils::ToUTF8String(Target), ParticleCreateError);
 		if (ParticleCreateError.empty())
 			ImGui::CloseCurrentPopup();
 	}
@@ -333,7 +329,7 @@ void FContentDrawerPanel::DrawCreateParticlePopup()
 
 void FContentDrawerPanel::DrawAnimationAssets(const fs::path& FbxPath, float ThumbnailSize)
 {
-	const FString FbxKey = FbxPath.lexically_relative(AssetRootPath).generic_string();
+	const FString FbxKey = FFileUtils::ToUTF8String(FbxPath.lexically_relative(AssetRootPath));
 	USkeletalMesh* Mesh = UAssetManager::GetAssetByPath<USkeletalMesh>(FbxKey);
 	if (!Mesh) return;
 
@@ -351,7 +347,7 @@ void FContentDrawerPanel::DrawAnimationAssets(const fs::path& FbxPath, float Thu
 		// 이름과 썸네일을 포함한 항목 전체에서 더블클릭을 받는다.
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Animation: %s\nSource: %s", Clip.DisplayName.c_str(), FbxPath.generic_string().c_str());
+			ImGui::SetTooltip("Animation: %s\nSource: %s", Clip.DisplayName.c_str(), FFileUtils::ToUTF8String(FbxPath).c_str());
 			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && OnOpenAnimation.IsBound())
 				OnOpenAnimation.Broadcast(Clip.Sequence, Mesh);
 		}
@@ -376,7 +372,7 @@ void FContentDrawerPanel::RenderFolderTree(const fs::path& Path, fs::path& Selec
 		if (TypeError || !bIsDirectory)
 			continue;
 
-		const FString FilenameString = ToUtf8Path(Entry.filename());
+		const FString FilenameString = FFileUtils::ToUTF8String(Entry.filename());
 
 		ImGuiTreeNodeFlags Flags =
 			ImGuiTreeNodeFlags_OpenOnArrow |

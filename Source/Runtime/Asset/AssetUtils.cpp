@@ -34,7 +34,7 @@ namespace AssetUtils
 			return Normalized;
 		}
 
-		const fs::path AssetPath(std::u8string(Normalized.begin(), Normalized.end()));
+		const fs::path AssetPath = FFileUtils::ToNativePath(Normalized);
 		const fs::path FilePath = fs::weakly_canonical(ProjectRoot / AssetPath, Error);
 		if (Error)
 		{
@@ -43,8 +43,7 @@ namespace AssetUtils
 
 		const fs::path RelativePath = FilePath.lexically_relative(ProjectRoot);
 		const bool bInProject = !RelativePath.empty() && *RelativePath.begin() != "..";
-		const std::u8string Key = (bInProject ? RelativePath : FilePath).generic_u8string();
-		return FString(Key.begin(), Key.end());
+		return FFileUtils::ToUTF8String(bInProject ? RelativePath : FilePath);
 	}
 
 	FString GetAssetExtension(const FString& Path)

@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "UI/WidgetSerializer.h"
 
+#include "Core/FileUtils.h"
 #include "UObject/UObjectHash.h"
 
 #include <fstream>
@@ -65,7 +66,7 @@ const json* FWidgetAssetCache::Find(const FString& Path)
 	if (const json* Cached = GetMap().Find(Path))
 		return Cached;
 
-	std::ifstream In(Path);
+	std::ifstream In(FFileUtils::ToNativePath(Path));
 	if (!In)
 	{
 		HTR_LOG(Error, "Cannot open widget asset: {}", Path);
@@ -84,11 +85,13 @@ const json* FWidgetAssetCache::Find(const FString& Path)
 void FWidgetAssetCache::Invalidate(const FString& Path)
 {
 	// 매니저의 정규화된 절대 경로로 저장해도 런타임의 상대 경로 캐시를 갱신한다.
+	const fs::path NativePath = FFileUtils::ToNativePath(Path);
 	TArray<FString> Matches;
 	for (const auto& [CachedPath, Data] : GetMap())
 	{
 		std::error_code Error;
-		if (CachedPath == Path || fs::equivalent(CachedPath, Path, Error)) Matches.Add(CachedPath);
+		if (CachedPath == Path || fs::equivalent(FFileUtils::ToNativePath(CachedPath), NativePath, Error))
+			Matches.Add(CachedPath);
 	}
 	for (const FString& Match : Matches) GetMap().Remove(Match);
 }

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/FileUtils.h"
 #include "FbxImporter.h"
 
 #include "Containers/Array.h"
@@ -317,10 +318,10 @@ bool FFbxImporter::ReadMaterialTexturePath(const FbxProperty& Property, const FS
 			continue;
 		}
 
-		std::filesystem::path Candidate(FileName);
+		std::filesystem::path Candidate = FFileUtils::ToNativePath(FileName);
 		if (!Candidate.is_absolute())
 		{
-			Candidate = std::filesystem::path(FbxPath).parent_path() / Candidate;
+			Candidate = FFileUtils::ToNativePath(FbxPath).parent_path() / Candidate;
 		}
 
 		Candidate = Candidate.lexically_normal();
@@ -328,7 +329,7 @@ bool FFbxImporter::ReadMaterialTexturePath(const FbxProperty& Property, const FS
 		std::error_code Error;
 		if (std::filesystem::is_regular_file(Candidate, Error))
 		{
-			OutTexturePath = Candidate.generic_string();
+			OutTexturePath = FFileUtils::ToUTF8String(Candidate);
 
 			return true;
 		}

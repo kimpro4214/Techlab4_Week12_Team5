@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/FileUtils.h"
 #include "Core/StringUtils.h"
 #include "ImageLoader.h"
 #include "RenderCommand.h"
@@ -7,6 +8,7 @@
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION   // 이미 다른 곳에 있으면 여기선 빼세요
+#define STBI_WINDOWS_UTF8
 #include "stb_image.h"
 
 FImageData ImageLoader::Load(const FString& Path)
@@ -192,7 +194,7 @@ FImageData ImageLoader::LoadDDS(const FString& Path)
 
 FImageData ImageLoader::LoadAuto(const FString& Path)
 {
-	const fs::path Ext = fs::path(Path).extension();
+	const FString Ext = FFileUtils::GetExtension(Path);
 	if (Ext == ".hdr" || Ext == ".HDR") return LoadHDR(Path);
 	if (Ext == ".dds" || Ext == ".DDS") return LoadDDS(Path);
 	return Load(Path);

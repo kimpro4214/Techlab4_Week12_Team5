@@ -1,5 +1,6 @@
 #include "EnginePCH.h"
 #include "RenderResourceManager.h"
+#include "Core/FileUtils.h"
 
 #include "RenderCommand.h"
 
@@ -145,7 +146,7 @@ void FRenderResourceManager::ScanShaders(const fs::path& ShaderRoot)
 
 	if (!fs::exists(ShaderRoot, ErrorCode))
 	{
-		HTR_LOG(Error, "[Shader] Scan Root Not Found : {}", ShaderRoot.generic_string());
+		HTR_LOG(Error, "[Shader] Scan Root Not Found : {}", FFileUtils::ToUTF8String(ShaderRoot));
 		return;
 	}
 
@@ -160,8 +161,7 @@ void FRenderResourceManager::ScanShaders(const fs::path& ShaderRoot)
 		if (Source.find("mainVS(") == std::string::npos ||
 			Source.find("mainPS(") == std::string::npos) continue;
 
-		FString Path = Entry.path().generic_string();
-		LoadOrCompileShader(Path);
+		LoadOrCompileShader(FFileUtils::ToUTF8String(Entry.path()));
 	}
 }
 

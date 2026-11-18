@@ -8,6 +8,7 @@
 
 #include "Render/StaticMeshData.h"
 #include "Core/EngineLog.h"
+#include "Core/FileUtils.h"
 
 static_assert(sizeof(FVertex) == 64);
 
@@ -22,7 +23,8 @@ static_assert(std::is_trivially_copyable_v<FLODSourceVertex>);
 namespace
 {
 	// FStaticMeshData, FVertex, FStaticMeshSection, FStaticMaterialSlot 구조가 바뀌면 올린다
-	constexpr uint32 BakeVersion{ 5 };
+	// 머티리얼 텍스처 경로를 UTF-8로 기록하므로 기존 캐시를 다시 생성한다.
+	constexpr uint32 BakeVersion{ 6 };
 
 	struct FBakeHeader
 	{
@@ -99,7 +101,7 @@ namespace
 
 TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 {
-	std::ifstream In(BinPath, std::ios::binary);
+	std::ifstream In(FFileUtils::ToNativePath(BinPath), std::ios::binary);
 	if (!In)
 	{
 		return nullptr;   // .bin이 없음 (처음 로드)
@@ -162,7 +164,7 @@ TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 
 void FStaticMeshBake::WriteBaked(const FString& BinPath, const FStaticMeshData& Data)
 {
-	std::ofstream Out(BinPath, std::ios::binary);
+	std::ofstream Out(FFileUtils::ToNativePath(BinPath), std::ios::binary);
 	if (!Out)
 	{
 		HTR_LOG(Warning, "[BAKE] {}: cannot open for writing", BinPath);

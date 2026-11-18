@@ -44,6 +44,7 @@
 #include "Editor/AnimationStateMachine/AnimationStateMachinePanel.h"
 #include "Editor/Outliner/OutlinerPanel.h"
 #include "Editor/HitoriEd/EditorFileUtils.h"
+#include "Core/FileUtils.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
@@ -238,10 +239,10 @@ bool UEditorEngine::Init()
 	EditorManager->RegisterFactory("SkeletalMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		std::error_code Error;
-		const fs::path RelativePath = fs::relative(Key.AssetPath, "Assets", Error);
+		const fs::path RelativePath = fs::relative(FFileUtils::ToNativePath(Key.AssetPath), "Assets", Error);
 		if (Error) return nullptr;
 		FString LoadError;
-		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(RelativePath.generic_string(), Key.AssetPath, LoadError);
+		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(FFileUtils::ToUTF8String(RelativePath), Key.AssetPath, LoadError);
 		if (!Mesh)
 		{
 			HTR_LOG(Error, "Cannot open skeletal mesh '{}': {}", Key.AssetPath, LoadError);
@@ -255,9 +256,9 @@ bool UEditorEngine::Init()
 		FString Error;
 		UAnimSequence* Sequence = UAssetManager::Get().LoadFbxAnimSequence(Key.AssetPath, Error, Key.SubAssetName);
 		std::error_code PathError;
-		const fs::path RelativePath = fs::relative(Key.AssetPath, "Assets", PathError);
+		const fs::path RelativePath = fs::relative(FFileUtils::ToNativePath(Key.AssetPath), "Assets", PathError);
 		if (!Sequence || PathError) return nullptr;
-		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(RelativePath.generic_string(), Key.AssetPath, Error);
+		USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(FFileUtils::ToUTF8String(RelativePath), Key.AssetPath, Error);
 		if (!Mesh) return nullptr;
 		return MakeUnique<FAnimationSequenceEditor>(this, Manager, Key, Sequence, Mesh, &SettingsPanel->GetSettings(),
 			[this](FAnimationSequenceEditor& Editor) { RenderAnimationSequencePreview(Editor); });
@@ -278,7 +279,7 @@ bool UEditorEngine::Init()
 		const FString& Path = Sequence->GetPath();
 		const size_t Separator = Path.find_last_of('/');
 		if (Separator == FString::npos) return;
-		EditorManager->OpenEditor({ "AnimationSequence", (fs::path("Assets") / Path.substr(0, Separator)).generic_string(), Path.substr(Separator + 1) });
+		EditorManager->OpenEditor({ "AnimationSequence", "Assets/" + Path.substr(0, Separator), Path.substr(Separator + 1) });
 	});
 	ViewportsPanel->SetSkeletalMeshDropCallback([this](USkeletalMesh* Mesh, int32 ViewIndex, const FVector2& Mouse)
 	{

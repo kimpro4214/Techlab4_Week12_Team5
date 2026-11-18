@@ -1,6 +1,7 @@
 ﻿#include "EnginePCH.h"
 #include "Editor/UIEditor/UIEditor.h"
 #include "Editor/UIEditor/UIEditorTab.h"
+#include "Core/FileUtils.h"
 #include "Render/RenderCommand.h"
 #include "UI/UIRenderer.h"
 #include "UI/UserWidget.h"
@@ -13,7 +14,7 @@ namespace
 	bool WriteAsset(const FString& Path, const FString& Data)
 	{
 		// 저장 실패 시 기존 파일을 보존하도록 같은 디렉터리에서 교체한다.
-		const fs::path Target(Path);
+		const fs::path Target = FFileUtils::ToNativePath(Path);
 		const fs::path Temporary = Target.wstring() + L".ui-editor.tmp";
 		std::ofstream Out(Temporary, std::ios::binary | std::ios::trunc);
 		Out << Data;
@@ -50,7 +51,7 @@ bool FUIEditor::CreateAssetFile(const FString& Path)
 {
 	// 신규 생성 요청으로 기존 에셋을 덮어쓰지 않는다.
 	std::error_code Error;
-	if (fs::exists(Path, Error) || Error) return false;
+	if (fs::exists(FFileUtils::ToNativePath(Path), Error) || Error) return false;
 	TUniquePtr<UCanvasPanel> NewRoot(NewObject<UCanvasPanel>());
 	NewRoot->WidgetName = "Root";
 	NewRoot->Anchors = FVector4(0.0f, 0.0f, 1.0f, 1.0f);
@@ -63,7 +64,7 @@ bool FUIEditor::CreateAssetFile(const FString& Path)
 
 bool FUIEditor::InitializeResources()
 {
-	std::ifstream In(GetKey().AssetPath);
+	std::ifstream In(FFileUtils::ToNativePath(GetKey().AssetPath));
 	json File = In ? json::parse(In, nullptr, false) : json();
 	if (File.is_discarded() || !File.is_object() || !File.contains("Root")) return false;
 	if (!RestoreSnapshot(File.dump(), true)) return false;

@@ -1,13 +1,21 @@
 #include "EnginePCH.h"
 #include "SoundWave.h"
 #include "Audio/MiniaudioInclude.h"
+#include "Core/StringUtils.h"
 
 bool USoundWave::LoadFromFile(const FString& Path)
 {
+	FWideString FilePath;
+	if (!StringUtils::TryUtf8ToWide(Path, FilePath))
+	{
+		HTR_LOG(Error, "[Audio] Invalid UTF-8 path: {}", Path);
+		return false;
+	}
+
 	// 채널 0 = 원본 유지. 3채널 이상이면 스테레오로 다시 연다.
 	ma_decoder_config Config = ma_decoder_config_init(ma_format_f32, 0, 0);
 	ma_decoder Decoder;
-	if (ma_decoder_init_file(Path.c_str(), &Config, &Decoder) != MA_SUCCESS)   // Windows에서 UTF-8 경로 처리됨
+	if (ma_decoder_init_file_w(FilePath.c_str(), &Config, &Decoder) != MA_SUCCESS)
 	{
 		HTR_LOG(Error, "[Audio] Cannot decode {}", Path);
 		return false;
@@ -16,7 +24,7 @@ bool USoundWave::LoadFromFile(const FString& Path)
 	{
 		ma_decoder_uninit(&Decoder);
 		Config = ma_decoder_config_init(ma_format_f32, 2, 0);
-		if (ma_decoder_init_file(Path.c_str(), &Config, &Decoder) != MA_SUCCESS) return false;
+		if (ma_decoder_init_file_w(FilePath.c_str(), &Config, &Decoder) != MA_SUCCESS) return false;
 	}
 
 	NumChannels = Decoder.outputChannels;

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/FileUtils.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditor.h"
 #include "Editor/SkeletalMeshEditor/SkeletalMeshEditorTab.h"
 
@@ -137,7 +138,7 @@ bool FSkeletalMeshEditor::ApplyPoseToAsset()
 bool FSkeletalMeshEditor::SavePoseToFile()
 {
 	if (!Mesh) return false;
-	const FString PosePath = std::filesystem::path(GetKey().AssetPath).replace_extension(".pose").generic_string();
+	const FString PosePath = FFileUtils::ToUTF8String(FFileUtils::ToNativePath(GetKey().AssetPath).replace_extension(".pose"));
 	FString Error;
 	// 파일 저장 실패 시 공유 원본과 저장 기준은 변경하지 않는다.
 	if (!SavePoseFile(ReferenceSkeleton, PreviewPose.LocalPose, PosePath, Error))

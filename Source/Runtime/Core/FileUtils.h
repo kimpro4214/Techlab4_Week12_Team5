@@ -3,12 +3,17 @@
 #include "Core/Types.h"
 #include "Core/EngineString.h"
 #include "Containers/Array.h"
+#include "Containers/StringView.h"
+#include <filesystem>
 #include <limits>
 
-// 파일 시스템과의 경계. 네이티브 경로 타입은 구현 안에서만 사용한다.
+// 엔진의 UTF-8 경로와 파일 시스템의 네이티브 경로를 변환한다.
 class FFileUtils
 {
 public:
+	static std::filesystem::path ToNativePath(FStringView Path);
+	static FString ToUTF8String(const std::filesystem::path& Path);
+
 	static FString NormalizePath(const FString& Path);
 	static FString GetExtension(const FString& Path);
 

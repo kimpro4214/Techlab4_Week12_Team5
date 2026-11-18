@@ -10,6 +10,7 @@ class IEditorTab;
 struct FAssetEditorKey
 {
 	FString EditorType;
+	// 에셋 경로는 UTF-8로 전달한다.
 	FString AssetPath;
 	FString SubAssetName;
 

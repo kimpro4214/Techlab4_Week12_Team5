@@ -1,6 +1,7 @@
 ﻿#include "EnginePCH.h"
 #include "Editor/UIEditor/UIEditorTab.h"
 #include "Editor/UIEditor/UIEditor.h"
+#include "Core/FileUtils.h"
 #include "UI/UserWidget.h"
 #include "UObject/UObjectHash.h"
 
@@ -115,7 +116,8 @@ void FUIEditorTab::DrawToolbar()
 		ImGui::EndMenu();
 	}
 
-	ImGui::TextDisabled("%s%s", fs::path(UIEditor.GetKey().AssetPath).filename().string().c_str(), UIEditor.IsDirty() ? " *" : "");
+	const FString Name = FFileUtils::ToUTF8String(FFileUtils::ToNativePath(UIEditor.GetKey().AssetPath).filename());
+	ImGui::TextDisabled("%s%s", Name.c_str(), UIEditor.IsDirty() ? " *" : "");
 }
 
 void FUIEditorTab::HandleShortcuts()

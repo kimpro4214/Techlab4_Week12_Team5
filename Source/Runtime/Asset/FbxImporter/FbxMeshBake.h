@@ -20,7 +20,8 @@ struct FFbxBakeHeader
 {
 	uint32 Magic = AssetUtils::MakeMagicNumber("FBXB");
 	// 저장 필드나 정점 등의 바이너리 구조가 바뀌면 올린다.
-	uint32 Version = 1;
+	// 머티리얼 텍스처 경로가 UTF-8로 바뀌어 이전 캐시를 다시 생성한다.
+	uint32 Version = 2;
 	EFbxBakeMeshType MeshType = EFbxBakeMeshType::StaticMesh;
 	int64 SourceWriteTime = 0;
 	uint64 SourceFileSize = 0;

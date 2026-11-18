@@ -8,6 +8,7 @@
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "GameFramework/DefaultPawn.h"
 #include "Components/StaticMeshComponent.h"
+#include "Core/FileUtils.h"
 #include "UObject/UObjectIterator.h"
 
 // 종료 시 렌더·에디터·뷰포트 설정을 함께 저장한다.
@@ -508,10 +509,10 @@ void FSettingsPanel::DrawDefaultPawnSettings()
         const auto GetMeshDisplayName = [](const UStaticMesh* Mesh) -> FString
         {
             if (!Mesh) return "None";
-            const fs::path Path(Mesh->GetPath());
+            const fs::path Path = FFileUtils::ToNativePath(Mesh->GetPath());
             return Path.stem() == "Atlas"
-                ? Path.parent_path().filename().string()
-                : Path.stem().string();
+                ? FFileUtils::ToUTF8String(Path.parent_path().filename())
+                : FFileUtils::ToUTF8String(Path.stem());
         };
         const FString Preview = GetMeshDisplayName(SelectedMesh);
         bool bChanged = false;

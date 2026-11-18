@@ -2,6 +2,7 @@
 #include "Editor/HitoriEd/EditorFileUtils.h"
 
 #include "Core/EngineLog.h"
+#include "Core/FileUtils.h"
 #include <commdlg.h>
 #include "Serialization/JsonArchive.h"
  
@@ -56,8 +57,6 @@ bool FEditorFileUtils::SaveSceneAs(UWorld* World)
 	if (FilePath.empty())
 		return false;
 
-	FilePath = std::filesystem::absolute(FilePath).lexically_normal().string();
-
 	if (!FJsonArchive::SaveWorld(World, FilePath))
 	{
 		HTR_LOG(Error, "Failed to save scene: {}", FilePath);
@@ -90,8 +89,6 @@ bool FEditorFileUtils::LoadScene(UWorld* World)
 	if (FilePath.empty())
 		return false;
 
-	FilePath = std::filesystem::absolute(FilePath).lexically_normal().string();
-
 	if (!FJsonArchive::LoadWorld(World, FilePath))
 		return false;
 
@@ -105,26 +102,26 @@ bool FEditorFileUtils::LoadScene(UWorld* World)
 
 FString FEditorFileUtils::OpenSaveSceneDialog()
 {
-	char FilePath[MAX_PATH] = {};
+	wchar_t FilePath[MAX_PATH] = {};
 
-	OPENFILENAMEA ofn = {};
-	ofn.lStructSize = sizeof(OPENFILENAMEA);
+	OPENFILENAMEW ofn = {};
+	ofn.lStructSize = sizeof(OPENFILENAMEW);
 	ofn.hwndOwner = nullptr;
 	ofn.lpstrFile = FilePath;
 	ofn.nMaxFile = MAX_PATH;
 
-	ofn.lpstrFilter = "Scene Files (*.scene)\0*.scene\0";
-	ofn.lpstrDefExt = "scene";
-	ofn.lpstrInitialDir = "Scene/";
+	ofn.lpstrFilter = L"Scene Files (*.scene)\0*.scene\0";
+	ofn.lpstrDefExt = L"scene";
+	ofn.lpstrInitialDir = L"Scene/";
 
 	ofn.Flags =
 		OFN_PATHMUSTEXIST |
 		OFN_OVERWRITEPROMPT |
 		OFN_NOCHANGEDIR;
 
-	if (GetSaveFileNameA(&ofn))
+	if (GetSaveFileNameW(&ofn))
 	{
-		return FString(FilePath);
+		return FFileUtils::ToUTF8String(std::filesystem::path(FilePath).lexically_normal());
 	}
 
 	return FString();
@@ -132,30 +129,30 @@ FString FEditorFileUtils::OpenSaveSceneDialog()
 
 FString FEditorFileUtils::OpenLoadSceneDialog()
 {
-	char FilePath[MAX_PATH] = {};
+	wchar_t FilePath[MAX_PATH] = {};
 
-	OPENFILENAMEA ofn = {};
-	ofn.lStructSize = sizeof(OPENFILENAMEA);
+	OPENFILENAMEW ofn = {};
+	ofn.lStructSize = sizeof(OPENFILENAMEW);
 	ofn.hwndOwner = nullptr;
 
 	ofn.lpstrFile = FilePath;
 	ofn.nMaxFile = MAX_PATH;
 
 	ofn.lpstrFilter =
-		"Scene Files (*.scene)\0*.scene\0"
-		"All Files (*.*)\0*.*\0";
+		L"Scene Files (*.scene)\0*.scene\0"
+		L"All Files (*.*)\0*.*\0";
 
-	ofn.lpstrDefExt = "scene";
-	ofn.lpstrInitialDir = "Scene/";
+	ofn.lpstrDefExt = L"scene";
+	ofn.lpstrInitialDir = L"Scene/";
 
 	ofn.Flags =
 		OFN_FILEMUSTEXIST |
 		OFN_PATHMUSTEXIST |
 		OFN_NOCHANGEDIR;
 
-	if (GetOpenFileNameA(&ofn))
+	if (GetOpenFileNameW(&ofn))
 	{
-		return FString(FilePath);
+		return FFileUtils::ToUTF8String(std::filesystem::path(FilePath).lexically_normal());
 	}
 
 	return FString();

@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/FileUtils.h"
 #include "StaticMeshInfoPanel.h"
 #include "Editor/StaticMeshEditor/StaticMeshEditor.h"
 #include "Render/Mesh.h"
@@ -18,7 +19,7 @@ void FStaticMeshInfoPanel::DrawContent()
 		return;
 	}
 
-	const FString Name = std::filesystem::path(Editor.GetKey().AssetPath).stem().string();
+	const FString Name = FFileUtils::ToUTF8String(FFileUtils::ToNativePath(Editor.GetKey().AssetPath).stem());
 	ImGui::TextDisabled("Asset Name");
 	ImGui::TextWrapped("%s", Name.c_str());
 	ImGui::Spacing();

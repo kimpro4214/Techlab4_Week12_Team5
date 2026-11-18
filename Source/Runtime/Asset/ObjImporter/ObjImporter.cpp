@@ -1,5 +1,7 @@
 #include "EnginePCH.h"
 #include "ObjImporter.h"
+#include "Core/FileUtils.h"
+#include "Core/StringUtils.h"
 
 #include <fstream>
 #include <sstream>
@@ -95,25 +97,32 @@ namespace
 		return true;
 	}
 
-	bool TransformPath(const FString& BaseFilePath, FStringView RelativePath, FString& Out)
+	bool TransformPath(const FString& BaseFilePath, FStringView RelativePath, FString& Out) try
 	{
 		if (RelativePath.empty())
 		{
 			return false;
 		}
 
-		std::filesystem::path Relative(RelativePath);
-		std::filesystem::path Result = Relative.is_absolute()
+		// OBJ/MTL의 경로는 UTF-8을 우선 사용하고, 기존 로컬 코드 페이지 파일도 읽는다.
+		FWideString WidePath;
+		const std::filesystem::path Relative = StringUtils::TryUtf8ToWide(FString(RelativePath), WidePath)
+			? std::filesystem::path(WidePath) : std::filesystem::path(RelativePath);
+		const std::filesystem::path Result = Relative.is_absolute()
 			? Relative
-			: std::filesystem::path(BaseFilePath).parent_path() / Relative;
+			: FFileUtils::ToNativePath(BaseFilePath).parent_path() / Relative;
 
-		Out = Result.lexically_normal().generic_string();
+		Out = FFileUtils::ToUTF8String(Result.lexically_normal());
 		return true;
+	}
+	catch (const std::system_error&)
+	{
+		return false;
 	}
 
 	bool ParseMaterial(const FString& Path, TArray<FObjMaterialInfo>& Out)
 	{
-		std::ifstream File(Path);
+		std::ifstream File(FFileUtils::ToNativePath(Path));
 		if (!File.is_open())
 		{
 			HTR_LOG(Warning, "[MTL] {}: cannot open file", Path);
@@ -214,7 +223,7 @@ namespace
 
 bool FObjImporter::ParseObj(const FString& Path, FObjInfo& Out)
 {
-	std::ifstream File(Path);
+	std::ifstream File(FFileUtils::ToNativePath(Path));
 	if (!File.is_open())
 	{
 		HTR_LOG(Error, "[OBJ] {}: cannot open file", Path);

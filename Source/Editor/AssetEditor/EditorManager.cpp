@@ -29,28 +29,17 @@ bool FEditorManager::NormalizeKey(const FAssetEditorKey& InKey, FAssetEditorKey&
 {
 	if (InKey.EditorType.empty() || InKey.AssetPath.empty()) return false;
 
-	// 파티클 로더의 경로는 UTF-8이다. 파일 시스템에 전달하기 전에 UTF-16으로 변환한다.
-	const bool bParticle = InKey.EditorType == "Particle";
 	FWideString WidePath;
-	if (bParticle && !StringUtils::TryUtf8ToWide(InKey.AssetPath, WidePath)) return false;
-	const std::filesystem::path InputPath = bParticle
-		? std::filesystem::path(WidePath) : std::filesystem::path(InKey.AssetPath);
+	if (!StringUtils::TryUtf8ToWide(InKey.AssetPath, WidePath)) return false;
 
 	std::error_code Error;
-	const std::filesystem::path AbsolutePath = std::filesystem::absolute(InputPath, Error);
+	const std::filesystem::path AbsolutePath = std::filesystem::absolute(std::filesystem::path(WidePath), Error);
 	if (Error) return false;
 	const std::filesystem::path Path = std::filesystem::weakly_canonical(AbsolutePath, Error);
 	if (Error || !Path.is_absolute()) return false;
 
 	OutKey = InKey;
-	if (bParticle)
-	{
-		if (!StringUtils::TryWideToUtf8(Path.generic_wstring(), OutKey.AssetPath)) return false;
-	}
-	else
-	{
-		OutKey.AssetPath = Path.generic_string();
-	}
+	if (!StringUtils::TryWideToUtf8(Path.generic_wstring(), OutKey.AssetPath)) return false;
 
 	// Windows 경로의 대소문자 차이로 같은 파일의 편집기가 중복 생성되지 않게 한다.
 	std::transform(OutKey.AssetPath.begin(), OutKey.AssetPath.end(), OutKey.AssetPath.begin(),
