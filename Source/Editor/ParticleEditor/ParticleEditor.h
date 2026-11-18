@@ -2,6 +2,8 @@
 
 #include "Editor/AssetEditor/AssetEditor.h"
 #include "Editor/AssetEditor/FPreviewScene.h"
+#include "Editor/Gizmo/Gizmo.h"
+#include "Editor/Gizmo/SceneComponentGizmoTarget.h"
 #include "Editor/Viewports/EditorViewportClient.h"
 #include "Camera/ViewportCameraMovement.h"
 #include <functional>
@@ -44,6 +46,8 @@ public:
 	void ReportPanelFocus(bool bInFocused) { bFocused |= bInFocused; }
 	void SetViewportState(uint32 Width, uint32 Height, const FViewportCameraInput& Input);
 	void FocusSystem();
+	void UpdateOriginGizmo(const FVector2& LocalMouse, bool bMouseDown);
+	void EndOriginGizmoDrag() { OriginGizmo.EndDrag(); }
 
 	////////////////////////////////////////////////////////////
 	// 프리뷰 시뮬레이션 제어
@@ -93,6 +97,9 @@ public:
 	bool IsViewportVisible() const { return bViewportVisible; }
 	bool IsRenderGrid() const { return bRenderGrid; }
 	void SetRenderGrid(bool bValue) { bRenderGrid = bValue; }
+	bool IsOriginGizmoEnabled() const { return OriginGizmo.GetTarget() != nullptr; }
+	void SetOriginGizmoEnabled(bool bEnabled);
+	const FGizmo& GetOriginGizmo() const { return OriginGizmo; }
 
 	UParticleSystem* GetSystem() const { return System; }
 	UParticleSystemComponent* GetParticleComponent() const { return ParticleComponent; }
@@ -136,6 +143,8 @@ private:
 	FPreviewScene PreviewScene;
 	FEditorViewportClient ViewportClient;
 	FViewportCameraInput CameraInput;
+	FSceneComponentGizmoTarget OriginGizmoTarget;
+	FGizmo OriginGizmo;
 
 	// 뷰포트 크기 및 표시·입력 상태
 	uint32 ViewportWidth = 0;

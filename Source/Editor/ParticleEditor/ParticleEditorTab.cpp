@@ -83,6 +83,8 @@ protected:
 		ImGui::Separator();
 		bool bGrid = Editor.IsRenderGrid();
 		if (ImGui::Checkbox("Grid", &bGrid)) Editor.SetRenderGrid(bGrid);
+		bool bOriginGizmo = Editor.IsOriginGizmoEnabled();
+		if (ImGui::Checkbox("Origin Gizmo", &bOriginGizmo)) Editor.SetOriginGizmoEnabled(bOriginGizmo);
 		ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
 		if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
 		if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
