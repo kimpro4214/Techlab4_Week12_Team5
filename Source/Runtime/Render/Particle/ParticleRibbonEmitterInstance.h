@@ -2,10 +2,8 @@
 
 #include "Render/Particle/ParticleEmitterInstance.h"   // 렌더 헤더는 include하지 않는다
 
-// 리본(띠) 이미터의 실행 상태
-// 파티클 하나 = 띠 위의 점 하나. 시뮬레이션(Spawn/Update/Kill)은 부모를 그대로 쓰고,
-// 점을 생성 순서대로 이어 렌더 쪽에 넘기는 부분만 다르다
-// Sprite 인스턴스가 아니라 부모를 상속한다: Sprite의 FillReplayData는 상자를 Sprite용으로 static_cast 한다
+struct FDynamicStripEmitterData;
+
 struct FParticleRibbonEmitterInstance : public FParticleEmitterInstance
 {
 	FParticleRibbonEmitterInstance();
@@ -33,7 +31,14 @@ struct FParticleRibbonEmitterInstance : public FParticleEmitterInstance
 		}
 	}
 
+	FDynamicEmitterDataBase* GetDynamicData() override;
+
+protected:
+	bool FillReplayData(FDynamicEmitterReplayDataBase& OutData) override;
+
 private:
 	TArray<uint32> SpawnOrders;	// Spawn 순서에 따른 배열
 	TArray<int32> SortedSlots;	// 실제 그려야 되는 Ribbon 배열에 맞게 정렬할때 쓰는 배열
+
+	TUniquePtr<FDynamicStripEmitterData> DynamicData;
 };
