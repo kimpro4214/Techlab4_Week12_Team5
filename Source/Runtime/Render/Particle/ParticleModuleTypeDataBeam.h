@@ -18,4 +18,5 @@ public:
 	UPROPERTY(EditAnywhere) float        Width        = 0.3f;
 	UPROPERTY(EditAnywhere) FLinearColor Color        = FLinearColor(0.4f, 0.7f, 1.0f, 1.0f);
 	UPROPERTY(EditAnywhere) float        UVTiling     = 0.0f;   // 0 이하: 전체 길이에 텍스처 하나
+	UPROPERTY(EditAnywhere) float        NoiseAmplitude = 0.0f; // 중간 점이 x/y/z로 흔들리는 최대 거리(월드 단위). 0이면 직선
 };

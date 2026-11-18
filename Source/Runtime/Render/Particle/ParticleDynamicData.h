@@ -194,4 +194,13 @@ struct FDynamicBeamEmitterData : public FDynamicStripEmitterDataBase
 	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
 };
 
+// Ribbon 이미터용. 그리는 방식은 Beam과 같고 점 목록만 다르다
+struct FDynamicRibbonEmitterData : public FDynamicStripEmitterDataBase
+{
+	FDynamicRibbonReplayData Source;
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
+};
+
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

@@ -26,7 +26,7 @@ bool FParticleBeamEmitterInstance::GetLocalBoundingBox(const FMatrix& WorldToCom
 	if (!BeamTypeData)
 		return false;
 
-	// 직선이라 두 끝점만 감싸면 된다. 점 생성이 바뀌어 휘어지면 점 전체를 감싸도록 바꾼다
+	// 두 끝점을 감싸고, 노이즈로 휘는 만큼은 패딩으로 더한다
 	FVector Source, Target;
 	GetEndpoints(Source, Target);
 	const FVector A = WorldToComponent.TransformPosition(Source);
@@ -35,7 +35,8 @@ bool FParticleBeamEmitterInstance::GetLocalBoundingBox(const FMatrix& WorldToCom
 	// 폭은 월드 단위라 컴포넌트 로컬로 옮기면 스케일만큼 나눠야 한다. 가장 작은 축 기준으로 넉넉하게
 	const FVector Scale = Component->GetWorldScale3D();
 	const float MinScale = std::max(1e-4f, std::min({ std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z) }));
-	const float Pad = BeamTypeData->Width * 0.5f / MinScale;
+	// 노이즈로 중간 점이 각 축으로 최대 NoiseAmplitude만큼 벗어나므로 그만큼 더 넓힌다
+	const float Pad = (BeamTypeData->Width * 0.5f + std::max(0.0f, BeamTypeData->NoiseAmplitude)) / MinScale;
 
 	OutBox = FBox(
 		FVector(std::min(A.X, B.X) - Pad, std::min(A.Y, B.Y) - Pad, std::min(A.Z, B.Z) - Pad),
@@ -56,8 +57,7 @@ bool FParticleBeamEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	BeamData.Material           = CurrentLODLevel->GetRequiredModule()->GetMaterial();
 	BeamData.UVTiling           = BeamTypeData->UVTiling;
 
-	// [렌더링 확인용] 직선 Source → Target을 SegmentCount개 구간으로 나눈다
-	// 실제 점 생성(타깃 지정, 노이즈, 수명)은 시뮬레이션 담당이 이 배열을 채우는 코드로 바꾼다
+	// Source → Target을 SegmentCount개 구간으로 나누고 중간 점에 노이즈를 더한다
 	FVector Source, Target;
 	GetEndpoints(Source, Target);
 	const int32 Segments = std::max(1, BeamTypeData->SegmentCount);
@@ -68,6 +68,13 @@ bool FParticleBeamEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 		const float Alpha = static_cast<float>(i) / static_cast<float>(Segments);
 		FParticleStripPoint& Point = BeamData.Points[i];
 		Point.Position = Source + (Target - Source) * Alpha;
+
+		// 양 끝(Source, Target)은 고정하고 중간 점만 3D 랜덤으로 흔든다
+		// 매 프레임 새 난수라 빔 모양이 프레임마다 바뀐다 (전기가 지글거리는 효과)
+		// NoiseAmplitude가 구간 길이(빔 길이 / SegmentCount)보다 크면 점이 앞뒤로 뒤집혀 띠가 접힐 수 있다
+		if (BeamTypeData->NoiseAmplitude > 0.0f && i > 0 && i < Segments)
+			Point.Position += ParticleRandRange(FVector(-1.0f, -1.0f, -1.0f), FVector(1.0f, 1.0f, 1.0f)) * BeamTypeData->NoiseAmplitude;
+
 		Point.Width    = BeamTypeData->Width;
 		Point.Color    = BeamTypeData->Color;
 	}
