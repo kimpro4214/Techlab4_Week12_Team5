@@ -305,3 +305,149 @@ void FDynamicMeshEmitterData::SubmitPerParticle(FRenderQueue& RenderQueue, const
 		}
 	}
 }
+
+void ParticleStrip::AppendStrip(const TArray<FParticleStripPoint>& Points, const FViewContext& View, float UVTiling,
+	TArray<FParticleStripVertex>& OutVertices, TArray<uint32>& OutIndices)
+{
+	// 1) 바로 앞 점과 거의 같은 위치의 점은 건너뛴다. 길이 0인 구간은 방향을 구할 수 없다
+	constexpr float MinSegmentSq = 1e-8f;
+	TArray<int32> Used;
+	Used.Reserve(Points.Num());
+	for (int32 i = 0; i < Points.Num(); ++i)
+	{
+		if (!Used.IsEmpty())
+		{
+			const FVector Delta = Points[i].Position - Points[Used.Last()].Position;
+			if (Delta.Dot(Delta) < MinSegmentSq)
+				continue;
+		}
+		Used.Add(i);
+	}
+
+	const int32 Count = Used.Num();
+	if (Count < 2)
+		return;   // 점 0개·1개, 또는 시작점과 끝점이 같은 Beam
+
+	// 2) U 좌표용 누적 길이
+	TArray<float> Distances;
+	Distances.SetNum(Count, false);
+	Distances[0] = 0.0f;
+	for (int32 i = 1; i < Count; ++i)
+	{
+		const FVector Delta = Points[Used[i]].Position - Points[Used[i - 1]].Position;
+		Distances[i] = Distances[i - 1] + std::sqrt(Delta.Dot(Delta));
+	}
+	const float TotalLength = Distances[Count - 1];
+
+	// 3) 점마다 좌우 정점 2개
+	const uint32 BaseVertex = static_cast<uint32>(OutVertices.Num());
+	FVector PrevSide(0.0f, 0.0f, 1.0f);
+	for (int32 i = 0; i < Count; ++i)
+	{
+		const FParticleStripPoint& Point = Points[Used[i]];
+
+		// 진행 방향: 양옆 점을 잇는 방향 (끝점은 한쪽만). 이웃 구간의 평균이라 꺾이는 곳이 벌어지지 않는다
+		const FVector& Prev = Points[Used[i > 0 ? i - 1 : i]].Position;
+		const FVector& Next = Points[Used[i < Count - 1 ? i + 1 : i]].Position;
+		const FVector Tangent = (Next - Prev).Normalized();
+
+		// 카메라를 향하는 면: 진행 방향과 시선 방향 모두에 수직인 방향으로 폭을 편다
+		const FVector ToCamera = View.bOrthographic
+			? FVector(-View.CameraForward.X, -View.CameraForward.Y, -View.CameraForward.Z)
+			: (View.CameraPosition - Point.Position).Normalized();
+		FVector Side = FVector::Cross(Tangent, ToCamera);
+		if (Side.SizeSquared() < 1e-8f)
+			Side = PrevSide;   // 띠를 길이 방향 정면에서 볼 때. 이전 점의 방향을 이어 쓴다
+		else
+			Side = Side.Normalized();
+		PrevSide = Side;
+
+		const FVector HalfWidth = Side * (Point.Width * 0.5f);
+		const float U = UVTiling > 0.0f
+			? Distances[i] * UVTiling
+			: (TotalLength > 0.0f ? Distances[i] / TotalLength : 0.0f);
+		const FVector4 Color(Point.Color.R, Point.Color.G, Point.Color.B, Point.Color.A);
+
+		OutVertices.Add({ Point.Position - HalfWidth, FVector2(U, 0.0f), Color });
+		OutVertices.Add({ Point.Position + HalfWidth, FVector2(U, 1.0f), Color });
+	}
+
+	// 4) 구간마다 사각형 하나 = 삼각형 2개
+	for (int32 i = 0; i < Count - 1; ++i)
+	{
+		const uint32 A = BaseVertex + static_cast<uint32>(i) * 2;   // 이 점 왼쪽
+		const uint32 B = A + 1;                                     // 이 점 오른쪽
+		const uint32 C = A + 2;                                     // 다음 점 왼쪽
+		const uint32 D = A + 3;                                     // 다음 점 오른쪽
+		OutIndices.Add(A); OutIndices.Add(B); OutIndices.Add(C);
+		OutIndices.Add(C); OutIndices.Add(B); OutIndices.Add(D);
+	}
+}
+
+void FDynamicStripEmitterDataBase::SubmitStrips(FRenderQueue& RenderQueue, const FViewContext& View,
+	const TArray<FParticleStripPoint>* Strips, int32 StripCount,
+	UMaterial* Material, float UVTiling, const FVector& WorldOrigin)
+{
+	if (!Material || !Strips || StripCount <= 0 || NextViewIndex >= MaxViewsPerFrame)
+		return;
+
+	// 1) 띠마다 끊어서 모은다. 띠끼리는 정점을 공유하지 않으므로 서로 이어지지 않는다
+	ScratchVertices.SetNum(0, false);
+	ScratchIndices.SetNum(0, false);
+	for (int32 s = 0; s < StripCount; ++s)
+		ParticleStrip::AppendStrip(Strips[s], View, UVTiling, ScratchVertices, ScratchIndices);
+
+	if (ScratchIndices.IsEmpty())
+		return;
+
+	// 2) 이 뷰 전용 버퍼. 여러 뷰를 제출한 뒤 한꺼번에 그리므로 뷰마다 따로 둔다
+	if (NextViewIndex >= ViewResources.Num())
+		ViewResources.Add(MakeUnique<FViewResources>());
+	FViewResources& Resources = *ViewResources[NextViewIndex++];
+
+	// 점 개수가 프레임마다 달라질 수 있으니, 넘칠 때만 두 배로 키워 다시 만든다
+	const int32 VertexCount = ScratchVertices.Num();
+	const int32 IndexCount  = ScratchIndices.Num();
+	if (!Resources.VertexBuffer || VertexCount > Resources.VertexCapacity)
+	{
+		Resources.VertexCapacity = std::max(VertexCount, Resources.VertexCapacity * 2);
+		Resources.VertexBuffer = RenderCommand::CreateDynamicVertexBuffer(
+			static_cast<uint32>(Resources.VertexCapacity * sizeof(FParticleStripVertex)),
+			static_cast<uint32>(sizeof(FParticleStripVertex)));
+	}
+	if (!Resources.IndexBuffer || IndexCount > Resources.IndexCapacity)
+	{
+		Resources.IndexCapacity = std::max(IndexCount, Resources.IndexCapacity * 2);
+		Resources.IndexBuffer = RenderCommand::CreateDynamicIndexBuffer(static_cast<uint32>(Resources.IndexCapacity));
+	}
+	if (!Resources.VertexBuffer || !Resources.IndexBuffer)
+		return;
+
+	RenderCommand::UpdateBufferData(Resources.VertexBuffer.get(), ScratchVertices.GetData(),
+		static_cast<uint32>(VertexCount * sizeof(FParticleStripVertex)));
+	RenderCommand::UpdateBufferData(Resources.IndexBuffer.get(), ScratchIndices.GetData(),
+		static_cast<uint32>(IndexCount * sizeof(uint32)));
+
+	// 3) 상수 (b1)
+	Resources.Constants.HasTexture       = Material->Textures.IsEmpty() ? 0.0f : 1.0f;
+	Resources.Constants.SoftEdge         = 1.0f;
+	Resources.Constants.PremultiplyAlpha = Material->BlendState == EBlendState::Additive ? 1.0f : 0.0f;
+
+	// 4) 정점이 이미 월드 좌표라 World(b2)는 단위 행렬. 이미터 하나 = 패킷 하나
+	const FVector Delta = WorldOrigin - View.CameraPosition;
+
+	FRenderPacket Packet;
+	Packet.Geometry.VertexBuffer    = Resources.VertexBuffer.get();
+	Packet.Geometry.IndexBuffer     = Resources.IndexBuffer.get();
+	Packet.IndexCount               = static_cast<uint32>(IndexCount);
+	Packet.Material                 = Material;
+	Packet.MaterialParamData        = &Resources.Constants;
+	Packet.MaterialParamDataSize    = sizeof(FParticleStripConstants);
+	Packet.CameraToParticleDistance = Delta.Dot(Delta);
+	RenderQueue.Add(Packet);
+}
+
+void FDynamicBeamEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	SubmitStrips(RenderQueue, View, &Source.Points, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
+}

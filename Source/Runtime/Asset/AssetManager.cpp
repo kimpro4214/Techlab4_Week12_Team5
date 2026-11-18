@@ -295,6 +295,7 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateParticleMaterial();
 	Get().CreateParticleSpriteMaterial();
 	Get().CreateParticleMeshMaterial();
+	Get().CreateParticleStripMaterial();
 	Get().CreateEditorArrowMaterial();
 }
 
@@ -578,6 +579,18 @@ void UAssetManager::CreateParticleMeshMaterial()
 	MeshMat->SamplerState = ESamplerState::LinearClamp;
 	MeshMat->ParamLayout = EMaterialParamLayout::None;
 	RegisterAsset("ParticleMeshMaterial", MeshMat);
+}
+
+// Beam/Ribbon 띠 재질. 텍스처 없이 점 색 × 폭 방향 부드러운 가장자리로 칠한다
+void UAssetManager::CreateParticleStripMaterial()
+{
+	UMaterial* StripMat = NewObject<UMaterial>();
+	StripMat->PSOType = EPSOType::ParticleStrip_Additive;
+	StripMat->BlendState = EBlendState::Additive;
+	StripMat->DepthStencilState = EDepthStencilState::ReadOnly;
+	StripMat->SamplerState = ESamplerState::LinearWrap;   // 길이 방향으로 텍스처를 반복할 수 있게
+	StripMat->ParamLayout = EMaterialParamLayout::None;
+	RegisterAsset("ParticleStripMaterial", StripMat);
 }
 
 void UAssetManager::CreateEditorArrowMaterial() {

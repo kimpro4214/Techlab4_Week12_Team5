@@ -34,6 +34,8 @@ enum class EPSOType : uint8
 	ParticleSprite_Additive,     // ParticleSystemComponent 스프라이트 (정렬 불필요)
 	ParticleSprite_AlphaBlend,   // ParticleSystemComponent 스프라이트 (뒤→앞 정렬 필요)
 	ParticleMesh,                // Mesh 파티클 인스턴싱 (StructuredBuffer t16에서 인스턴스 행렬·색을 읽는다)
+	ParticleStrip_Additive,      // Beam/Ribbon 띠
+	ParticleStrip_AlphaBlend,
 	Count
 };
 

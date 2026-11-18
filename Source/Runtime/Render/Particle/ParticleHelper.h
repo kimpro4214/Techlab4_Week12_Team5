@@ -22,6 +22,8 @@ enum class EDynamicEmitterType : uint8
 {
 	Sprite,
 	Mesh,
+	Beam,
+	Ribbon,
 };
 
 // Mesh 파티클이 어느 쪽을 바라볼지
@@ -60,6 +62,22 @@ struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
 	// Required의 Material. ParticleMesh 재질이면 인스턴싱으로, 아니면 메시 자체 재질로 파티클마다 그린다
 	UMaterial* Material = nullptr;
 	int32 MaxParticles = 0;   // 인스턴스 버퍼 용량
+};
+
+// Beam/Ribbon 띠를 이루는 점 하나. 점을 만드는 쪽(시뮬레이션)이 채우고, 렌더는 이어서 띠로 그리기만 한다
+struct FParticleStripPoint
+{
+	FVector      Position = FVector::ZeroVector;   // 월드 좌표
+	float        Width    = 1.0f;                  // 이 점에서의 띠 폭
+	FLinearColor Color    = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+};
+
+struct FDynamicBeamReplayData : public FDynamicEmitterReplayDataBase
+{
+	TArray<FParticleStripPoint> Points;   // Source → 중간 점 → Target 순서
+	UMaterial* Material = nullptr;
+	// 0보다 크면 길이 1당 텍스처 반복 횟수, 0 이하면 전체 길이에 텍스처 하나를 늘린다
+	float UVTiling = 0.0f;
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟

@@ -126,4 +126,72 @@ private:
 	TArray<FParticleMeshInstance> ScratchInstances; // 매 프레임 할당하지 않도록 재사용
 };
 
+// 띠 정점. ParticleStripShader.hlsl의 VS_INPUT과 순서·크기가 같아야 한다 (36바이트)
+struct FParticleStripVertex
+{
+	FVector  Position;   // 월드 (CPU에서 카메라 쪽으로 이미 펼친 위치)
+	FVector2 UV;         // U: 길이 방향, V: 폭 방향 0 ~ 1
+	FVector4 Color;
+};
+static_assert(sizeof(FParticleStripVertex) == 36, "ParticleStripShader.hlsl VS_INPUT과 맞춰야 한다");
+
+// ParticleStripShader.hlsl의 cbuffer ParticleStrip(b1)과 같아야 한다 (16바이트)
+struct FParticleStripConstants
+{
+	float HasTexture       = 0.0f;
+	float SoftEdge         = 1.0f;
+	float PremultiplyAlpha = 0.0f;
+	float Padding          = 0.0f;
+};
+static_assert(sizeof(FParticleStripConstants) == 16, "ParticleStripShader.hlsl cbuffer ParticleStrip과 맞춰야 한다");
+
+// 점 목록 → 카메라를 향하는 띠. Beam과 Ribbon이 같이 쓴다
+// 카메라 방향에 따라 폭 방향이 바뀌므로 뷰마다 다시 만든다
+namespace ParticleStrip
+{
+	// 띠 하나를 OutVertices/OutIndices 뒤에 덧붙인다. 점이 2개 미만이면 아무것도 하지 않는다
+	void AppendStrip(const TArray<FParticleStripPoint>& Points, const FViewContext& View, float UVTiling,
+		TArray<FParticleStripVertex>& OutVertices, TArray<uint32>& OutIndices);
+}
+
+// 띠 이미터의 공통 부분: 뷰별 GPU 버퍼와 제출
+// 하위 클래스는 Submit에서 띠 목록을 넘기기만 한다
+struct FDynamicStripEmitterDataBase : public FDynamicEmitterDataBase
+{
+	// 매 프레임 Source를 갱신한 직후 호출한다. 뷰 버퍼 사용 위치를 처음으로 되돌린다
+	void Init() { NextViewIndex = 0; }
+
+protected:
+	// 띠 여러 개를 이 뷰 전용 버퍼 하나에 모아 패킷 하나로 제출한다
+	void SubmitStrips(FRenderQueue& RenderQueue, const FViewContext& View,
+		const TArray<FParticleStripPoint>* Strips, int32 StripCount,
+		UMaterial* Material, float UVTiling, const FVector& WorldOrigin);
+
+private:
+	struct FViewResources
+	{
+		TUniquePtr<FVertexBuffer> VertexBuffer;
+		TUniquePtr<FIndexBuffer>  IndexBuffer;
+		int32 VertexCapacity = 0;
+		int32 IndexCapacity  = 0;
+		FParticleStripConstants Constants;   // 패킷이 포인터로 참조하므로 프레임 동안 살아있어야 한다
+	};
+
+	static constexpr int32 MaxViewsPerFrame = 8;
+
+	TArray<TUniquePtr<FViewResources>> ViewResources;
+	int32 NextViewIndex = 0;
+	TArray<FParticleStripVertex> ScratchVertices;
+	TArray<uint32> ScratchIndices;
+};
+
+// Beam 이미터용
+struct FDynamicBeamEmitterData : public FDynamicStripEmitterDataBase
+{
+	FDynamicBeamReplayData Source;
+
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
+};
+
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)
