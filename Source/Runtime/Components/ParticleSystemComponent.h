@@ -27,6 +27,7 @@ public:
 	UParticleSystem* GetTemplate() const { return Template; }
 	void SetPreviewEmitterFilter(int32 LODIndex, const UParticleEmitter* SoloEmitter);
 	int32 GetEmitterLODIndex() const { return EmitterLODIndex; }
+	int32 GetNumActiveParticles() const;
 
 	bool IsCompleted() const { return bHasCompleted; }
 

@@ -47,6 +47,17 @@ void UParticleSystemComponent::SetPreviewEmitterFilter(int32 LODIndex, const UPa
 	PreviewSoloEmitter = SoloEmitter;
 }
 
+int32 UParticleSystemComponent::GetNumActiveParticles() const
+{
+	int32 Count = 0;
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		Count += Instance->ActiveParticles;
+	}
+
+	return Count;
+}
+
 void UParticleSystemComponent::InitializeSystem()
 {
 	ResetSystem();
