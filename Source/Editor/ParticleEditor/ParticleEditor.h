@@ -10,6 +10,7 @@ class UEngine;
 class UParticleSystem;
 class UParticleSystemComponent;
 class UParticleEmitter;
+class UParticleLODLevel;
 class UParticleModule;
 struct FEditorSettings;
 
@@ -59,6 +60,13 @@ public:
 
 	void SelectEmitter(int32 Index);
 	void AddEmitter();
+	FString GetEmitterDisplayName(int32 Index) const;
+	void RemoveEmitter(int32 Index);
+	void SetEmitterEnabled(int32 Index, bool bEnabled);
+	void SetSoloEmitter(const UParticleEmitter* Emitter);
+	const UParticleEmitter* GetSoloEmitter() const { return SoloEmitter; }
+	void AddModule(int32 EmitterIndex, UClass* ModuleClass);
+	void RemoveModule(int32 EmitterIndex, UParticleModule* Module);
 	void SelectLODLevel(int32 Index);
 	int32 GetSelectedLODLevel() const { return SelectedLODLevel; }
 	int32 GetLODLevelCount() const;
@@ -97,6 +105,8 @@ protected:
 	bool DiscardChanges() override;
 
 private:
+	UParticleLODLevel* GetEmitterLOD(int32 Index) const;
+
 	// 외부 참조 및 렌더링 콜백
 	UEngine* Engine = nullptr;
 	UParticleSystem* SourceSystem = nullptr;
@@ -113,6 +123,7 @@ private:
 	int32 SelectedLODLevel = 0;
 	int32 SelectedEmitterIndex = -1;
 	UParticleModule* SelectedModule = nullptr;
+	const UParticleEmitter* SoloEmitter = nullptr;
 	bool bPreviewValid = true;
 
 	// 에디터 전용 프리뷰 리소스

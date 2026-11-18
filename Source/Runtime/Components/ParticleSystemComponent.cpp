@@ -33,8 +33,18 @@ void UParticleSystemComponent::BeginPlay()
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate)
 {
+	if (Template != NewTemplate)
+	{
+		SetPreviewEmitterFilter(0, nullptr);
+	}
 	Template = NewTemplate;
 	InitializeSystem();   // 에디터에서도 바로 반영되도록 BeginPlay 여부와 상관없이 다시 만든다
+}
+
+void UParticleSystemComponent::SetPreviewEmitterFilter(int32 LODIndex, const UParticleEmitter* SoloEmitter)
+{
+	EmitterLODIndex = LODIndex;
+	PreviewSoloEmitter = SoloEmitter;
 }
 
 void UParticleSystemComponent::InitializeSystem()
@@ -49,11 +59,13 @@ void UParticleSystemComponent::InitializeSystem()
 	if (!Template)
 		return;
 
+	bSystemInitialized = true;
 	for (UParticleEmitter* Emitter : Template->GetEmitters())
 	{
-		if (!Emitter)
+		const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(EmitterLODIndex) : nullptr;
+		if (!LOD || (PreviewSoloEmitter ? Emitter != PreviewSoloEmitter : !LOD->IsEnabled()))
 			continue;
-		Emitter->CacheEmitterModuleInfo();
+		Emitter->CacheEmitterModuleInfo(EmitterLODIndex);
 		if (FParticleEmitterInstance* Instance = Emitter->CreateInstance(this))
 			EmitterInstances.Add(Instance);
 	}
@@ -61,6 +73,8 @@ void UParticleSystemComponent::InitializeSystem()
 
 void UParticleSystemComponent::ResetSystem()
 {
+	bSystemInitialized = false;
+
 	// 렌더 데이터는 인스턴스가 소유한다 → Proxy가 들고 있는 포인터를 먼저 비워서 지워진 메모리를 Submit하지 않게 한다
 	if (FParticleSystemSceneProxy* Proxy = GetParticleSceneProxy())
 		Proxy->ResetDynamicData();
@@ -83,7 +97,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	// 에디터 월드에는 BeginPlay가 없으므로 첫 Tick에서 지연 초기화한다
 	// 끄는 중에는 만들지 않는다: 첫 Tick 전에 Deactivate가 불렸는데 여기서 만들면 다시 뿜기 시작한다
-	if (EmitterInstances.IsEmpty() && Template && !bPendingDeactivate)
+	if (!bSystemInitialized && Template && !bPendingDeactivate)
 		InitializeSystem();
 
 	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한

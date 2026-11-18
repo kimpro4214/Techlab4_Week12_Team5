@@ -25,6 +25,8 @@ public:
 
 	void SetTemplate(UParticleSystem* NewTemplate);
 	UParticleSystem* GetTemplate() const { return Template; }
+	void SetPreviewEmitterFilter(int32 LODIndex, const UParticleEmitter* SoloEmitter);
+	int32 GetEmitterLODIndex() const { return EmitterLODIndex; }
 
 	bool IsCompleted() const { return bHasCompleted; }
 
@@ -55,4 +57,9 @@ private:
 
 	bool bPendingDeactivate = false;
 	bool bHasCompleted = false;
+	bool bSystemInitialized = false;
+
+	// 에디터가 소유한 프리뷰 컴포넌트에서만 설정합니다.
+	int32 EmitterLODIndex = 0;
+	const UParticleEmitter* PreviewSoloEmitter = nullptr;
 };

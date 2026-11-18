@@ -178,8 +178,99 @@ void FParticleEditor::AddEmitter()
 	if (!System) return;
 
 	System->AddDefaultEmitter();
-	SelectLODLevel(0);
+	SelectedLODLevel = 0;
 	SelectEmitter(System->GetEmitters().Num() - 1);
+	RefreshSystem();
+}
+
+FString FParticleEditor::GetEmitterDisplayName(int32 Index) const
+{
+	if (System && System->GetEmitters().IsValidIndex(Index))
+	{
+		const UParticleEmitter* Emitter = System->GetEmitters()[Index];
+		if (Emitter && !Emitter->GetEmitterName().empty())
+		{
+			return Emitter->GetEmitterName();
+		}
+	}
+	return "Emitter " + std::to_string(Index + 1);
+}
+
+void FParticleEditor::RemoveEmitter(int32 Index)
+{
+	if (!System || !System->GetEmitters().IsValidIndex(Index)) return;
+
+	if (SoloEmitter == System->GetEmitters()[Index])
+	{
+		SoloEmitter = nullptr;
+	}
+	if (ParticleComponent) ParticleComponent->ResetSystem();
+	System->RemoveEmitter(Index);
+
+	if (SelectedLODLevel >= GetLODLevelCount())
+	{
+		SelectedLODLevel = 0;
+		SelectedModule = nullptr;
+	}
+
+	if (SelectedEmitterIndex == Index)
+	{
+		SelectEmitter(std::min(Index, System->GetEmitters().Num() - 1));
+	}
+	else if (SelectedEmitterIndex > Index)
+	{
+		--SelectedEmitterIndex;
+	}
+	RefreshSystem();
+}
+
+UParticleLODLevel* FParticleEditor::GetEmitterLOD(int32 Index) const
+{
+	if (!System || !System->GetEmitters().IsValidIndex(Index)) return nullptr;
+
+	UParticleEmitter* Emitter = System->GetEmitters()[Index];
+	return Emitter ? Emitter->GetLODLevel(SelectedLODLevel) : nullptr;
+}
+
+void FParticleEditor::SetEmitterEnabled(int32 Index, bool bEnabled)
+{
+	if (UParticleLODLevel* LOD = GetEmitterLOD(Index))
+	{
+		LOD->SetEnabled(bEnabled);
+		RefreshSystem();
+	}
+}
+
+void FParticleEditor::SetSoloEmitter(const UParticleEmitter* Emitter)
+{
+	SoloEmitter = Emitter;
+	RefreshSystem();
+}
+
+void FParticleEditor::AddModule(int32 EmitterIndex, UClass* ModuleClass)
+{
+	UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex);
+	if (!LOD || !ModuleClass || !ModuleClass->IsChildOf(UParticleModule::StaticClass())) return;
+
+	if (UParticleModule* Module = NewObject<UParticleModule>(LOD, ModuleClass))
+	{
+		LOD->AddModule(Module);
+		SelectModule(EmitterIndex, Module);
+		RefreshSystem();
+	}
+}
+
+void FParticleEditor::RemoveModule(int32 EmitterIndex, UParticleModule* Module)
+{
+	const UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex);
+	if (!LOD || !Module || LOD->GetModules().Find(Module) < 0) return;
+
+	if (ParticleComponent) ParticleComponent->ResetSystem();
+	if (SelectedModule == Module)
+	{
+		SelectedModule = nullptr;
+	}
+	System->RemoveModule(EmitterIndex, SelectedLODLevel, Module);
 	RefreshSystem();
 }
 
@@ -207,13 +298,13 @@ void FParticleEditor::SelectLODLevel(int32 Index)
 
 	SelectedLODLevel = Index;
 	SelectedModule = nullptr;
+	RefreshSystem();
 }
 
 void FParticleEditor::SelectModule(int32 EmitterIndex, UParticleModule* Module)
 {
 	SelectEmitter(EmitterIndex);
-	UParticleEmitter* Emitter = GetSelectedEmitter();
-	const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(SelectedLODLevel) : nullptr;
+	const UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex);
 	if (!LOD || !Module) return;
 
 	if (Module == LOD->GetRequiredModule() || Module == LOD->GetSpawnModule() ||
@@ -235,6 +326,7 @@ bool FParticleEditor::RefreshSystem()
 
 	// 캐시와 메모리 배치를 바꾸기 전에 기존 인스턴스를 해제합니다.
 	ParticleComponent->ResetSystem();
+	ParticleComponent->SetPreviewEmitterFilter(SelectedLODLevel, SoloEmitter);
 	bPreviewValid = System->ValidateAsset(LastError);
 	if (!bPreviewValid) return false;
 
@@ -307,6 +399,7 @@ void FParticleEditor::ShutdownResources()
 	PreviewScene.Release();
 
 	SelectEmitter(-1);
+	SoloEmitter = nullptr;
 	delete System;
 	System = nullptr;
 	SourceSystem = nullptr;
@@ -324,9 +417,10 @@ bool FParticleEditor::DiscardChanges()
 	// 복원할 객체를 준비한 뒤 교체하여 복원 실패 시 편집 상태를 유지합니다.
 	if (ParticleComponent) ParticleComponent->SetTemplate(nullptr);
 	SelectEmitter(-1);
+	SoloEmitter = nullptr;
 	delete System;
 	System = Restored.release();
-	SelectLODLevel(0);
+	SelectedLODLevel = 0;
 	bPreviewValid = true;
 	if (ParticleComponent) ParticleComponent->SetTemplate(System);
 

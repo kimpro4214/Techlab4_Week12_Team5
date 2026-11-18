@@ -3,9 +3,14 @@
 
 UAsset::~UAsset()
 {
+	DestroyOwnedObjects(this);
+}
+
+void UAsset::DestroyOwnedObjects(UObject* Owner)
+{
 	// Outer 아래의 객체만 소유한다. 외부 애셋 참조는 함께 삭제하지 않는다.
 	TArray<UObject*> OwnedObjects;
-	OwnedObjects.Add(this);
+	OwnedObjects.Add(Owner);
 	for (int32 Index = 0; Index < OwnedObjects.Num(); ++Index)
 	{
 		for (UObject* Object : GUObjectArray)

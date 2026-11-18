@@ -25,7 +25,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 
 	SpriteTemplate = InTemplate;
 	Component = InComponent;
-	CurrentLODLevelIndex = 0;
+	CurrentLODLevelIndex = Component->GetEmitterLODIndex();
 	CurrentLODLevel = SpriteTemplate->GetLODLevel(CurrentLODLevelIndex);
 	if (!CurrentLODLevel)
 		return false;

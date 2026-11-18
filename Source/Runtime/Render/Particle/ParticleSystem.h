@@ -19,6 +19,9 @@ public:
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	void AddEmitter(UParticleEmitter* InEmitter);
 	void AddDefaultEmitter();
+	// 삭제 전에 이미터를 참조하는 실행 인스턴스를 해제해야 합니다.
+	void RemoveEmitter(int32 Index);
+	bool RemoveModule(int32 EmitterIndex, int32 LODIndex, UParticleModule* Module);
 
 	// 호출 전에 두 시스템을 사용하는 실행 인스턴스를 해제해야 합니다.
 	// 이미터의 소유권을 함께 교환하여 공유 에셋 객체의 주소를 유지합니다.

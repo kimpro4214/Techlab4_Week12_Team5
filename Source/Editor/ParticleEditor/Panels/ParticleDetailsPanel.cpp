@@ -19,7 +19,7 @@ void FParticleDetailsPanel::DrawContent()
 	{
 		if (UParticleEmitter* Emitter = Editor.GetSelectedEmitter())
 		{
-			ImGui::Text("Emitter %d", Editor.GetSelectedEmitterIndex() + 1);
+			ImGui::TextUnformatted(Editor.GetEmitterDisplayName(Editor.GetSelectedEmitterIndex()).c_str());
 			ImGui::Text("LODs: %d", Emitter->GetLODLevels().Num());
 		}
 		ImGui::TextWrapped("Select a module to edit its properties.");

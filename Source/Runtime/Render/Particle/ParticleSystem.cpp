@@ -139,6 +139,33 @@ void UParticleSystem::AddEmitter(UParticleEmitter* InEmitter)
 	Emitters.Add(InEmitter);
 }
 
+void UParticleSystem::RemoveEmitter(int32 Index)
+{
+	if (!Emitters.IsValidIndex(Index)) return;
+
+	UParticleEmitter* Emitter = Emitters[Index];
+	Emitters.RemoveAt(Index);
+	DestroyOwnedObjects(Emitter);
+	delete Emitter;
+}
+
+bool UParticleSystem::RemoveModule(int32 EmitterIndex, int32 LODIndex, UParticleModule* Module)
+{
+	if (!Module || !Emitters.IsValidIndex(EmitterIndex) || !Emitters[EmitterIndex]) return false;
+
+	UParticleLODLevel* LOD = Emitters[EmitterIndex]->GetLODLevel(LODIndex);
+	if (!LOD || Module->GetOuter() != LOD) return false;
+
+	const int32 ModuleIndex = LOD->Modules.Find(Module);
+	if (ModuleIndex < 0) return false;
+
+	LOD->Modules.RemoveAt(ModuleIndex);
+	Emitters[EmitterIndex]->CacheEmitterModuleInfo(LODIndex);
+	DestroyOwnedObjects(Module);
+	delete Module;
+	return true;
+}
+
 void UParticleSystem::SwapEmitters(UParticleSystem& Other)
 {
 	if (this == &Other) return;

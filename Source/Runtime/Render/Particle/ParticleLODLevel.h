@@ -12,13 +12,16 @@ class UParticleModuleSpawn;
 class UParticleModuleTypeDataBase;
 
 
-// Emitter의 LOD 하나에 해당하는 모듈 묶음 . 지금은 LOD 0만 쓴다.
+// Emitter의 LOD 하나에 해당하는 모듈 묶음입니다.
 // 하나의 Emitter가 여러 개의 LODLevel을 갖는다. LODLevel은 SpawnModules / UpdateModules를 캐시한다.
 UCLASS()
 class UParticleLODLevel : public UObject
 {
 	GENERATED_BODY()
 public:
+	bool IsEnabled() const { return bEnabled; }
+	void SetEnabled(bool bValue) { bEnabled = bValue; }
+
 	UParticleModuleRequired* GetRequiredModule() const { return RequiredModule; }
 	UParticleModuleSpawn* GetSpawnModule() const { return SpawnModule; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
@@ -36,6 +39,8 @@ public:
 	void UpdateModuleLists();
 
 private:
+	friend class UParticleSystem;
+
 	UPROPERTY()
 	int32 Level = 0;
 	UPROPERTY()

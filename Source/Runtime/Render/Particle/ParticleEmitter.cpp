@@ -7,6 +7,24 @@
 #include "Render/Particle/ParticleModuleTypeDataBase.h"
 #include "Render/Particle/ParticleModule.h"
 #include "Render/Particle/ParticleModuleRequired.h"
+#include "Serialization/Archive.h"
+
+void UParticleEmitter::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	if (Ar.IsError() || !Ar.HasAnyPortFlags(EPropertyPortFlags::PPF_Asset)) return;
+
+	// 기존 애셋의 이미터 레코드에는 이름이 없으므로 남은 데이터가 있을 때만 읽습니다.
+	if (Ar.IsLoading())
+	{
+		EmitterName.clear();
+		if (Ar.Tell() < Ar.TotalSize()) Ar << EmitterName;
+	}
+	else if (!EmitterName.empty())
+	{
+		Ar << EmitterName;
+	}
+}
 
 void UParticleEmitter::AddLODLevel(UParticleLODLevel* InLODLevel)
 {
@@ -48,7 +66,7 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 Index) const
 	return LODLevels[Index];
 }
 
-void UParticleEmitter::CacheEmitterModuleInfo()
+void UParticleEmitter::CacheEmitterModuleInfo(int32 LODIndex)
 {
 	RequiredInstanceBytes = 0;
 	ModuleInstanceOffsetMap.Reset();
@@ -60,12 +78,11 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 		if (LODLevel) LODLevel->UpdateModuleLists();
 	}
 
-	const UParticleLODLevel* HighestLOD = GetLODLevel(0);
-	if (!HighestLOD)
+	const UParticleLODLevel* ActiveLOD = GetLODLevel(LODIndex);
+	if (!ActiveLOD)
 		return;
 
-	const TArray<UParticleModule*>& BaseModules = HighestLOD->GetModules();
-	for (const UParticleModule* Module : BaseModules)
+	for (const UParticleModule* Module : ActiveLOD->GetModules())
 	{
 		if (!Module)
 			continue;
@@ -78,7 +95,7 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 			RequiredInstanceBytes = Offset + InstanceBytes;
 		}
 
-		const uint32 Bytes = Module->RequiredBytes(HighestLOD->GetTypeDataModule());
+		const uint32 Bytes = Module->RequiredBytes(ActiveLOD->GetTypeDataModule());
 		if (Bytes == 0)
 			continue;
 

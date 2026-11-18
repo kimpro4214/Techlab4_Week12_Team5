@@ -21,6 +21,9 @@ public:
 	void SetPath(FString Path) { AssetPath = Path; }
 	const FString& GetPath() const { return AssetPath; }
 
+protected:
+	static void DestroyOwnedObjects(UObject* Owner);
+
 private:
 	FString AssetPath;
 };
