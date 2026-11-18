@@ -173,11 +173,47 @@ void FParticleEditor::SelectEmitter(int32 Index)
 	SelectedModule = nullptr;
 }
 
+void FParticleEditor::AddEmitter()
+{
+	if (!System) return;
+
+	System->AddDefaultEmitter();
+	SelectLODLevel(0);
+	SelectEmitter(System->GetEmitters().Num() - 1);
+	RefreshSystem();
+}
+
+int32 FParticleEditor::GetLODLevelCount() const
+{
+	int32 Count = 0;
+	if (!System) return Count;
+
+	for (const UParticleEmitter* Emitter : System->GetEmitters())
+	{
+		if (Emitter && Emitter->GetLODLevels().Num() > Count)
+		{
+			Count = Emitter->GetLODLevels().Num();
+		}
+	}
+	return Count;
+}
+
+void FParticleEditor::SelectLODLevel(int32 Index)
+{
+	if (Index < 0 || (Index != 0 && Index >= GetLODLevelCount()) || Index == SelectedLODLevel)
+	{
+		return;
+	}
+
+	SelectedLODLevel = Index;
+	SelectedModule = nullptr;
+}
+
 void FParticleEditor::SelectModule(int32 EmitterIndex, UParticleModule* Module)
 {
 	SelectEmitter(EmitterIndex);
 	UParticleEmitter* Emitter = GetSelectedEmitter();
-	const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+	const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(SelectedLODLevel) : nullptr;
 	if (!LOD || !Module) return;
 
 	if (Module == LOD->GetRequiredModule() || Module == LOD->GetSpawnModule() ||
@@ -290,6 +326,7 @@ bool FParticleEditor::DiscardChanges()
 	SelectEmitter(-1);
 	delete System;
 	System = Restored.release();
+	SelectLODLevel(0);
 	bPreviewValid = true;
 	if (ParticleComponent) ParticleComponent->SetTemplate(System);
 

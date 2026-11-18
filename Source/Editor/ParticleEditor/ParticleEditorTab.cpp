@@ -5,16 +5,53 @@
 #include "Panels/ParticleDetailsPanel.h"
 #include "Panels/ParticleEmittersPanel.h"
 
+namespace
+{
+class FParticleSettingsPanel : public FParticleEditorPanel
+{
+public:
+	explicit FParticleSettingsPanel(FParticleEditor& InEditor)
+		: FParticleEditorPanel(InEditor, "Settings")
+	{
+	}
+
+protected:
+	void DrawContent() override
+	{
+		const bool bPaused = Editor.IsPaused();
+		if (ImGui::Button(bPaused ? "Play" : "Pause")) Editor.SetPaused(!bPaused);
+		ImGui::SameLine();
+		if (ImGui::Button("Restart")) Editor.Restart();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(!Editor.IsPaused());
+		if (ImGui::Button("Step")) Editor.Step();
+		ImGui::EndDisabled();
+
+		ImGui::SetNextItemWidth(100.0f);
+		float TimeScale = Editor.GetTimeScale();
+		if (ImGui::SliderFloat("Speed", &TimeScale, 0.1f, 4.0f, "%.1fx")) Editor.SetTimeScale(TimeScale);
+
+		bool bGrid = Editor.IsRenderGrid();
+		if (ImGui::Checkbox("Grid", &bGrid)) Editor.SetRenderGrid(bGrid);
+		ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
+
+		if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
+		if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
+	}
+};
+}
+
 FParticleEditorTab::FParticleEditorTab(FParticleEditor& InEditor)
 	: FAssetEditorTab(InEditor)
 	, ParticleEditor(InEditor)
 {
 	// 탭의 부모 창이 달라져도 애셋별 도킹 ID를 유지합니다.
 	const ImGuiID AssetId = ImHashStr(InEditor.GetKey().GetTabId().c_str());
-	DockSpaceId = ImHashStr("ParticleDockSpaceV2", 0, AssetId);
+	DockSpaceId = ImHashStr("ParticleDockSpaceV3", 0, AssetId);
 	PanelClassId = ImHashStr("ParticlePanelClass", 0, AssetId);
 
 	Panels.Add(MakeUnique<FParticleViewportPanel>(InEditor));
+	Panels.Add(MakeUnique<FParticleSettingsPanel>(InEditor));
 	Panels.Add(MakeUnique<FParticleDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FParticleEmittersPanel>(InEditor));
 	for (auto& Panel : Panels)
@@ -52,18 +89,62 @@ void FParticleEditorTab::DrawMenuBar()
 	}
 }
 
+void FParticleEditorTab::DrawToolbar()
+{
+	const float Padding = ImGui::GetStyle().ItemSpacing.x;
+	ImGui::Indent(Padding);
+
+	if (ImGui::Button("Add Emitter"))
+	{
+		ParticleEditor.AddEmitter();
+	}
+
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted("LOD Level");
+	ImGui::SameLine();
+
+	const int32 CurrentLOD = ParticleEditor.GetSelectedLODLevel();
+	const int32 LODCount = ParticleEditor.GetLODLevelCount();
+	const FString CurrentLabel = "LOD " + std::to_string(CurrentLOD);
+	ImGui::BeginDisabled(LODCount <= 1);
+	ImGui::SetNextItemWidth(ImGui::CalcTextSize("LOD 0000").x + ImGui::GetFrameHeight());
+	if (ImGui::BeginCombo("##LODLevel", CurrentLabel.c_str()))
+	{
+		for (int32 Index = 0; Index < LODCount; ++Index)
+		{
+			const FString Label = "LOD " + std::to_string(Index);
+			if (ImGui::Selectable(Label.c_str(), Index == CurrentLOD))
+			{
+				ParticleEditor.SelectLODLevel(Index);
+			}
+			if (Index == CurrentLOD)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::EndDisabled();
+	ImGui::Unindent(Padding);
+	ImGui::Separator();
+}
+
 void FParticleEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size)
 {
 	ImGui::DockBuilderAddNode(InDockSpaceId, ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(InDockSpaceId, Size);
 	ImGuiID EmittersId = InDockSpaceId;
 	ImGuiID LeftId = ImGui::DockBuilderSplitNode(EmittersId, ImGuiDir_Left, 0.25f, nullptr, &EmittersId);
-	ImGuiID ViewportId = LeftId;
-	const ImGuiID DetailsId = ImGui::DockBuilderSplitNode(ViewportId, ImGuiDir_Down, 0.5f, nullptr, &ViewportId);
+	const ImGuiID ViewportId = ImGui::DockBuilderSplitNode(LeftId, ImGuiDir_Up, 0.4f, nullptr, &LeftId);
+
+	// 남은 높이의 1/3을 Settings에 할당해 전체 높이의 20%로 맞춥니다.
+	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(LeftId, ImGuiDir_Up, 1.0f / 3.0f, nullptr, &LeftId);
 
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
-	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), DetailsId);
-	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), EmittersId);
+	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), SettingsId);
+	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), LeftId);
+	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), EmittersId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
@@ -76,6 +157,11 @@ void FParticleEditorTab::OnRender(bool bActive)
 	}
 
 	ParticleEditor.ReportPanelFocus(bActive && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows));
+
+	if (bActive)
+	{
+		DrawToolbar();
+	}
 
 	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)
 	{

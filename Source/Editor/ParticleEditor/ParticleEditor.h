@@ -58,6 +58,10 @@ public:
 	////////////////////////////////////////////////////////////
 
 	void SelectEmitter(int32 Index);
+	void AddEmitter();
+	void SelectLODLevel(int32 Index);
+	int32 GetSelectedLODLevel() const { return SelectedLODLevel; }
+	int32 GetLODLevelCount() const;
 	void SelectModule(int32 EmitterIndex, UParticleModule* Module);
 	UParticleEmitter* GetSelectedEmitter() const;
 	UParticleModule* GetSelectedModule() const { return SelectedModule; }
@@ -105,7 +109,8 @@ private:
 	TArray<uint8> SavedSnapshot;
 	FString LastError;
 
-	// 선택은 편집 복사본 안의 LOD 0에만 적용합니다.
+	// 편집 복사본에서 현재 표시하는 LOD와 선택 항목입니다.
+	int32 SelectedLODLevel = 0;
 	int32 SelectedEmitterIndex = -1;
 	UParticleModule* SelectedModule = nullptr;
 	bool bPreviewValid = true;

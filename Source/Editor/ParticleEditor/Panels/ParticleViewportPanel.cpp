@@ -9,25 +9,6 @@ FParticleViewportPanel::FParticleViewportPanel(FParticleEditor& InEditor)
 
 void FParticleViewportPanel::DrawContent()
 {
-	if (ImGui::Button(Editor.IsPaused() ? "Play" : "Pause")) Editor.SetPaused(!Editor.IsPaused());
-	ImGui::SameLine();
-	if (ImGui::Button("Restart")) Editor.Restart();
-	ImGui::SameLine();
-	ImGui::BeginDisabled(!Editor.IsPaused());
-	if (ImGui::Button("Step")) Editor.Step();
-	ImGui::EndDisabled();
-	ImGui::SetNextItemWidth(100.0f);
-	float TimeScale = Editor.GetTimeScale();
-	if (ImGui::SliderFloat("Speed", &TimeScale, 0.1f, 4.0f, "%.1fx")) Editor.SetTimeScale(TimeScale);
-	ImGui::SameLine();
-	ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
-
-	bool bGrid = Editor.IsRenderGrid();
-	if (ImGui::Checkbox("Grid", &bGrid)) Editor.SetRenderGrid(bGrid);
-
-	if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
-	if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
-
 	FEditorViewportClient* Client = Editor.GetViewportClient();
 	const ImVec2 Size = ImGui::GetContentRegionAvail();
 	if (!Client || Size.x < 1.0f || Size.y < 1.0f)

@@ -17,6 +17,7 @@ public:
 	void OnRender(bool bActive) override;
 
 private:
+	void DrawToolbar();
 	void BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2& Size);
 
 	FParticleEditor& ParticleEditor;

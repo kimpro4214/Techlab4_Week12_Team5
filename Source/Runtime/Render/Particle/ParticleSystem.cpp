@@ -186,6 +186,13 @@ void UParticleSystem::PostLoadAsset()
 
 UParticleSystem* UParticleSystem::CreateDefault()
 {
+	UParticleSystem* System = NewObject<UParticleSystem>();
+	System->AddDefaultEmitter();
+	return System;
+}
+
+void UParticleSystem::AddDefaultEmitter()
+{
 	UParticleModuleRequired* Required = NewObject<UParticleModuleRequired>();
 	Required->SetMaxParticles(300);
 	Required->SetMaterial(UAssetManager::GetAssetByPath<UMaterial>("ParticleSpriteMaterial"));
@@ -243,7 +250,5 @@ UParticleSystem* UParticleSystem::CreateDefault()
 	}
 	Emitter->CacheEmitterModuleInfo();   // 모듈을 다 넣은 뒤 Spawn/Update 목록 분류
 
-	UParticleSystem* System = NewObject<UParticleSystem>();
-	System->AddEmitter(Emitter);
-	return System;
+	AddEmitter(Emitter);
 }

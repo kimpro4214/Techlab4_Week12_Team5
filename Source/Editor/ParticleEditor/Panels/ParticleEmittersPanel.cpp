@@ -13,7 +13,6 @@ void FParticleEmittersPanel::DrawContent()
 	UParticleSystem* System = Editor.GetSystem();
 	if (!System) return;
 
-	ImGui::TextDisabled("LOD 0");
 	if (System->GetEmitters().IsEmpty())
 	{
 		ImGui::TextUnformatted("No emitters");
@@ -38,7 +37,7 @@ void FParticleEmittersPanel::DrawContent()
 		ImGui::Separator();
 
 		const UParticleEmitter* Emitter = System->GetEmitters()[Index];
-		const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+		const UParticleLODLevel* LOD = Emitter ? Emitter->GetLODLevel(Editor.GetSelectedLODLevel()) : nullptr;
 		if (LOD)
 		{
 			auto DrawModule = [&](UParticleModule* Module, const char* Name)
@@ -64,6 +63,10 @@ void FParticleEmittersPanel::DrawContent()
 				if (!Module->IsEnabled()) Name += " (Disabled)";
 				DrawModule(Module, Name.c_str());
 			}
+		}
+		else
+		{
+			ImGui::TextDisabled("LOD unavailable");
 		}
 
 		ImGui::EndChild();
