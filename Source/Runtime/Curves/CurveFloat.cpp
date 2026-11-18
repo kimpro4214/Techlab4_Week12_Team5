@@ -8,7 +8,7 @@ namespace
 	constexpr int32 MaxCurveKeys = 10000; // 커브 키 개수 제한. UI/메모리/성능을 고려한 임시 상수.
     bool SameTime(float A, float B){ return std::abs(A - B) < KeyTimeTolerance; }
 	bool ValidMode(ECurveInterpMode Mode) 
-    { return Mode == ECurveInterpMode::Constant || Mode == ECurveInterpMode::Linear || Mode == ECurveInterpMode::Cubic; }
+    { return Mode <= ECurveInterpMode::Spline; }
 }
 
 
@@ -21,7 +21,7 @@ float UCurveFloat::GetFloatValue(float InTime) const
     if (InTime <= Keys[0].Time) return Keys[0].Value;
     if (InTime >= Keys.Last().Time) return Keys.Last().Value;
 	const auto Right = std::upper_bound(Keys.begin(), Keys.end(), InTime, [](float Time, const FFloatCurveKey& Key) { return Time < Key.Time; });
-	return EvalSegment(*(Right - 1), *Right, InTime);
+	return EvalSegment(static_cast<int32>(Right - Keys.begin()) - 1, InTime);
 }
 
 // 유효한 시간/값인지 확인하고 같은 시각의 키를 갱신하거나 새 ID로 추가 후 정렬합니다.
@@ -153,7 +153,8 @@ bool UCurveFloat::ImportFromJson(const FString& Data)
             FFloatCurveKey Key;
             const int64 Id = Entry["Id"].get<int64>();
             const int64 Mode = Entry["InterpMode"].get<int64>();
-            if (Id < 0 || Id >= std::numeric_limits<int32>::max() || Mode < 0 || Mode > 2) return false;
+            if (Id < 0 || Id >= std::numeric_limits<int32>::max() ||
+                Mode < 0 || Mode > static_cast<int64>(ECurveInterpMode::Spline)) return false;
             Key.KeyId = static_cast<int32>(Id);
             Key.InterpMode = static_cast<ECurveInterpMode>(Mode);
             Key.Time = Entry["Time"].get<float>();
@@ -221,15 +222,28 @@ void UCurveFloat::SortKeys()
     std::stable_sort(Keys.begin(), Keys.end(), [](const auto& A, const auto& B) { return A.Time < B.Time; });
 }
 
-// Constant는 왼쪽 값, Linear는 직선, Cubic은 Hermite 기저와 접선을 사용합니다.
-float UCurveFloat::EvalSegment(const FFloatCurveKey& LeftKey, const FFloatCurveKey& RightKey, float InTime) const
+float UCurveFloat::GetSplineTangent(int32 KeyIndex) const
 {
+    // 내부 키는 양쪽 이웃을, 양 끝 키는 바로 옆 키를 사용합니다.
+    const FFloatCurveKey& Before = Keys[std::max(0, KeyIndex - 1)];
+    const FFloatCurveKey& After = Keys[std::min(Keys.Num() - 1, KeyIndex + 1)];
+    return (After.Value - Before.Value) / (After.Time - Before.Time);
+}
+
+float UCurveFloat::EvalSegment(int32 LeftIndex, float InTime) const
+{
+    const FFloatCurveKey& LeftKey = Keys[LeftIndex];
+    const FFloatCurveKey& RightKey = Keys[LeftIndex + 1];
     const float Length = RightKey.Time - LeftKey.Time;
     if (Length <= KeyTimeTolerance) return LeftKey.Value;
     const float T = std::clamp((InTime - LeftKey.Time) / Length, 0.0f, 1.0f);
     if (LeftKey.InterpMode == ECurveInterpMode::Constant) return LeftKey.Value;
     if (LeftKey.InterpMode == ECurveInterpMode::Linear) return LeftKey.Value + (RightKey.Value - LeftKey.Value) * T;
+
+    const bool bSpline = LeftKey.InterpMode == ECurveInterpMode::Spline;
+    const float LeaveTangent = bSpline ? GetSplineTangent(LeftIndex) : LeftKey.LeaveTangent;
+    const float ArriveTangent = bSpline ? GetSplineTangent(LeftIndex + 1) : RightKey.ArriveTangent;
     const float T2 = T * T, T3 = T2 * T;
-    return (2 * T3 - 3 * T2 + 1) * LeftKey.Value + (T3 - 2 * T2 + T) * LeftKey.LeaveTangent * Length +
-        (-2 * T3 + 3 * T2) * RightKey.Value + (T3 - T2) * RightKey.ArriveTangent * Length;
+    return (2 * T3 - 3 * T2 + 1) * LeftKey.Value + (T3 - 2 * T2 + T) * LeaveTangent * Length +
+        (-2 * T3 + 3 * T2) * RightKey.Value + (T3 - T2) * ArriveTangent * Length;
 }

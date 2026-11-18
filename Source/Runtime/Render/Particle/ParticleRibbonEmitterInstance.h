@@ -35,5 +35,11 @@ private:
 	FVector LastHeadPosition = FVector::ZeroVector;   // 가장 최근에 태어난 마디의 월드 위치
 	float   LastHeadDistance = 0.0f;       // 그 마디의 누적 거리
 
+	// 마디가 태어날 때의 시각(EmitterTime)과 속도 접선 (위치 차 ÷ 시간 차, 월드 단위/초)
+	TArray<float>   SlotBirthTimes;
+	TArray<FVector> SlotBirthTangents;
+	float   LastHeadTime    = 0.0f;
+	FVector LastHeadTangent = FVector::ZeroVector;
+
 	TUniquePtr<FDynamicRibbonEmitterData> DynamicData;
 };
