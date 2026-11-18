@@ -6,6 +6,7 @@
 class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleSystemComponent;
+class UParticleModule;
 struct FDynamicEmitterDataBase;   // 정의는 렌더 헤더(ParticleDynamicData.h). 여기서는 전방 선언만
 
 // Component × Emitter 하나마다 하나 존재하는 실행 상태 
@@ -23,14 +24,14 @@ struct FParticleEmitterInstance
 	virtual bool Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
 
 	// 이번 프레임 생성 개수를 계산해 SpawnParticles를 부른다. 소수점은 SpawnFraction으로 이월
-	void Spawn(float DeltaTime);
+	void Spawn(float DeltaTime, float SpawnDeltaTime);
 	// Count개를 빈 칸에 생성한다. 블록이 가득 차면 멈춘다
-	void SpawnParticles(int32 Count, const FVector& InitialLocation);
+	void SpawnParticles(int32 Count, const FVector& InitialLocation, float FirstSpawnTime, float SpawnInterval);
 
 	// 매 Tick 시작에 갱신
 	void UpdateTransforms();
 
-	// 한 프레임 시뮬레이션: 나이 증가 → Update 모듈 → Kill → Spawn
+	// 한 프레임 시뮬레이션: Kill → 나이 증가 → Update 모듈 → Integrate → Spawn
 	virtual void Tick(float DeltaTime);
 
 	// i번째 살아있는 파티클(ParticleIndices[i])을 죽인다. 칸은 지우지 않고 인덱스만 뒤로 보낸다
@@ -59,6 +60,16 @@ struct FParticleEmitterInstance
 	float  SpawnFraction = 0.0f;    // 지난 프레임에 못 만든 소수점 몫
 	float  EmitterTime = 0.0f;
 
+	uint8* GetModuleInstanceData(const UParticleModule* Module);
+
+	void StopSpawning() { bSpawnFinished = true; }
+	bool HasCompleted() const { return bSpawnFinished && ActiveParticles == 0; }
+
+	void AddCollisionEvent(const FParticleCollisionEvent& Event) { CollisionEvents.Add(Event); }
+	const TArray<FParticleCollisionEvent>& GetCollisionEvents() const { return CollisionEvents; }
+
+	bool SetCurrentLODIndex(int32 Index);
+
 protected:
 	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
 	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);
@@ -77,4 +88,10 @@ protected:
 	void KillParticles();                            // RelativeTime 1 이상인 파티클 제거
 	void Tick_ModuleUpdate(float DeltaTime);         // Update 모듈 실행
 	void Integrate(float DeltaTime);                 // 속도 → 위치, 회전속도 → 회전
+
+	uint8* InstanceData = nullptr;
+
+private:
+	bool bSpawnFinished = false;
+	TArray<FParticleCollisionEvent> CollisionEvents;
 };

@@ -1,4 +1,7 @@
 #include "EnginePCH.h"
+#include "Asset/AssetSerializer.h"
+#include "Asset/AssetUtils.h"
+#include "Render/Particle/ParticleSystem.h"
 #include "AssetManager.h"
 #include "Render/Buffer.h"
 #include "Render/Material.h"
@@ -31,14 +34,6 @@
 
 namespace
 {
-	FString GetAssetExtension(const FString& Path) {
-		const std::u8string UTF8Path{ Path.begin(), Path.end() };
-		FString Extension{ std::filesystem::path{ UTF8Path }.extension().string() };
-		for (char& Character : Extension) {
-			Character = static_cast<char>(std::tolower(static_cast<unsigned char>(Character)));
-		}
-		return Extension;
-	}
 
 	UStaticMesh* CreateStaticMesh(const FStaticMeshData* MeshData)
 	{
@@ -297,6 +292,9 @@ void UAssetManager::Init(const FAssetLoadProgress& OnProgress)
 	Get().CreateParticleMeshMaterial();
 	Get().CreateParticleStripMaterial();
 	Get().CreateEditorArrowMaterial();
+
+	// 기본 머티리얼과 텍스처가 준비된 뒤 참조를 가진 애셋을 읽는다.
+	Get().LoadSerializedAssets();
 }
 
 void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgress& OnProgress)
@@ -319,10 +317,14 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 	const int32 Total = Files.Num();
 	for (int32 i = 0; i < Total; ++i)
 	{
-		FString Key = fs::relative(Files[i], AssetRoot).generic_string();
-		FString Path = Files[i].generic_string();
+		const std::u8string RelativePath = fs::relative(Files[i], AssetRoot).generic_u8string();
+		const std::u8string FilePath = Files[i].generic_u8string();
+		FString Key(RelativePath.begin(), RelativePath.end());
+		FString Path(FilePath.begin(), FilePath.end());
 		AssetPathMap.Add(Key, Path);
-		LoadAsset(Key, Path);
+		const FString Extension = AssetUtils::GetAssetExtension(Path);
+		if (!AssetUtils::IsSerializedAssetExtension(Extension))
+			LoadAsset(Key, Path);
 
 		if (OnProgress)
 		{
@@ -332,7 +334,14 @@ void UAssetManager::ScanAssets(const fs::path& AssetRoot, const FAssetLoadProgre
 }
 
 void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
-	const FString Extension{ GetAssetExtension(Path) };
+	const FString Extension{ AssetUtils::GetAssetExtension(Path) };
+	if (AssetUtils::IsSerializedAssetExtension(Extension))
+	{
+		FString Error;
+		if (!LoadSerializedAsset(Path, nullptr, Error))
+			HTR_LOG(Error, "Failed to load asset '{}': {}", Path, Error);
+		return;
+	}
 	if (Extension == ".png" || Extension == ".dds") {
 		if (UTexture2D* Texture{ LoadTexture(Path) }) {
 			AssetMap[Key] = Texture;
@@ -350,7 +359,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 	if (Extension == ".fbx")
 	{
 		// 메모리에 등록된 메시라면 디스크 접근과 타입 판별도 생략한다.
-		if (URenderAsset** CachedAsset = AssetMap.Find(Key); CachedAsset && *CachedAsset)
+		if (UAsset** CachedAsset = AssetMap.Find(Key); CachedAsset && *CachedAsset)
 		{
 			if (!Cast<UStaticMesh>(*CachedAsset) && !Cast<USkeletalMesh>(*CachedAsset))
 			{
@@ -375,7 +384,7 @@ void UAssetManager::LoadAsset(const FString& Key, const FString& Path) {
 		}
 
 		FFbxBakeResult* BakedData = bHasBake ? &BakeResult : nullptr;
-		URenderAsset* Mesh = nullptr;
+		UAsset* Mesh = nullptr;
 		if (MeshType == EFbxMeshType::SkeletalMesh)
 		{
 			Mesh = LoadFbxSkeletalMesh(Key, Path, Error, BakedData);
@@ -550,7 +559,7 @@ void UAssetManager::CreateParticleSpriteMaterial()
 {
 	UMaterial* SpriteMat = NewObject<UMaterial>();
 	SpriteMat->PSOType = EPSOType::ParticleSprite_Additive;
-	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/StarParticle.png"));
+	SpriteMat->Textures.Add(GetAssetByPath<UTexture2D>("Assets/SubUV/Circle.png"));
 	SpriteMat->BlendState = EBlendState::Additive;
 	SpriteMat->DepthStencilState = EDepthStencilState::ReadOnly;
 	SpriteMat->SamplerState = ESamplerState::LinearClamp;
@@ -609,14 +618,14 @@ void UAssetManager::Shutdown()
 }
 
 
-void UAssetManager::RegisterAsset(const FString& Key, URenderAsset* Asset)
+void UAssetManager::RegisterAsset(const FString& Key, UAsset* Asset)
 {
 	Asset->SetPath(Key);
 	AssetMap[Key] = Asset;
 }
 
 UTexture2D* UAssetManager::LoadTexture(const FString& InPath, bool GenerateMips) {
-	if (URenderAsset** Found{ AssetMap.Find(InPath) }) {
+	if (UAsset** Found{ AssetMap.Find(InPath) }) {
 		return Cast<UTexture2D>(*Found);
 	}
 
@@ -693,6 +702,15 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 		return Cached;
 	}
 
+	// 경로 별칭으로 요청한 경우에도 기존 공유 메시를 사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : Get().AssetPathMap)
+	{
+		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
+		if (!Registered) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
+	}
+
 	TUniquePtr<FStaticMeshData> Data = FObjImporter::LoadStaticMeshData(Path);
 	UStaticMesh* Mesh = CreateStaticMesh(Data.get());   // Data가 nullptr이면 nullptr 반환
 	if (!Mesh)
@@ -701,6 +719,7 @@ UStaticMesh* UAssetManager::LoadObjStaticMesh(const FString& Path)
 	}
 
 	Get().RegisterAsset(Key, Mesh);
+	Get().AssetPathMap.Add(Key, Path);
 	return Mesh;
 }
 
@@ -709,7 +728,7 @@ UStaticMesh* UAssetManager::LoadFbxStaticMesh(const FString& Key, const FString&
 	OutError.clear();
 
 	// 같은 Key로 등록된 메시가 있으면 기존 리소스를 재사용한다.
-	URenderAsset** CachedAsset = AssetMap.Find(Key);
+	UAsset** CachedAsset = AssetMap.Find(Key);
 	if (CachedAsset && *CachedAsset)
 	{
 		UStaticMesh* CachedMesh = Cast<UStaticMesh>(*CachedAsset);
@@ -719,6 +738,15 @@ UStaticMesh* UAssetManager::LoadFbxStaticMesh(const FString& Key, const FString&
 		}
 
 		return CachedMesh;
+	}
+
+	// 경로 별칭으로 요청한 경우에도 기존 공유 메시를 사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : Get().AssetPathMap)
+	{
+		UStaticMesh* Registered = GetAssetByPath<UStaticMesh>(RegisteredKey);
+		if (!Registered) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Registered;
 	}
 
 	FStaticMeshData MeshData;
@@ -776,6 +804,19 @@ UAnimSequence* UAssetManager::LoadFbxAnimSequence(const FString& Path, FString& 
 		if (UAnimSequence* Cached = Cast<UAnimSequence>(AssetMap.FindRef(AnimKey))) return Cached;
 	}
 
+	// 에디터 키의 절대 경로/대소문자 정규화 이후에도 기존 클립을 재사용한다.
+	for (const auto& [RegisteredKey, RegisteredAsset] : AssetMap)
+	{
+		UAnimSequence* Cached = Cast<UAnimSequence>(RegisteredAsset);
+		if (!Cached || Name.empty()) continue;
+		const fs::path ClipPath(RegisteredKey);
+		if (!Name.empty() && ClipPath.filename().string() != Name) continue;
+		const fs::path RegisteredPath = fs::path("Assets") / ClipPath.parent_path();
+		std::error_code Error;
+		const fs::path RequestedPath = fs::exists(Path) ? fs::path(Path) : fs::path("Assets") / Key;
+		if (fs::equivalent(RequestedPath, RegisteredPath, Error) && !Error) return Cached;
+	}
+
 	if (!FirstFbxAnimations.Contains(Key))
 	{
 		FString DiskPath = Path;
@@ -826,7 +867,7 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 	OutError.clear();
 
 	// 같은 키로 등록된 메시가 있으면 임포트와 GPU 자원 생성을 생략한다.
-	URenderAsset** CachedAsset = AssetMap.Find(Key);
+	UAsset** CachedAsset = AssetMap.Find(Key);
 	if (CachedAsset && *CachedAsset)
 	{
 		USkeletalMesh* CachedMesh = Cast<USkeletalMesh>(*CachedAsset);
@@ -837,6 +878,15 @@ USkeletalMesh* UAssetManager::LoadFbxSkeletalMesh(const FString& Key, const FStr
 		}
 
 		return CachedMesh;
+	}
+
+	// 편집기 식별 경로의 대소문자·절대 경로 표기가 달라도 기존 공유 메시를 재사용한다.
+	for (const auto& [RegisteredKey, RegisteredPath] : AssetPathMap)
+	{
+		UAsset** Registered = AssetMap.Find(RegisteredKey);
+		if (!Registered || !*Registered || !(*Registered)->IsA<USkeletalMesh>()) continue;
+		std::error_code Error;
+		if (fs::equivalent(Path, RegisteredPath, Error) && !Error) return Cast<USkeletalMesh>(*Registered);
 	}
 
 	FSkeletalMeshData MeshData;
@@ -924,7 +974,7 @@ int32 UAssetManager::LoadFbxAnimations(const FString& Key, const FString& Path, 
 		const FString AnimKey = Key + "/" + Data.Name;
 
 		UAnimSequence* Sequence = nullptr;
-		if (URenderAsset* CachedAsset = AssetMap.FindRef(AnimKey))
+		if (UAsset* CachedAsset = AssetMap.FindRef(AnimKey))
 		{
 			HTR_LOG(Warning, "Asset key is already used: {}", AnimKey);
 			Sequence = Cast<UAnimSequence>(CachedAsset);
@@ -964,27 +1014,6 @@ void UAssetManager::GetFbxAnimationAssets(const FString& FbxKey, TArray<FFbxAnim
 	{
 		return A.DisplayName == B.DisplayName ? A.AssetKey < B.AssetKey : A.DisplayName < B.DisplayName;
 	});
-}
-
-void UAssetManager::SyncAnimNotifiesByClipName(const UAnimSequence* SourceSequence)
-{
-	if (!SourceSequence) return;
-	const FString& SrcPath = SourceSequence->GetPath();
-	const size_t SlashPos = SrcPath.find_last_of('/');
-	if (SlashPos == FString::npos) return;
-
-	const FString ClipSuffix = SrcPath.substr(SlashPos); // e.g., "/Walk_Loop"
-	for (auto& [Key, Asset] : AssetMap)
-	{
-		if (!Asset || Asset == SourceSequence) continue;
-		if (Key.ends_with(ClipSuffix))
-		{
-			if (UAnimSequence* TargetSeq = Cast<UAnimSequence>(Asset))
-			{
-				TargetSeq->Notifies = SourceSequence->Notifies;
-			}
-		}
-	}
 }
 
 bool UAssetManager::ReorientStaticMesh(UStaticMesh& Mesh, const std::function<FVector(const FVector&)>& Rotate)
@@ -1080,4 +1109,135 @@ FLODGenerateResult UAssetManager::GenerateStaticMeshLODs(UStaticMesh& Mesh, cons
 	Mesh.ScreenThresholds = Request.ScreenThresholds;
 	Mesh.RebuildRenderData();
 	return Result;
+}
+
+void UAssetManager::LoadSerializedAssets()
+{
+	for (const auto& [Key, Path] : AssetPathMap)
+	{
+		if (!AssetUtils::IsSerializedAssetExtension(AssetUtils::GetAssetExtension(Path)))
+		{
+			continue;
+		}
+
+		FString Error;
+		if (!LoadSerializedAsset(Path, nullptr, Error))
+		{
+			HTR_LOG(Error, "Failed to load asset '{}': {}", Path, Error);
+		}
+	}
+}
+
+UAsset* UAssetManager::LoadSerializedAsset(const FString& Path, UClass* ExpectedClass, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (!ExpectedClass && AssetUtils::GetAssetExtension(Key) == ".particle")
+	{
+		ExpectedClass = UParticleSystem::StaticClass();
+	}
+
+	// 이미 등록된 경로는 다시 읽지 않는다. 다른 타입을 요청한 경우에만 실패한다.
+	if (UAsset* Existing = AssetMap.FindRef(Key))
+	{
+		if (ExpectedClass && !Existing->IsA(ExpectedClass))
+		{
+			OutError = "Asset path is already registered with a different type: " + Key;
+			return nullptr;
+		}
+
+		return Existing;
+	}
+
+	// 외부 애셋을 재귀 로드하다 같은 경로로 돌아오면 순환 의존성이므로 중단한다.
+	if (LoadingAssetPaths.Find(Key) >= 0)
+	{
+		OutError = "Circular external asset dependency: " + Key;
+		return nullptr;
+	}
+
+	return LoadAndRegisterSerializedAsset(Key, ExpectedClass, OutError);
+}
+
+UAsset* UAssetManager::LoadAndRegisterSerializedAsset(const FString& Key, UClass* ExpectedClass, FString& OutError)
+{
+	LoadingAssetPaths.Add(Key);
+	UAsset* Asset = FAssetSerializer::Load(Key, ExpectedClass, OutError);
+	LoadingAssetPaths.RemoveLast();
+
+	// 완전히 복원된 객체만 공개하여 다른 로드가 미완성 애셋을 참조하지 않게 한다.
+	if (Asset)
+	{
+		RegisterAsset(Key, Asset);
+	}
+
+	return Asset;
+}
+
+UParticleSystem* UAssetManager::LoadParticleSystem(const FString& Path, FString& OutError)
+{
+	UAsset* Asset = LoadSerializedAsset(Path, UParticleSystem::StaticClass(), OutError);
+	return Cast<UParticleSystem>(Asset);
+}
+
+UAsset* UAssetManager::LoadAssetReference(const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (UAsset* Existing = AssetMap.FindRef(Key))
+	{
+		return Existing;
+	}
+
+	// 기존 형식의 리소스는 초기 스캔에서 준비하고, 바이너리 애셋만 여기서 지연 로드한다.
+	if (AssetUtils::IsSerializedAssetExtension(AssetUtils::GetAssetExtension(Key)))
+	{
+		return LoadSerializedAsset(Key, nullptr, OutError);
+	}
+
+	OutError = "External asset is not registered: " + Key;
+	return nullptr;
+}
+
+bool UAssetManager::ValidateParticleSavePath(UParticleSystem* System, const FString& Key, FString& OutError) const
+{
+	if (AssetUtils::GetAssetExtension(Key) != ".particle")
+	{
+		OutError = "Particle asset extension must be .particle";
+		return false;
+	}
+
+	UAsset* Existing = AssetMap.FindRef(Key);
+	if (Existing && Existing != System)
+	{
+		OutError = "Another asset already uses this path: " + Key;
+		return false;
+	}
+
+	// 기존 경로를 바꾸면 해당 경로를 참조하는 씬과 캐시가 서로 달라지므로 별도 복사로 처리해야 한다.
+	if (System && !System->GetPath().empty() && System->GetPath() != Key)
+	{
+		OutError = "Save a copy before assigning a different path to a registered asset";
+		return false;
+	}
+
+	return true;
+}
+
+bool UAssetManager::SaveParticleSystem(UParticleSystem* System, const FString& Path, FString& OutError)
+{
+	OutError.clear();
+	const FString Key = AssetUtils::MakeAssetKey(Path);
+	if (!ValidateParticleSavePath(System, Key, OutError))
+	{
+		return false;
+	}
+
+	if (!FAssetSerializer::Save(System, Key, OutError))
+	{
+		return false;
+	}
+
+	RegisterAsset(Key, System);
+	return true;
 }

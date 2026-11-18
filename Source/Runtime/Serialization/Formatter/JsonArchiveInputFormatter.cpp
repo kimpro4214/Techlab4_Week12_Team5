@@ -1,7 +1,7 @@
 #include "EnginePCH.h"
 #include "JsonArchiveInputFormatter.h"
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "Asset/AssetManager.h"
 
 
@@ -225,7 +225,8 @@ void FJsonArchiveInputFormatter::Serialize(UObject*& Value)
     if (!Read(AssetPath, "asset path"))
         return;
 
-    if (URenderAsset* Asset = UAssetManager::GetAssetByPath<URenderAsset>(AssetPath))
+    FString Error;
+    if (UAsset* Asset = UAssetManager::Get().LoadAssetReference(AssetPath, Error))
         Value = Asset;
     else
         HTR_LOG(Warning, "Load: asset '{}' not found, keeping default", AssetPath);

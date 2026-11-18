@@ -35,7 +35,7 @@ public:
 		if (Num && !IsError())
 		{
 			// Only serialize if we have the requested amount of data
-			if (Offset + Num <= TotalSize())
+			if (Num >= 0 && Offset >= 0 && Offset <= TotalSize() && Num <= TotalSize() - Offset)
 			{
 				FMemory::Memcpy(Data, &Bytes[(int32)Offset], Num);
 				Offset += Num;
@@ -52,6 +52,7 @@ public:
 		, LimitSize(INT64_MAX)
 	{
 		SetIsLoading(true);
+		SetIsPersistent(bIsPersistent);
 	}
 
 	/** With this method it's possible to attach data behind some serialized data. */ 

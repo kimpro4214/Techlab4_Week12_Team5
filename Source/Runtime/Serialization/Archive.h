@@ -9,7 +9,8 @@ enum class EPropertyPortFlags : uint32
 {
 	PPF_None = 0,
 	PPF_Duplicate = 1 << 0,   // 객체 복제 중
-	PPF_DuplicateForPIE = 1 << 1,   // PIE 월드 복제 중
+	PPF_DuplicateForPIE = 1 << 1, // PIE 월드 복제 중
+	PPF_Asset = 1 << 2,           // 영속 애셋의 객체 ID / 외부 경로 참조
 };
 DEFINE_ENUM_OPERATORS(EPropertyPortFlags)
 

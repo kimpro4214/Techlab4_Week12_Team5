@@ -133,7 +133,7 @@ void FContentDrawerPanel::OnRender()
 				}
 				else // 파일인 경우
 				{
-					URenderAsset* Asset = UAssetManager::GetAssetByPath<URenderAsset>(PathString);
+					UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(PathString);
 					if (Asset && Asset->IsA<UTexture2D>())
 					{
 						TextureAsset = Cast<UTexture2D>(Asset);
@@ -206,11 +206,15 @@ void FContentDrawerPanel::OnRender()
 					{
 						OnOpenWidget(PathString);
 					}
+					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic)
+					{
+						OnOpenStatic(PathString);
+					}
 					else if (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					{
 						// ScanAssets에서 등록한 것과 같은 Assets 기준 상대 경로를 사용한다.
 						const FString Key = Path.lexically_relative(AssetRootPath).generic_string();
-						URenderAsset* Asset = UAssetManager::GetAssetByPath<URenderAsset>(Key);
+						UAsset* Asset = UAssetManager::GetAssetByPath<UAsset>(Key);
 
 						if (!Asset)
 						{
@@ -226,8 +230,7 @@ void FContentDrawerPanel::OnRender()
 						}
 						else if (Asset->IsA<UStaticMesh>())
 						{
-							// StaticMesh 전용 편집기를 추가하면 이 분기에 연결한다.
-							HTR_LOG(Info, "StaticMesh selected '{}': no dedicated editor is available.", Key);
+							if (OnOpenStatic) OnOpenStatic(PathString);
 						}
 						else
 						{

@@ -23,6 +23,7 @@ public:
 	void SetOpenWidgetCallback(std::function<void(const FString&)> InCallback) { OnOpenWidget = std::move(InCallback); }
 	void SetCreateWidgetCallback(std::function<void(const FString&)> InCallback) { OnCreateWidget = std::move(InCallback); }
 
+	void SetOpenStaticCallback(std::function<void(const FString&)> InCallback) { OnOpenStatic = std::move(InCallback); }
 	void SetOpenSkeletalCallback(std::function<void(const FString&)> InCallback) { OnOpenSkeletal = std::move(InCallback); }
 	void SetOpenAnimationCallback(std::function<void(UAnimSequence*, USkeletalMesh*)> InCallback) { OnOpenAnimation = std::move(InCallback); }
 
@@ -31,6 +32,7 @@ private:
 
 	std::function<void(const FString&)> OnOpenWidget;
 	std::function<void(const FString&)> OnCreateWidget;
+	std::function<void(const FString&)> OnOpenStatic;
 	std::function<void(const FString&)> OnOpenSkeletal;
 	std::function<void(UAnimSequence*, USkeletalMesh*)> OnOpenAnimation;
 	char NewAssetName[64] = "NewWidget";

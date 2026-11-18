@@ -147,8 +147,8 @@ void UWorld::Tick(float RealDeltaTime)
 		Scene.UpdateAllTransforms();
 	}
 
-	// 에디터 월드가 아니면 액터 틱을 돌린다
-	if (WorldType != EWorldType::Editor)
+	// 편집·프리뷰 월드는 게임 액터 Tick과 전역 코루틴을 실행하지 않는다.
+	if (WorldType != EWorldType::Editor && WorldType != EWorldType::EditorPreview)
 	{
 		while (!BeginPlayList.IsEmpty())
 		{
@@ -169,8 +169,9 @@ void UWorld::Tick(float RealDeltaTime)
 			if (PlayerController) PlayerController->UpdateCameraManager(RealDeltaTime);
 		}
 	}
-	else
+	else if (WorldType == EWorldType::Editor || !bIsPaused)
 	{
+		// 기존 Editor 갱신은 유지하고, EditorPreview는 일시정지를 반영한다.
 		// 에디터 월드에서도 파티클 시뮬레이션은 틱이 돌아야 한다
 		for (TObjectIterator<UParticleSubUVComponent> Comp; Comp; ++Comp)
 		{

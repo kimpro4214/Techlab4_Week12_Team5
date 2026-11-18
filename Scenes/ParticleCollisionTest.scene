@@ -1,0 +1,149 @@
+{
+    "Version": 4,
+    "World": {
+        "PersistentLevel": {
+            "Actors": [
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "BounceParticles",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": -1.6, "Z": 0.15 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Name": "FreeParticles",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 1.6, "Z": 0.15 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "BlockingCeiling",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": -1.6, "Z": 1.2 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "OverrideMaterials": [],
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.3, "Y": 1.6, "Z": 0.2 }
+                                },
+                                "bBlockComponent": false
+                            }
+                        },
+                        {
+                            "Class": "UBoxComponent",
+                            "Name": "CeilingCollider",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "BoxExtent": { "X": 0.65, "Y": 0.8, "Z": 0.1 },
+                                "bBlockComponent": true,
+                                "bDrawOnlyIfSelected": true,
+                                "bGenerateOverlapEvents": false
+                            }
+                        }
+                    ],
+                    "Properties": { "bActorEnableCollision": true }
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Name": "TestFloor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": -0.1 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                }
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "OverrideMaterials": [],
+                            "Properties": {
+                                "StaticMesh": "Cube",
+                                "Transform": {
+                                    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+                                    "Rotation": { "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0 },
+                                    "Scale": { "X": 2.6, "Y": 6.0, "Z": 0.2 }
+                                },
+                                "bBlockComponent": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                },
+                {
+                    "Class": "AActor",
+                    "Name": "TestLight",
+                    "Components": [
+                        {
+                            "Class": "UDirectionalLightComponent",
+                            "Name": "UDirectionalLightComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Intensity": 0.8,
+                                "Transform": {
+                                    "Location": { "X": -2.0, "Y": 0.0, "Z": 4.0 },
+                                    "Rotation": { "Pitch": 55.0, "Roll": 0.0, "Yaw": 35.0 },
+                                    "Scale": { "X": 1.0, "Y": 1.0, "Z": 1.0 }
+                                },
+                                "bCastShadows": false
+                            }
+                        }
+                    ],
+                    "Properties": {}
+                }
+            ],
+            "Properties": {}
+        },
+        "Properties": {}
+    }
+}

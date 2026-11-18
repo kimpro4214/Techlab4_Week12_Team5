@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Asset/RenderAsset.h"
+#include "Asset/Asset.h"
 #include "Font.generated.h"
 
 class UTexture2D;
@@ -16,7 +16,7 @@ struct FGlyphInfo // 글자 하나의 정보
 };
 
 UCLASS()
-class UFont : public URenderAsset
+class UFont : public UAsset
 {
 	GENERATED_BODY()
 public:

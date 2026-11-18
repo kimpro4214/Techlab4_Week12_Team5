@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Core/StringUtils.h"
 #include "SplashScreen.h"
 
 #include "Render/ImageLoader.h"
@@ -29,7 +30,7 @@ namespace
 		int32 ImageWidth = 0;   
 		int32 ImageHeight = 0;
 
-		std::wstring Text;
+		FWideString Text;
 		float Progress = 0.0f;
 	};
 
@@ -98,7 +99,7 @@ namespace
 			FillRect(MemDC, &Client, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
 		}
 
-		std::wstring Text;
+		FWideString Text;
 		float Progress;
 		{
 			std::lock_guard Lock(GSplash.Mutex);
@@ -235,11 +236,17 @@ void FSplashScreen::Show(HINSTANCE hInstance, const FString& ImagePath)
 
 void FSplashScreen::SetText(const FString& Text)
 {
-	std::wstring WString(Text.begin(), Text.end());
-	SetText(WString);
+	FWideString WideText;
+	if (!StringUtils::TryUtf8ToWide(Text, WideText))
+	{
+		HTR_LOG(Warning, "Invalid UTF-8 splash screen text.");
+		return;
+	}
+
+	SetText(WideText);
 }
 
-void FSplashScreen::SetText(const std::wstring& Text)
+void FSplashScreen::SetText(const FWideString& Text)
 {
 	HWND hWnd;
 	{

@@ -9,9 +9,9 @@ class UParticleModuleColor : public UParticleModule
 public:
 	UParticleModuleColor() { bSpawnModule = true; }
 
-	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle* ParticleBase) override
+	void Spawn(const FSpawnContext& Context) override
 	{
-		ParticleBase->BaseColor = ParticleBase->Color = StartColor;
+		Context.ParticleBase->BaseColor = Context.ParticleBase->Color = StartColor;
 	}
 
 	UPROPERTY(EditAnywhere) FLinearColor StartColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);

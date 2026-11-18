@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PrimitiveComponent.h"
+#include "Render/Particle/ParticleSystem.h"
 #include "ParticleSystemComponent.generated.h"
 
 class UParticleSystem;               
@@ -25,12 +26,20 @@ public:
 	void SetTemplate(UParticleSystem* NewTemplate);
 	UParticleSystem* GetTemplate() const { return Template; }
 
+	bool IsCompleted() const { return bHasCompleted; }
+
+	virtual void PostEditChangeProperty(const FProperty& Property) override;
+
 	void InitializeSystem();   // Template의 Emitter마다 Instance를 새로 만든다
 	void ResetSystem();        // Instance를 모두 지운다
 
 	int32 GetNumActiveParticles() const;   // 모든 Emitter의 활성 파티클 합 (Stat/디버그용)
+	
+	virtual void Activate(bool bReset = false) override;
+	virtual void Deactivate() override;
 
 private:
+	UPROPERTY(EditAnywhere)
 	UParticleSystem* Template = nullptr;
 	TArray<FParticleEmitterInstance*> EmitterInstances;   // 이 컴포넌트가 소유
 
@@ -43,4 +52,7 @@ private:
 
 	// 컴포넌트 로컬 공간 Bounds. 첫 파티클이 나오기 전에는 원점 주변 작은 박스
 	FBox LocalBounds = FBox(FVector(-1.0f, -1.0f, -1.0f), FVector(1.0f, 1.0f, 1.0f));
+
+	bool bPendingDeactivate = false;
+	bool bHasCompleted = false;
 };

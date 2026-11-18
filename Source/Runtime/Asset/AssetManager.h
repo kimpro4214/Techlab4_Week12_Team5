@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UObject/Object.h"
+#include "Asset/Asset.h"
 #include "UObject/Property.h"
 #include "Render/Renderer.h"
 #include "Asset/LOD/StaticMeshLODGenerator.h"
@@ -20,6 +21,7 @@ class USkeletalMesh;
 class UMaterial;
 class USoundWave;
 class UAnimSequence;
+class UParticleSystem;
 struct FMeshMaterialSlot;
 struct FSkeletalMeshData;
 struct FFbxBakeResult;
@@ -71,7 +73,7 @@ public:
 	template <typename T>
 	static T* GetAssetByPath(const FString& Path)
 	{
-		URenderAsset** Found = Get().AssetMap.Find(Path);
+		UAsset** Found = Get().AssetMap.Find(Path);
 
 		if (Found == nullptr || *Found == nullptr || !(*Found)->IsA<T>())
 		{
@@ -80,7 +82,13 @@ public:
 		return Cast<T>(*Found);
 	}
 
-	void RegisterAsset(const FString& Key, URenderAsset* Asset);
+	void RegisterAsset(const FString& Key, UAsset* Asset);
+
+	// .particle / .asset는 공통 바이너리 형식을 사용한다. 같은 경로는 한 번만 로드한다.
+	UAsset* LoadSerializedAsset(const FString& Path, UClass* ExpectedClass, FString& OutError);
+	UParticleSystem* LoadParticleSystem(const FString& Path, FString& OutError);
+	UAsset* LoadAssetReference(const FString& Path, FString& OutError);
+	bool SaveParticleSystem(UParticleSystem* System, const FString& Path, FString& OutError);
 
 	//UStaticMesh* GetMesh(FString InName);
 	//UStaticMesh* GetMesh(EPrimitiveType Type); // 오버로드(수정 중)
@@ -104,7 +112,6 @@ public:
 	int32 LoadFbxAnimations(const FString& Key, const FString& Path, FString& OutError);
 	// 같은 FBX 아래에 이미 등록된 클립을 조회한다. 임포트나 에셋 생성은 하지 않는다.
 	void GetFbxAnimationAssets(const FString& FbxKey, TArray<FFbxAnimationAsset>& OutAssets) const;
-	void SyncAnimNotifiesByClipName(const UAnimSequence* SourceSequence);
 
 	FLODGenerateResult GenerateStaticMeshLODs(UStaticMesh& Mesh,const FLODGenerateRequest& Request);
 
@@ -116,6 +123,10 @@ public:
 	static void ForEachObjStaticMesh(const std::function<void(const FString& Key, UStaticMesh& Mesh)>& Func);
 
 private:
+	void LoadSerializedAssets();
+	UAsset* LoadAndRegisterSerializedAsset(const FString& Key, UClass* ExpectedClass, FString& OutError);
+	bool ValidateParticleSavePath(UParticleSystem* System, const FString& Key, FString& OutError) const;
+
 	// 슬롯의 색상과 텍스처 정보로 실제 재질을 생성한다.
 	TUniquePtr<UMaterial> CreateSkeletalMaterial(const FMeshMaterialSlot& Slot, FString& OutError);
 
@@ -123,7 +134,8 @@ private:
 	USkeletalMesh* CreateSkeletalMesh(FSkeletalMeshData&& MeshData, FString& OutError);
 
 	TMap<FString, FString> AssetPathMap;
-	TMap<FString, URenderAsset*> AssetMap;
+	TMap<FString, UAsset*> AssetMap;
+	TArray<FString> LoadingAssetPaths;
 	// 빈 테이크 이름은 파일에서 처음으로 등록한 클립을 사용한다.
 	TMap<FString, UAnimSequence*> FirstFbxAnimations;
 	TMap<FString, USoundWave*> SoundMap;

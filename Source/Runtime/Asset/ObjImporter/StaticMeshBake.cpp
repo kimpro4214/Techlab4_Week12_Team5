@@ -1,4 +1,5 @@
 #include "EnginePCH.h"
+#include "Asset/AssetUtils.h"
 #include "StaticMeshBake.h"
 
 #include <cstring>
@@ -26,7 +27,7 @@ namespace
 	struct FBakeHeader
 	{
 		// 'S'taic 'M'esh 'B'a'K'e
-		char Magic[4] = { 'S', 'M', 'B', 'K' };
+		uint32 Magic = AssetUtils::MakeMagicNumber("SMBK");
 		uint32 Version = BakeVersion;
 	};
 
@@ -111,7 +112,7 @@ TUniquePtr<FStaticMeshData> FStaticMeshBake::ReadBaked(const FString& BinPath)
 	FBakeHeader Header;
 	const FBakeHeader Expected;
 	if (!ReadPod<FBakeHeader>(In, Header) ||
-		std::memcmp(Header.Magic, Expected.Magic, sizeof(Header.Magic)) != 0 ||
+		Header.Magic != Expected.Magic ||
 		Header.Version != Expected.Version)
 	{
 		HTR_LOG(Warning, "[BAKE] {}: invalid header or version, re-cooking", BinPath);
