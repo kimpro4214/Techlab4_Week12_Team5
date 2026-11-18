@@ -4,6 +4,7 @@
 #include "Editor/ParticleEditor/ParticleEditor.h"
 #include "Render/Particle/ParticleHelper.h"
 #include "Render/Particle/ParticleSystem.h"
+#include "Render/Particle/ParticleModuleAcceleration.h"
 #include "Render/Particle/ParticleModuleCollision.h"
 #include "Render/Particle/ParticleModuleColor.h"
 #include "Render/Particle/ParticleModuleColorOverLife.h"
@@ -83,6 +84,7 @@ bool FParticleEmittersPanel::DrawEmitterMenu(int32 Index, bool bHasLOD)
 				{ "Lifetime", UParticleModuleLifetime::StaticClass },
 				{ "Location", UParticleModuleLocation::StaticClass },
 				{ "Velocity", UParticleModuleVelocity::StaticClass },
+				{ "Acceleration", UParticleModuleAcceleration::StaticClass },
 				{ "Color", UParticleModuleColor::StaticClass },
 				{ "Color Over Life", UParticleModuleColorOverLife::StaticClass },
 				{ "Size", UParticleModuleSize::StaticClass },
