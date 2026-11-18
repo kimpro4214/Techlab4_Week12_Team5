@@ -16,6 +16,7 @@ struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
 
 protected:
 	bool FillReplayData(FDynamicEmitterReplayDataBase& OutData) override;
+	float GetParticleExtent(const FBaseParticle& Particle) const override;   // 메시 반지름 × 파티클 크기
 
 private:
 	UParticleModuleTypeDataMesh* MeshTypeData = nullptr;   // 메시와 방향 설정

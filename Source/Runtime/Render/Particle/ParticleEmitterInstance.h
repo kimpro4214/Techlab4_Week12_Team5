@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Render/Particle/ParticleHelper.h"   // 렌더 헤더는 include하지 않는다
+#include "Math/Box.h"
 
 class UParticleEmitter;
 class UParticleLODLevel;
@@ -38,6 +39,9 @@ struct FParticleEmitterInstance
 	// 렌더용 데이터를 프레임당 한 번 만든다. 그릴 게 없으면 nullptr. 이미터 종류별 서브클래스가 구현한다
 	virtual FDynamicEmitterDataBase* GetDynamicData() { return nullptr; }
 
+	// 이 이미터가 그리는 것을 모두 감싸는 박스를 컴포넌트 로컬 공간으로 구한다. 그릴 것이 없으면 false
+	virtual bool GetLocalBoundingBox(const FMatrix& WorldToComponent, FBox& OutBox) const;
+
 	FMatrix EmitterToSimulation = FMatrix::Identity;   // Emitter 로컬 → 시뮬레이션 공간, 원점이 생성 위치
 	FMatrix SimulationToWorld = FMatrix::Identity;   // 시뮬레이션 공간 → 월드, 렌더 단계에서 사용
 
@@ -58,6 +62,10 @@ struct FParticleEmitterInstance
 protected:
 	// 모든 이미터 종류가 공통으로 채우는 ReplayData 필드. 살아있는 파티클이 없으면 false
 	virtual bool FillReplayData(FDynamicEmitterReplayDataBase& OutData);
+
+	// 파티클 중심에서 가장 먼 모서리까지 거리 (컴포넌트 로컬 단위)
+	// 스프라이트는 크기의 절반 × √2 (어느 각도로 돌아도 들어가도록)
+	virtual float GetParticleExtent(const FBaseParticle& Particle) const;
 
 	bool AllocateParticleData(int32 MaxParticles);
 	void FreeParticleData();

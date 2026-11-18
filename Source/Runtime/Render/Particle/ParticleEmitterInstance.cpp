@@ -8,6 +8,8 @@
 #include "Components/ParticleSystemComponent.h"
 #include "Core/HAL/UnrealMemory.h"
 #include <algorithm>
+#include <cfloat>
+#include <cmath>
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -142,6 +144,38 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 	// 월드 공간 시뮬레이션이면 SimulationToWorld가 단위 행렬이라, 이미터 위치를 따로 계산해서 넘긴다
 	OutData.EmitterWorldOrigin  = SimulationToWorld.TransformPosition(EmitterToSimulation.GetOrigin());
 	OutData.Scale               = Component->GetWorldScale3D();
+	return true;
+}
+
+float FParticleEmitterInstance::GetParticleExtent(const FBaseParticle& Particle) const
+{
+	return std::max(std::abs(Particle.Size.X), std::abs(Particle.Size.Y)) * 0.7072f;
+}
+
+bool FParticleEmitterInstance::GetLocalBoundingBox(const FMatrix& WorldToComponent, FBox& OutBox) const
+{
+	if (ActiveParticles <= 0 || !ParticleDataBlock.ParticleData)
+		return false;
+
+	// 파티클 위치는 시뮬레이션 공간 → 월드 → 컴포넌트 로컬로 옮긴다. 로컬 공간 이미터면 사실상 원점 오프셋만 남는다
+	const FMatrix SimulationToComponent = SimulationToWorld * WorldToComponent;
+
+	FVector Min( FLT_MAX,  FLT_MAX,  FLT_MAX);
+	FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (int32 i = 0; i < ActiveParticles; ++i)
+	{
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
+			ParticleDataBlock.ParticleData + ParticleStride * ParticleDataBlock.ParticleIndices[i]);
+
+		const FVector Center = SimulationToComponent.TransformPosition(Particle.Location);
+		const float Extent = GetParticleExtent(Particle);   // 크기를 빼먹으면 화면 가장자리 파티클이 잘린다
+
+		Min.X = std::min(Min.X, Center.X - Extent);  Max.X = std::max(Max.X, Center.X + Extent);
+		Min.Y = std::min(Min.Y, Center.Y - Extent);  Max.Y = std::max(Max.Y, Center.Y + Extent);
+		Min.Z = std::min(Min.Z, Center.Z - Extent);  Max.Z = std::max(Max.Z, Center.Z + Extent);
+	}
+
+	OutBox = FBox(Min, Max);
 	return true;
 }
 

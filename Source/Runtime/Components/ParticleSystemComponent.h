@@ -38,6 +38,9 @@ private:
 	void SendRenderDynamicData();
 	FParticleSystemSceneProxy* GetParticleSceneProxy() const;
 
-	// 파티클은 월드 공간에서 날아가므로 컬링 박스를 넉넉하게 잡는다
-	float BoundsExtent = 10.0f;
+	// 이미터들이 그리는 것을 모두 감싸도록 LocalBounds를 갱신하고, 바뀌면 컬링(BVH)에 반영한다
+	void UpdateComponentBounds();
+
+	// 컴포넌트 로컬 공간 Bounds. 첫 파티클이 나오기 전에는 원점 주변 작은 박스
+	FBox LocalBounds = FBox(FVector(-1.0f, -1.0f, -1.0f), FVector(1.0f, 1.0f, 1.0f));
 };

@@ -4,6 +4,8 @@
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleTypeDataMesh.h"
+#include <algorithm>
+#include <cmath>
 
 FParticleMeshEmitterInstance::FParticleMeshEmitterInstance(UParticleModuleTypeDataMesh* InMeshTypeData)
 	: MeshTypeData(InMeshTypeData)
@@ -11,6 +13,23 @@ FParticleMeshEmitterInstance::FParticleMeshEmitterInstance(UParticleModuleTypeDa
 }
 
 FParticleMeshEmitterInstance::~FParticleMeshEmitterInstance() = default;
+
+float FParticleMeshEmitterInstance::GetParticleExtent(const FBaseParticle& Particle) const
+{
+	if (!MeshTypeData || !MeshTypeData->Mesh)
+		return FParticleEmitterInstance::GetParticleExtent(Particle);
+
+	// 메시 원점에서 가장 먼 모서리까지 거리. 어느 방향으로 돌아도 이 반지름 안에 들어간다
+	const FBox& MeshBounds = MeshTypeData->Mesh->GetRenderBounds();
+	const FVector FarCorner(
+		std::max(std::abs(MeshBounds.Min.X), std::abs(MeshBounds.Max.X)),
+		std::max(std::abs(MeshBounds.Min.Y), std::abs(MeshBounds.Max.Y)),
+		std::max(std::abs(MeshBounds.Min.Z), std::abs(MeshBounds.Max.Z)));
+	const float MeshRadius = std::sqrt(FarCorner.Dot(FarCorner));
+
+	const float MaxSize = std::max({ std::abs(Particle.Size.X), std::abs(Particle.Size.Y), std::abs(Particle.Size.Z) });
+	return MeshRadius * MaxSize;
+}
 
 bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {

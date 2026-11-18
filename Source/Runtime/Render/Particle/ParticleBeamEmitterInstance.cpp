@@ -4,7 +4,9 @@
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleTypeDataBeam.h"
+#include "Components/ParticleSystemComponent.h"
 #include <algorithm>
+#include <cmath>
 
 FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleModuleTypeDataBeam* InBeamTypeData)
 	: BeamTypeData(InBeamTypeData)
@@ -12,6 +14,34 @@ FParticleBeamEmitterInstance::FParticleBeamEmitterInstance(UParticleModuleTypeDa
 }
 
 FParticleBeamEmitterInstance::~FParticleBeamEmitterInstance() = default;
+
+void FParticleBeamEmitterInstance::GetEndpoints(FVector& OutSource, FVector& OutTarget) const
+{
+	OutSource = SimulationToWorld.TransformPosition(EmitterToSimulation.GetOrigin());
+	OutTarget = SimulationToWorld.TransformPosition(EmitterToSimulation.TransformPosition(BeamTypeData->TargetOffset));
+}
+
+bool FParticleBeamEmitterInstance::GetLocalBoundingBox(const FMatrix& WorldToComponent, FBox& OutBox) const
+{
+	if (!BeamTypeData)
+		return false;
+
+	// 직선이라 두 끝점만 감싸면 된다. 점 생성이 바뀌어 휘어지면 점 전체를 감싸도록 바꾼다
+	FVector Source, Target;
+	GetEndpoints(Source, Target);
+	const FVector A = WorldToComponent.TransformPosition(Source);
+	const FVector B = WorldToComponent.TransformPosition(Target);
+
+	// 폭은 월드 단위라 컴포넌트 로컬로 옮기면 스케일만큼 나눠야 한다. 가장 작은 축 기준으로 넉넉하게
+	const FVector Scale = Component->GetWorldScale3D();
+	const float MinScale = std::max(1e-4f, std::min({ std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z) }));
+	const float Pad = BeamTypeData->Width * 0.5f / MinScale;
+
+	OutBox = FBox(
+		FVector(std::min(A.X, B.X) - Pad, std::min(A.Y, B.Y) - Pad, std::min(A.Z, B.Z) - Pad),
+		FVector(std::max(A.X, B.X) + Pad, std::max(A.Y, B.Y) + Pad, std::max(A.Z, B.Z) + Pad));
+	return true;
+}
 
 bool FParticleBeamEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
@@ -28,8 +58,8 @@ bool FParticleBeamEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 
 	// [렌더링 확인용] 직선 Source → Target을 SegmentCount개 구간으로 나눈다
 	// 실제 점 생성(타깃 지정, 노이즈, 수명)은 시뮬레이션 담당이 이 배열을 채우는 코드로 바꾼다
-	const FVector Source = BeamData.EmitterWorldOrigin;
-	const FVector Target = SimulationToWorld.TransformPosition(EmitterToSimulation.TransformPosition(BeamTypeData->TargetOffset));
+	FVector Source, Target;
+	GetEndpoints(Source, Target);
 	const int32 Segments = std::max(1, BeamTypeData->SegmentCount);
 
 	BeamData.Points.SetNum(Segments + 1, false);
