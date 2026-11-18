@@ -3,6 +3,7 @@
 #include "ParticleEditor.h"
 #include "Panels/ParticleViewportPanel.h"
 #include "Panels/ParticleDetailsPanel.h"
+#include "Panels/ParticleCurvePanel.h"
 #include "Panels/ParticleEmittersPanel.h"
 #include "Render/Particle/ParticleSystem.h"
 
@@ -111,13 +112,14 @@ FParticleEditorTab::FParticleEditorTab(FParticleEditor& InEditor)
 {
 	// 탭의 부모 창이 달라져도 애셋별 도킹 ID를 유지합니다.
 	const ImGuiID AssetId = ImHashStr(InEditor.GetKey().GetTabId().c_str());
-	DockSpaceId = ImHashStr("ParticleDockSpaceV3", 0, AssetId);
+	DockSpaceId = ImHashStr("ParticleDockSpaceV4", 0, AssetId);
 	PanelClassId = ImHashStr("ParticlePanelClass", 0, AssetId);
 
 	Panels.Add(MakeUnique<FParticleViewportPanel>(InEditor));
 	Panels.Add(MakeUnique<FParticleSettingsPanel>(InEditor));
 	Panels.Add(MakeUnique<FParticleDetailsPanel>(InEditor));
 	Panels.Add(MakeUnique<FParticleEmittersPanel>(InEditor));
+	Panels.Add(MakeUnique<FParticleCurvePanel>(InEditor));
 	for (auto& Panel : Panels)
 	{
 		Panel->SetDockClass(PanelClassId);
@@ -219,11 +221,13 @@ void FParticleEditorTab::BuildDefaultLayout(ImGuiID InDockSpaceId, const ImVec2&
 
 	// 남은 높이의 1/3을 Settings에 할당해 전체 높이의 20%로 맞춥니다.
 	const ImGuiID SettingsId = ImGui::DockBuilderSplitNode(LeftId, ImGuiDir_Up, 1.0f / 3.0f, nullptr, &LeftId);
+	const ImGuiID CurveId = ImGui::DockBuilderSplitNode(EmittersId, ImGuiDir_Down, 0.4f, nullptr, &EmittersId);
 
 	ImGui::DockBuilderDockWindow(Panels[0]->GetWindowName(), ViewportId);
 	ImGui::DockBuilderDockWindow(Panels[1]->GetWindowName(), SettingsId);
 	ImGui::DockBuilderDockWindow(Panels[2]->GetWindowName(), LeftId);
 	ImGui::DockBuilderDockWindow(Panels[3]->GetWindowName(), EmittersId);
+	ImGui::DockBuilderDockWindow(Panels[4]->GetWindowName(), CurveId);
 	ImGui::DockBuilderFinish(InDockSpaceId);
 }
 
