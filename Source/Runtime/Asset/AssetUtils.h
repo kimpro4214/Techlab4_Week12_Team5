@@ -55,7 +55,7 @@ namespace AssetUtils
 
 	void HashText(uint64& Hash, const FString& Text);
 	void HashProperty(uint64& Hash, const FProperty& Property);
-	uint64 GetSchema(UClass* Class);
+	uint64 GetSchema(UClass* Class, const FProperty* MissingProperty = nullptr);
 
 	void SerializeHeader(FArchive& Archive, FAssetFileHeader& Header);
 	void SerializeObjectData(FArchive& Archive, FObjectData& Data);
