@@ -6,8 +6,10 @@ FAssetEditorTab::FAssetEditorTab(FAssetEditor& InEditor)
 	: Editor(InEditor)
 {
 	const FAssetEditorKey& Key = Editor.GetKey();
+	// 에디터 키의 경로는 '/'로 정규화되어 있으므로 인코딩 변환 없이 파일명을 얻는다.
+	const size_t Separator = Key.AssetPath.find_last_of('/');
 	const FString Name = Key.SubAssetName.empty()
-		? std::filesystem::path(Key.AssetPath).filename().string() : Key.SubAssetName;
+		? Key.AssetPath.substr(Separator == FString::npos ? 0 : Separator + 1) : Key.SubAssetName;
 	TabName = Name + " (" + Key.EditorType + ")###AssetEditor:" + Key.GetTabId();
 }
 

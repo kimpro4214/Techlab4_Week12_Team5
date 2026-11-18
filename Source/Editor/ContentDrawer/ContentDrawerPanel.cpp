@@ -2,10 +2,20 @@
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
 #include "Asset/AssetManager.h"
 #include "Asset/AssetUtils.h"
+#include "Core/StringUtils.h"
 #include "Text/Font.h"
 #include "Render/Mesh.h"
 #include "Render/SkeletalMesh.h"
 #include "Editor/HitoriEd/EditorDragDrop.h"
+
+namespace
+{
+	FString ToUtf8Path(const fs::path& Path)
+	{
+		const std::u8string Utf8Path = Path.generic_u8string();
+		return FString(Utf8Path.begin(), Utf8Path.end());
+	}
+}
 
 bool FContentDrawerPanel::Init()
 {
@@ -127,8 +137,8 @@ void FContentDrawerPanel::OnRender()
 
 				ImGui::TableNextColumn();
 
-				std::string PathString = Path.generic_string();
-				std::string FilenameString = Path.filename().string();
+				const FString PathString = ToUtf8Path(Path);
+				const FString FilenameString = ToUtf8Path(Path.filename());
 				const bool bIsParticle = !bIsDirectory && AssetUtils::GetAssetExtension(PathString) == ".particle";
 
 				ImGui::PushID(PathString.c_str()); // 각 위젯에 고유 ID 부여
@@ -201,7 +211,7 @@ void FContentDrawerPanel::OnRender()
 					// 시작 시 로드한 에셋과 같은 키를 사용해 공유 리소스를 재사용한다.
 					const FString Key = Path.lexically_relative(AssetRootPath).generic_string();
 					FString LoadError;
-					USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(Key, PathString, LoadError);
+					USkeletalMesh* Mesh = UAssetManager::Get().LoadFbxSkeletalMesh(Key, Path.generic_string(), LoadError);
 					if (Mesh)
 					{
 						ImGui::SetDragDropPayload(EditorDragDrop::SkeletalMesh, &Mesh, sizeof(Mesh));
@@ -227,11 +237,11 @@ void FContentDrawerPanel::OnRender()
 					}
 					else if (Path.extension() == ".widget" && OnOpenWidget.IsBound())
 					{
-						OnOpenWidget.Broadcast(PathString);
+						OnOpenWidget.Broadcast(Path.generic_string());
 					}
 					else if ((Path.extension() == ".obj" || Path.extension() == ".OBJ") && OnOpenStatic.IsBound())
 					{
-						OnOpenStatic.Broadcast(PathString);
+						OnOpenStatic.Broadcast(Path.generic_string());
 					}
 					else if (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					{
@@ -248,12 +258,12 @@ void FContentDrawerPanel::OnRender()
 							// 실제 SkeletalMesh일 때만 해당 편집기를 연다.
 							if (OnOpenSkeletal.IsBound())
 							{
-								OnOpenSkeletal.Broadcast(PathString);
+								OnOpenSkeletal.Broadcast(Path.generic_string());
 							}
 						}
 						else if (Asset->IsA<UStaticMesh>())
 						{
-							if (OnOpenStatic.IsBound()) OnOpenStatic.Broadcast(PathString);
+							if (OnOpenStatic.IsBound()) OnOpenStatic.Broadcast(Path.generic_string());
 						}
 						else
 						{
@@ -262,7 +272,7 @@ void FContentDrawerPanel::OnRender()
 					}
 				}
 				if (bIsFbx)
-					ImGui::TextWrapped("[Mesh] %s", Path.stem().string().c_str());
+					ImGui::TextWrapped("[Mesh] %s", ToUtf8Path(Path.stem()).c_str());
 				else
 					ImGui::TextWrapped("%s", FilenameString.c_str());
 
@@ -289,9 +299,10 @@ void FContentDrawerPanel::DrawCreateParticlePopup()
 		ParticleCreateError.clear();
 
 	const FString Name = NewAssetName;
+	FWideString WideName;
 	const bool bValidName = !Name.empty() && Name.find_first_of("<>:\"/\\|?*") == FString::npos
-		&& Name.back() != '.' && Name.back() != ' ';
-	const fs::path Target = CurrentPath / (Name + ".particle");
+		&& Name.back() != '.' && Name.back() != ' ' && StringUtils::TryUtf8ToWide(Name, WideName);
+	const fs::path Target = CurrentPath / (WideName + L".particle");
 	std::error_code PathError;
 	const bool bExists = bValidName && fs::exists(Target, PathError);
 
@@ -310,7 +321,7 @@ void FContentDrawerPanel::DrawCreateParticlePopup()
 	ImGui::BeginDisabled(!bCanCreate);
 	if ((ImGui::Button("Create") || bSubmit) && bCanCreate)
 	{
-		OnCreateParticle.Broadcast(Target.generic_string(), ParticleCreateError);
+		OnCreateParticle.Broadcast(ToUtf8Path(Target), ParticleCreateError);
 		if (ParticleCreateError.empty())
 			ImGui::CloseCurrentPopup();
 	}
@@ -365,8 +376,7 @@ void FContentDrawerPanel::RenderFolderTree(const fs::path& Path, fs::path& Selec
 		if (TypeError || !bIsDirectory)
 			continue;
 
-		const FString FilenameString =
-			Entry.filename().string();
+		const FString FilenameString = ToUtf8Path(Entry.filename());
 
 		ImGuiTreeNodeFlags Flags =
 			ImGuiTreeNodeFlags_OpenOnArrow |
