@@ -200,7 +200,15 @@ struct FDynamicRibbonEmitterData : public FDynamicStripEmitterDataBase
 	FDynamicRibbonReplayData Source;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
+
+	// Source.Points의 마디 사이를 3차(Hermite) 곡선으로 메워 TessellatedPoints를 만든다
+	// Source를 갱신한 직후 프레임당 한 번 부른다. Submit은 이 결과를 그린다
+	void Tessellate();
+
 	void Submit(FRenderQueue& RenderQueue, const FViewContext& View) override;
+
+private:
+	TArray<FParticleStripPoint> TessellatedPoints;   // 보간된 점 목록. 매 프레임 재사용
 };
 
 // 어떤 DynamicData를 만들지는 EmitterInstance 서브클래스의 GetDynamicData()가 정한다 (팩토리 함수 없음)

@@ -73,6 +73,10 @@ struct FParticleStripPoint
 	// 띠 길이 방향 위치(텍스처 U의 기준). 음수면 렌더가 점 사이 거리를 누적해서 계산한다
 	// 리본은 마디가 태어날 때의 거리를 넣어서, 머리가 움직여도 무늬가 마디에 붙어 있게 한다
 	float        Distance = -1.0f;
+	// 곡선 보간용. 리본은 마디가 태어날 때의 시각과 그때 소스가 움직이던 속도(월드 단위/초)를 넣는다
+	// Time이 음수면 접선을 0으로 본다 (곡선 없이 부드럽게만 잇는다)
+	FVector      Tangent  = FVector::ZeroVector;
+	float        Time     = -1.0f;
 };
 
 struct FDynamicBeamReplayData : public FDynamicEmitterReplayDataBase
@@ -90,6 +94,12 @@ struct FDynamicRibbonReplayData : public FDynamicEmitterReplayDataBase
 	UMaterial* Material = nullptr;
 	// 0보다 크면 길이 1당 텍스처 반복 횟수, 0 이하면 전체 길이에 텍스처 하나를 늘린다
 	float UVTiling = 0.0f;
+
+	// 마디 사이 곡선 보간 설정 (UParticleModuleTypeDataRibbon과 같은 의미)
+	float DistanceTessellationStepSize    = 0.0f;
+	float TangentTessellationScalar       = 0.0f;
+	int32 MaxTessellationBetweenParticles = 0;
+	bool  bTangentRecalculationEveryFrame = false;
 };
 
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟

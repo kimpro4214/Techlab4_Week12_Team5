@@ -474,7 +474,106 @@ void FDynamicBeamEmitterData::Submit(FRenderQueue& RenderQueue, const FViewConte
 	SubmitStrips(RenderQueue, View, &Source.Points, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
 }
 
+void FDynamicRibbonEmitterData::Tessellate()
+{
+	const TArray<FParticleStripPoint>& Points = Source.Points;
+	const int32 Count = Points.Num();
+	TessellatedPoints.Reset();
+
+	const float StepSize      = Source.DistanceTessellationStepSize;
+	const float TangentScalar = Source.TangentTessellationScalar;
+	const int32 MaxPerSegment = Source.MaxTessellationBetweenParticles;
+	const bool bTessellate = Count >= 2 && StepSize > 0.0f && TangentScalar > 0.0f && MaxPerSegment > 0;
+	if (!bTessellate)
+	{
+		// 보간을 끄면 마디를 직선으로 잇는다
+		for (const FParticleStripPoint& Point : Points)
+			TessellatedPoints.Add(Point);
+		return;
+	}
+
+	// 마디의 속도(월드 단위/초). 접선은 이 속도로 정한다
+	// 기본은 태어날 때 기록한 값. 재계산을 켜면 지금 이웃 마디의 위치·탄생 시각으로 매 프레임 다시 구한다
+	// 점 순서가 머리(최신) → 꼬리라서, 앞(i-1)이 더 최근 마디다: 속도 = (앞 위치 - 뒤 위치) / (앞 시각 - 뒤 시각)
+	const auto Velocity = [&Points, Count, this](int32 i)
+	{
+		if (Source.bTangentRecalculationEveryFrame)
+		{
+			const FParticleStripPoint& Newer = Points[i > 0 ? i - 1 : i];
+			const FParticleStripPoint& Older = Points[i < Count - 1 ? i + 1 : i];
+			const float TimeDelta = Newer.Time - Older.Time;
+			if (Newer.Time >= 0.0f && Older.Time >= 0.0f && TimeDelta > 1e-5f)
+				return (Newer.Position - Older.Position) / TimeDelta;
+		}
+		return Points[i].Tangent;
+	};
+
+	for (int32 i = 0; i < Count - 1; ++i)
+	{
+		const FParticleStripPoint& A = Points[i];
+		const FParticleStripPoint& B = Points[i + 1];
+		TessellatedPoints.Add(A);
+
+		const FVector Segment = B.Position - A.Position;
+		const float Length = std::sqrt(Segment.Dot(Segment));
+		if (Length < 1e-4f)
+			continue;   // 겹친 마디. 띠 빌더가 어차피 건너뛴다
+
+		// Hermite 접선 (0~1 구간 기준) = 속도 × 두 마디의 시간 차
+		// 머리 → 꼬리로 가므로 시간 차가 음수라 방향도 알맞게 뒤집힌다
+		// 시각을 모르거나 같은 프레임에 태어나 시간 차가 0이면 접선 0 (두 마디를 곡선 없이 부드럽게 잇는다)
+		FVector TangentA = FVector::ZeroVector;
+		FVector TangentB = FVector::ZeroVector;
+		const float TimeDelta = B.Time - A.Time;
+		if (A.Time >= 0.0f && B.Time >= 0.0f && std::abs(TimeDelta) > 1e-5f)
+		{
+			TangentA = Velocity(i) * TimeDelta;
+			TangentB = Velocity(i + 1) * TimeDelta;
+		}
+
+		// 두 접선이 모두 0이면 곡선이 직선과 같으므로 점을 넣지 않는다
+		if (TangentA.SizeSquared() <= 1e-12f && TangentB.SizeSquared() <= 1e-12f)
+			continue;
+
+		const FVector DirA = TangentA.SizeSquared() > 1e-12f ? TangentA.Normalized() : FVector::ZeroVector;
+		const FVector DirB = TangentB.SizeSquared() > 1e-12f ? TangentB.Normalized() : FVector::ZeroVector;
+
+		// 꺾인 정도: 두 끝의 접선 방향이 같으면 0, 직각이면 1, 정반대면 2
+		// 직선 구간은 곡선으로 메워도 모양이 같으므로 점을 넣지 않는다
+		const float Bend = 1.0f - std::clamp(DirA.Dot(DirB), -1.0f, 1.0f);
+		if (Bend < 1e-3f)
+			continue;
+
+		// 중간 점 수 = 길이 기준과 꺾인 정도 기준 중 큰 값. 너무 많아지지 않게 상한을 둔다
+		const int32 ByDistance = static_cast<int32>(Length / StepSize);
+		const int32 ByTangent  = static_cast<int32>(Bend * TangentScalar);
+		const int32 Inserts    = std::min(std::max(ByDistance, ByTangent), MaxPerSegment);
+		if (Inserts <= 0)
+			continue;
+
+		for (int32 j = 1; j <= Inserts; ++j)
+		{
+			const float Alpha = static_cast<float>(j) / static_cast<float>(Inserts + 1);
+
+			FParticleStripPoint Point;
+			Point.Position = FMath::CubicInterp(A.Position, TangentA, B.Position, TangentB, Alpha);
+			Point.Width    = A.Width + (B.Width - A.Width) * Alpha;
+			Point.Color    = FLinearColor(
+				A.Color.R + (B.Color.R - A.Color.R) * Alpha,
+				A.Color.G + (B.Color.G - A.Color.G) * Alpha,
+				A.Color.B + (B.Color.B - A.Color.B) * Alpha,
+				A.Color.A + (B.Color.A - A.Color.A) * Alpha);
+			// 두 마디 모두 탄생 거리가 있으면 사이를 섞는다 → 무늬가 마디에 붙어 있는 성질이 유지된다
+			Point.Distance = (A.Distance >= 0.0f && B.Distance >= 0.0f)
+				? A.Distance + (B.Distance - A.Distance) * Alpha
+				: -1.0f;
+			TessellatedPoints.Add(Point);
+		}
+	}
+	TessellatedPoints.Add(Points[Count - 1]);
+}
+
 void FDynamicRibbonEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
 {
-	SubmitStrips(RenderQueue, View, &Source.Points, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
+	SubmitStrips(RenderQueue, View, &TessellatedPoints, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
 }
