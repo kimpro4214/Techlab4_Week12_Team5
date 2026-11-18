@@ -621,7 +621,8 @@ bool FSceneRenderer::AddBoneWeightPass(FRenderGraphBuilder& Graph, FRenderer* Re
 	if (!Graph.AddRasterPass(std::move(Background), [this, Skybox]
 		{
 			if (bCorePassSucceeded && Skybox)
-				Skybox->OnRender(View.ViewProjectionMatrix, View.ViewLocation);
+				Skybox->OnRender(View.ViewProjectionMatrix, View.ViewLocation,
+					World ? World->GetScene().GetSkySphere(View.bGameView) : nullptr);
 		})) return false;
 	if (!AddToneMapPass(Graph, Renderer, BackgroundHDR, SceneColor, Options)) return false;
 
@@ -690,7 +691,8 @@ bool FSceneRenderer::AddCorePasses(FRenderGraphBuilder& Graph, FRenderer* Render
 	if (!Graph.AddRasterPass(std::move(Sky), [this, Skybox]
 		{
 			if (bCorePassSucceeded && Skybox)
-				Skybox->OnRender(View.ViewProjectionMatrix, View.ViewLocation);
+				Skybox->OnRender(View.ViewProjectionMatrix, View.ViewLocation,
+					World ? World->GetScene().GetSkySphere(View.bGameView) : nullptr);
 		})) return false;
 
 	// 언리얼 RenderShadowDepthMaps: 할당된 그림자 맵마다 Caster 깊이를 아틀라스에 그린다.

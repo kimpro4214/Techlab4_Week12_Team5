@@ -66,7 +66,7 @@ private:
 	bool bFocused = false;
 	bool bVisible = false;
 	bool bViewportVisible = false;
-	bool bRenderGrid = true;
+	bool bRenderGrid = false;
 	bool bShowBoneWeight = false;
 	// 애니메이션의 트랙 순서가 아닌, 프리뷰 메시의 스켈레톤 인덱스를 사용한다.
 	int32 SelectedBoneIndex = -1;

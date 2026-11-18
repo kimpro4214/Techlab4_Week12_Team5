@@ -41,6 +41,7 @@ bool FSkeletalMeshEditor::InitializeResources()
 
 	FPreviewSceneOptions Options;
 	Options.WorldName = "SkeletalMeshPreview";
+	Options.bUseEditorSkySphere = true;
 	if (!PreviewScene.Initialize(Engine, Options)) return false;
 	ViewportClient.SetWorld(PreviewScene.GetWorld());
 	PreviewMeshComponent = Cast<USkeletalMeshComponent>(

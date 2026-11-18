@@ -37,6 +37,7 @@
 #include "Components/TextRenderComponent.h"
 
 #include "Asset/AssetManager.h"
+#include "Render/Particle/ParticleSystem.h"
 #include "Render/RenderResourceManager.h"
 
 #include "Render/RenderCommand.h"
@@ -213,6 +214,14 @@ bool UEditorEngine::Init()
 			[this](FParticleEditor& Editor) { RenderParticlePreview(Editor); });
 	});
 	ContentDrawerPanel->OnOpenParticle.Add([this](const FString& Path) { EditorManager->OpenEditor({ "Particle", Path, "" }); });
+	ContentDrawerPanel->OnCreateParticle.Add([](const FString& Path, FString& Error)
+	{
+		UParticleSystem* System = NewObject<UParticleSystem>();
+		if (!UAssetManager::Get().SaveParticleSystem(System, Path, Error))
+		{
+			delete System;
+		}
+	});
 	EditorManager->RegisterFactory("StaticMesh", [this](FEditorManager& Manager, const FAssetEditorKey& Key) -> TUniquePtr<FAssetEditor>
 	{
 		FString Error;

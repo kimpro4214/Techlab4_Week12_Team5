@@ -3,7 +3,7 @@
 
 #include "RenderCommand.h"
 #include "RenderResourceManager.h"
-#include "ImageLoader.h"
+#include "Components/SkySphereComponent.h"
 
 namespace
 {
@@ -35,7 +35,7 @@ namespace
 	}
 }
 
-bool FSkyboxRenderer::Init(const FString& PanoramaPath)
+bool FSkyboxRenderer::Init()
 {
 	Shader = FRenderResourceManager::GetShaderProgram("Resources/Shader/SkyboxShader.hlsl");
 	if (!Shader)
@@ -44,54 +44,50 @@ bool FSkyboxRenderer::Init(const FString& PanoramaPath)
 		return false;
 	}
 
-	FImageData Image = ImageLoader::LoadAuto(PanoramaPath);
-	if (!Image.IsValid())
-	{
-		HTR_LOG(Error, "[Skybox] panorama load failed: {}", PanoramaPath);
-		return false;
-	}
-
-	// 포맷은 Image를 따른다(.hdr이면 R32G32B32A32_FLOAT).
-	FTextureDesc Desc{};
-	Desc.Width = Image.Width;
-	Desc.Height = Image.Height;
-	Desc.Usage = ETextureUsage::Immutable;
-	Desc.BindFlags = ETextureBindFlags::ShaderResource;
-
-	PanoramaTexture = RenderCommand::CreateTexture2D(Desc, Image);
-	if (!PanoramaTexture) return false;
-
-	bDecodeSRGBInShader = !IsSampledAsLinear(Image.Format);
-
 	ConstantBuffer = RenderCommand::CreateConstantBuffer(sizeof(FSkyboxConstants));
+	if (!ConstantBuffer) return false;
 
 	PipelineState.Shader = Shader;
 	PipelineState.Topology = EPrimitiveTopology::TriangleList;
-	// 전체 화면 삼각형이라 컬링 방향을 따질 필요가 없다.
 	PipelineState.RasterizerState = ERasterizerState::SolidNone;
 	PipelineState.BlendState = EBlendState::Opaque;
-	// 깊이 테스트/쓰기 모두 끈다. 배경을 먼저 깔고 물체가 그 위에 그려지게 한다.
 	PipelineState.DepthStencilState = EDepthStencilState::Disabled;
 
-	HTR_LOG(Info, "[Skybox] loaded: {} ({}x{}, format {}, shader sRGB decode {})",
-		PanoramaPath, Image.Width, Image.Height, static_cast<uint32>(Image.Format), bDecodeSRGBInShader ? "on" : "off");
 	return true;
 }
 
-void FSkyboxRenderer::OnRender(const FMatrix& ViewProjection, const FVector& CameraPosition)
+void FSkyboxRenderer::OnRender(const FMatrix& ViewProjection, const FVector& CameraPosition,
+	const USkySphereComponent* SkySphere)
 {
-	if (!IsValid()) return;
-
 	FSkyboxConstants Constants;
-	// 업로드할 때 전치한다. HLSL은 mul(벡터, 행렬) 규약을 쓴다 (Renderer.cpp와 동일).
-	Constants.InverseViewProjection = ViewProjection.Inverse();
-	Constants.CameraPosition = CameraPosition;
-	Constants.DecodeSRGB = bDecodeSRGBInShader ? 1.0f : 0.0f;
+	FTexture2D* Texture = nullptr;
+	if (SkySphere)
+	{
+		if (const UMaterial* Material = SkySphere->GetBackgroundMaterial())
+		{
+			// 첫 번째 슬롯을 등장방형 파노라마로 사용하고 BaseColor로 색을 조절한다.
+			Constants.BackgroundColor = Material->BaseColor;
+			if (Material->Textures.Num() > 0 && Material->Textures[0])
+				Texture = Material->Textures[0]->GetResource();
+		}
+		else
+		{
+			Constants.BackgroundColor = SkySphere->GetBackgroundColor().ToVector4();
+		}
+	}
+
+	if (Texture)
+	{
+		Constants.InverseViewProjection = ViewProjection.Inverse();
+		Constants.CameraPosition = CameraPosition;
+		Constants.DecodeSRGB = IsSampledAsLinear(Texture->GetFormat()) ? 0.0f : 1.0f;
+		Constants.HasPanorama = 1.0f;
+	}
 
 	RenderCommand::BindPipelineState(PipelineState);
 	RenderCommand::UpdateBufferData(ConstantBuffer.get(), &Constants);
 	RenderCommand::BindConstantBuffer(0, ConstantBuffer.get(), EShaderBindFlagBits::Pixel);
-	RenderCommand::BindShaderResource(0, PanoramaTexture.get(), EShaderBindFlagBits::Pixel);
+	RenderCommand::BindShaderResource(0, Texture, EShaderBindFlagBits::Pixel);
 	// 경도(U)가 0<->1에서 감기므로 Clamp가 아니라 Wrap이어야 이음매가 안 보인다.
 	RenderCommand::BindSamplerState(0, ESamplerState::LinearWrap, EShaderBindFlagBits::Pixel);
 

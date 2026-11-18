@@ -55,6 +55,8 @@ void FContentDrawerPanel::OnRender()
 
 	ImGui::BeginChild("AssetGridView");
 	{
+		bool bOpenCreateParticle = false;
+
 		// 빈 곳 우클릭 (항목 위 우클릭은 제외)
 		if (ImGui::BeginPopupContextWindow("##DrawerContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 		{
@@ -63,8 +65,17 @@ void FContentDrawerPanel::OnRender()
 				strcpy_s(NewAssetName, "NewWidget");
 				bOpenCreateWidget = true;   // 메뉴 팝업 안에서 바로 다른 팝업을 열 수 없어 다음 줄에서 연다
 			}
+			if (ImGui::MenuItem("Create Particle"))
+			{
+				strcpy_s(NewAssetName, "NewParticle");
+				ParticleCreateError.clear();
+				bOpenCreateParticle = true;
+			}
 			ImGui::EndPopup();
 		}
+		if (bOpenCreateParticle) ImGui::OpenPopup("Create Particle");
+		DrawCreateParticlePopup();
+
 		if (bOpenCreateWidget) { ImGui::OpenPopup("Create Widget"); bOpenCreateWidget = false; }
 
 		if (ImGui::BeginPopupModal("Create Widget", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -258,6 +269,47 @@ void FContentDrawerPanel::OnRender()
 	}
 	ImGui::EndChild();
 	ImGui::End();
+}
+
+void FContentDrawerPanel::DrawCreateParticlePopup()
+{
+	if (!ImGui::BeginPopupModal("Create Particle", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		return;
+
+	const bool bSubmit = ImGui::InputText("Name", NewAssetName, sizeof(NewAssetName), ImGuiInputTextFlags_EnterReturnsTrue);
+	if (ImGui::IsItemEdited())
+		ParticleCreateError.clear();
+
+	const FString Name = NewAssetName;
+	const bool bValidName = !Name.empty() && Name.find_first_of("<>:\"/\\|?*") == FString::npos
+		&& Name.back() != '.' && Name.back() != ' ';
+	const fs::path Target = CurrentPath / (Name + ".particle");
+	std::error_code PathError;
+	const bool bExists = bValidName && fs::exists(Target, PathError);
+
+	const char* Error = ParticleCreateError.c_str();
+	if (!Name.empty() && !bValidName)
+		Error = "Enter a valid file name.";
+	else if (bExists)
+		Error = "A file with this name already exists.";
+	else if (PathError)
+		Error = "Could not check the destination path.";
+
+	if (*Error)
+		ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "%s", Error);
+
+	const bool bCanCreate = bValidName && !bExists && !PathError && OnCreateParticle.IsBound();
+	ImGui::BeginDisabled(!bCanCreate);
+	if ((ImGui::Button("Create") || bSubmit) && bCanCreate)
+	{
+		OnCreateParticle.Broadcast(Target.generic_string(), ParticleCreateError);
+		if (ParticleCreateError.empty())
+			ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel")) ImGui::CloseCurrentPopup();
+	ImGui::EndPopup();
 }
 
 void FContentDrawerPanel::DrawAnimationAssets(const fs::path& FbxPath, float ThumbnailSize)

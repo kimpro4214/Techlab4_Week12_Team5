@@ -2,6 +2,29 @@
 #include "Scene.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyLightComponent.h"
+#include "Components/SkySphereComponent.h"
+
+void FScene::AddSkySphere(USkySphereComponent* Component)
+{
+	if (SkySpheres.Num() > 0)
+		HTR_LOG(Warning, "Multiple SkySphere components are registered; the first visible one will be used.");
+	SkySpheres.Add(Component);
+}
+
+void FScene::RemoveSkySphere(USkySphereComponent* Component)
+{
+	const int32 Index = SkySpheres.Find(Component);
+	if (Index != INDEX_NONE) SkySpheres.RemoveAt(Index);
+}
+
+const USkySphereComponent* FScene::GetSkySphere(bool bGameView) const
+{
+	for (const USkySphereComponent* SkySphere : SkySpheres)
+	{
+		if (SkySphere->IsShown(bGameView)) return SkySphere;
+	}
+	return nullptr;
+}
 
 void FScene::AddPrimitive(UPrimitiveComponent* Component)
 {

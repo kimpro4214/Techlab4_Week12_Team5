@@ -48,7 +48,7 @@ public:
 	uint8* BeginObjectConstants(uint32 MaxSlots);
 	void EndObjectConstants();
 
-	void InitScenePasses(const FString& SkyPanoramaPath);
+	void InitScenePasses();
 
 	// FSceneRenderer::Render가 쓰는 상주 패스 객체. UE에서는 렌더러 모듈의 글로벌 자원에 해당한다.
 	FSkyboxRenderer* GetSkybox() const { return Skybox.get(); }

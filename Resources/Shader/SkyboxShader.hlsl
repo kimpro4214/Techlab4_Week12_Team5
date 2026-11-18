@@ -11,6 +11,8 @@ cbuffer SkyboxConstants : register(b0)
     // 1이면 셰이더에서 sRGB -> 선형 변환. (8bit/BC UNORM 텍스처)
     // _SRGB 포맷은 하드웨어가 샘플링할 때 이미 디코딩하고, float(.hdr) 포맷은 원래 선형이라 0이다.
     float  DecodeSRGB;
+    float4 BackgroundColor;
+    float  HasPanorama;
 };
 
 Texture2D    PanoramaTexture : register(t0);
@@ -40,6 +42,9 @@ PSInput mainVS(uint VertexID : SV_VertexID)
 
 float4 mainPS(PSInput Input) : SV_TARGET
 {
+    if (HasPanorama == 0.0f)
+        return float4(BackgroundColor.rgb, 1.0f);
+
     // 화면 좌표 -> 원평면 위의 월드 좌표 -> 카메라가 그쪽을 보는 방향
     float2 NDC = Input.UV * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f);
 
@@ -63,5 +68,5 @@ float4 mainPS(PSInput Input) : SV_TARGET
     {
         Color.rgb = SRGBToLinear(Color.rgb);
     }
-    return float4(Color.rgb, 1.0f);
+    return float4(Color.rgb * BackgroundColor.rgb, 1.0f);
 }

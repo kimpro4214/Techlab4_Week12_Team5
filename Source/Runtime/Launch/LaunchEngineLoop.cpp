@@ -97,7 +97,7 @@ bool FEngineLoop::PreInit(HINSTANCE hInstance, UClass* EngineClass)
 			FSplashScreen::SetProgress(AssetStart + (AssetEnd - AssetStart) * Loaded / Total);
 		});
 
-	Renderer->InitScenePasses(Config.SkyPanorama ? Config.SkyPanorama : "");
+	Renderer->InitScenePasses();
 
 	FSplashScreen::SetText(L"Initializing Engine...");
 	FSplashScreen::SetProgress(0.8f);

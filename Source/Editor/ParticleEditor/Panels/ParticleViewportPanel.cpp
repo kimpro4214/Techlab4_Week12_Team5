@@ -22,6 +22,9 @@ void FParticleViewportPanel::DrawContent()
 	ImGui::SameLine();
 	ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
 
+	bool bGrid = Editor.IsRenderGrid();
+	if (ImGui::Checkbox("Grid", &bGrid)) Editor.SetRenderGrid(bGrid);
+
 	if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
 	if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
 

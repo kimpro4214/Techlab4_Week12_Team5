@@ -43,7 +43,6 @@ FGameSettings FGameSettings::Load(const FString& Path)
 	}
 
 	Settings.StartupMap = Config.GetString("Game", "GameDefaultMap", Settings.StartupMap);
-	Settings.SkyPanorama = Config.GetString("Game", "SkyPanorama", Settings.SkyPanorama);
 
 	// 음수는 잘못된 값으로 보고 기본값을 쓴다. 0은 주 모니터 해상도라는 뜻이라 허용한다.
 	const auto GetUInt = [&Config](const char* Section, const char* Key, uint32 Default, bool bAllowZero)

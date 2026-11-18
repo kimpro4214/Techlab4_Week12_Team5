@@ -15,6 +15,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/RectLightComponent.h"
 #include "Components/SkyLightComponent.h"
+#include "Components/SkySphereComponent.h"
 
 #include "Components/RotatingMovementComponent.h"
 #include "Components/ProjectileMovementComponent.h"
@@ -171,7 +172,7 @@ namespace
 		return isChanged;
 	}
 
-	bool DrawTextureSlot(UMaterial** MaterialPtr, int32 SlotIndex)
+	bool DrawTextureSlot(UMaterial** MaterialPtr, int32 SlotIndex, const char* SlotLabel = nullptr)
 	{
 		bool bIsChanged = false;
 
@@ -237,7 +238,11 @@ namespace
 		ImGui::SameLine();
 
 		ImGui::BeginGroup();
-		if (SlotIndex == 0)
+		if (SlotLabel)
+		{
+			ImGui::TextUnformatted(SlotLabel);
+		}
+		else if (SlotIndex == 0)
 		{
 			ImGui::Text("Slot 0 (Base Color)");
 		}
@@ -908,7 +913,37 @@ namespace
 			UObject* DirectOwner = Container == Object ? Object : nullptr;
 			const UObject* PreviousValue = DirectOwner ? nullptr : *ObjPtr;
 
-			if (Property.Class == UMaterial::StaticClass())
+			if (auto* SkySphere = Cast<USkySphereComponent>(DirectOwner);
+				SkySphere && Property.Name == "BackgroundMaterial")
+			{
+				const UMaterial* Current = SkySphere->GetBackgroundMaterial();
+				const char* Preview = !Current ? "None" :
+					Current->GetPath().empty() ? "Material Instance" : Current->GetPath().c_str();
+				if (ImGui::BeginCombo(Label.c_str(), Preview))
+				{
+					if (ImGui::Selectable("None", Current == nullptr))
+					{
+						SkySphere->SetBackgroundMaterial(nullptr);
+						bChanged = Current != nullptr;
+					}
+
+					for (TObjectIterator<UMaterial> Material; Material; ++Material)
+					{
+						if (Material->GetPath().empty()) continue;
+						if (ImGui::Selectable(Material->GetPath().c_str(), Current == *Material))
+						{
+							SkySphere->SetBackgroundMaterial(*Material);
+							bChanged = Current != *Material;
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::PushID(Label.c_str());
+				bChanged |= DrawTextureSlot(reinterpret_cast<UMaterial**>(ObjPtr), 0, "Panorama Texture");
+				ImGui::PopID();
+			}
+			else if (Property.Class == UMaterial::StaticClass())
 			{
 				ImGui::BeginGroup();
 				bChanged |= DrawTextureSlot(reinterpret_cast<UMaterial**>(ObjPtr), 0);
@@ -1010,7 +1045,14 @@ namespace
 
 	void DrawProperty(UObject* Object, const FProperty& Property, ImFont* CustomFont)
 	{
-		if (DrawPropertyValue(Object, Object, Property, CustomFont))
+		const char* NameOverride = nullptr;
+		if (Object->IsA<USkySphereComponent>())
+		{
+			if (Property.Name == "BackgroundMaterial") NameOverride = "Background Material";
+			if (Property.Name == "BackgroundColor") NameOverride = "Background Color";
+		}
+
+		if (DrawPropertyValue(Object, Object, Property, CustomFont, NameOverride))
 		{
 			Object->PostEditChangeProperty(Property);
 		}

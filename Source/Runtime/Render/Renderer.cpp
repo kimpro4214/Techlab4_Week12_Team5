@@ -254,16 +254,13 @@ void FRenderer::EndObjectConstants()
 	if (PerObjectSlotCB) RenderCommand::Unmap(PerObjectSlotCB.get());
 }
 
-void FRenderer::InitScenePasses(const FString& SkyPanoramaPath)
+void FRenderer::InitScenePasses()
 {
-	if (!SkyPanoramaPath.empty())
+	Skybox = MakeUnique<FSkyboxRenderer>();
+	if (!Skybox->Init())
 	{
-		Skybox = MakeUnique<FSkyboxRenderer>();
-		if (!Skybox->Init(SkyPanoramaPath))
-		{
-			HTR_LOG(Warning, "Skybox panorama not loaded: {}", SkyPanoramaPath);
-			Skybox.reset();
-		}
+		HTR_LOG(Warning, "Skybox renderer initialization failed");
+		Skybox.reset();
 	}
 	HeightFog = MakeUnique<FHeightFogRenderer>();
 	HeightFog->Init(this);

@@ -55,6 +55,7 @@ bool FStaticMeshEditor::InitializeResources()
 	if (!Mesh || Mesh->GetMeshData().Vertices.IsEmpty() || Mesh->GetMeshData().Indices.IsEmpty()) return false;
 	FPreviewSceneOptions Options;
 	Options.WorldName = "StaticMeshPreview";
+	Options.bUseEditorSkySphere = true;
 	if (!PreviewScene.Initialize(Engine, Options)) return false;
 
 	ViewportClient.SetWorld(PreviewScene.GetWorld());

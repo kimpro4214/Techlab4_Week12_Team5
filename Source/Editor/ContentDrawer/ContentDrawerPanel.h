@@ -27,14 +27,17 @@ public:
 	TDelegate<const FString&> OnCreateWidget;
 	TDelegate<const FString&> OnOpenStatic;
 	TDelegate<const FString&> OnOpenParticle;
+	TDelegate<const FString&, FString&> OnCreateParticle;
 	TDelegate<const FString&> OnOpenSkeletal;
 	TDelegate<UAnimSequence*, USkeletalMesh*> OnOpenAnimation;
 
 private:
 	void DrawAnimationAssets(const fs::path& FbxPath, float ThumbnailSize);
+	void DrawCreateParticlePopup();
 
 	char NewAssetName[64] = "NewWidget";
 	bool bOpenCreateWidget = false;
+	FString ParticleCreateError;
 
 	fs::path AssetRootPath = "Assets";
 	fs::path CurrentPath = "Assets";

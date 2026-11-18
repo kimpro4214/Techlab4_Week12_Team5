@@ -120,6 +120,6 @@ private:
 	uint32 ViewportHeight = 0;
 	bool bViewportVisible = false;
 	bool bFocused = false;
-	bool bRenderGrid = true;
+	bool bRenderGrid = false;
 	bool bInitialFocusPending = true;
 };

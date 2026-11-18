@@ -1,14 +1,18 @@
 #include "EnginePCH.h"
 #include "Editor/AssetEditor/FPreviewScene.h"
 
+#include "Asset/AssetManager.h"
 #include "Components/DirectionalLightComponent.h"
 #include "Components/SkyLightComponent.h"
+#include "Components/SkySphereComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "UObject/UObjectGlobals.h"
 
 #include <cmath>
+
+FPreviewScene::FPreviewScene() = default;
 
 FPreviewScene::~FPreviewScene()
 {
@@ -39,6 +43,9 @@ bool FPreviewScene::Initialize(UEngine* InEngine, const FPreviewSceneOptions& Op
 		Release();
 		return false;
 	}
+	if (Options.bUseEditorSkySphere)
+		CreateEditorSkySphere();
+
 	World->GetScene().UpdateAllTransforms();
 	return true;
 }
@@ -52,6 +59,7 @@ void FPreviewScene::Release()
 	// EditorPreview 컨텍스트는 월드와 액터까지 함께 파괴한다.
 	if (Engine->GetWorldContextFromWorld(ReleasedWorld)) Engine->DestroyWorldContext(ReleasedWorld);
 	else Engine->DestroyWorld(ReleasedWorld);
+	SkySphereMaterial.reset();
 	Engine = nullptr;
 	bSimulate = false;
 	bPaused = false;
@@ -90,6 +98,24 @@ bool FPreviewScene::CreateDefaultLighting(const FPreviewSceneOptions& Options)
 	Sun->SetRelativeRotation(Options.LightRotation);
 	Sun->SetIntensity(Options.DirectionalLightIntensity);
 	return true;
+}
+
+void FPreviewScene::CreateEditorSkySphere()
+{
+	const char* PanoramaPath = "Assets/SkySphere/skysphere_editor.png";
+	UTexture2D* Panorama = UAssetManager::Get().LoadTexture(PanoramaPath);
+	if (!Panorama)
+	{
+		HTR_LOG(Warning, "Preview SkySphere texture could not be loaded: {}", PanoramaPath);
+		return;
+	}
+
+	auto* SkySphere = Cast<USkySphereComponent>(AddComponent(USkySphereComponent::StaticClass(), "PreviewSkySphere"));
+	if (!SkySphere) return;
+
+	SkySphereMaterial.reset(NewObject<UMaterial>());
+	SkySphereMaterial->Textures.Add(Panorama);
+	SkySphere->SetBackgroundMaterial(SkySphereMaterial.get());
 }
 
 void FPreviewScene::SetPaused(bool bInPaused)

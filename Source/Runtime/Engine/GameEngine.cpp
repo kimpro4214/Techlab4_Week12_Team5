@@ -33,7 +33,6 @@ FEngineConfig UGameEngine::GetConfig() const
 	// Esc는 FGameViewportClient가 받아 종료 요청으로 바꾼다. 나중에 게임 UI가 가로챌 수 있다.
 	Desc.bExitOnEscape = false;
 	Desc.SplashImage = "Resources/Splash.png";
-	Desc.SkyPanorama = Settings.SkyPanorama.c_str();   // 2-2단계에서 추가한 항목
 	return Desc;
 }
 

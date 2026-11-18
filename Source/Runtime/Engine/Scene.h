@@ -15,6 +15,8 @@
 #include "Render/LightSceneInfo.h"
 #include <unordered_map>
 
+class USkySphereComponent;
+
 class FScene
 {
 public:
@@ -30,6 +32,9 @@ public:
 
 	const class FAmbientLightSceneProxy* GetActiveAmbientLight(bool bGameView) const { return nullptr; }
 	FAmbientLightRenderData GetSkyAmbientLight(bool bGameView) const;
+	void AddSkySphere(USkySphereComponent* Component);
+	void RemoveSkySphere(USkySphereComponent* Component);
+	const USkySphereComponent* GetSkySphere(bool bGameView) const;
 	void PrepareSkyLight(const FSkyLightRenderData& SkyLight);
 	const FSkyLightEnvironment* FindSkyLightEnvironment(const FString& SourcePath) const;
 	FSkyLightEnvironment* FindPendingSkyLightEnvironment(const FString& SourcePath);
@@ -74,6 +79,7 @@ public:
 	TArray<FLocalLightSceneProxy*>        LocalLightProxies;      // ↔ PackedIndex ↔
 	TArray<FDirectionalLightSceneProxy*>  DirectionalLightProxies;
 	TArray<USkyLightComponent*>           SkyLights;               // 프록시 없음
+	TArray<USkySphereComponent*>          SkySpheres;
 
 private:
 	void RecordShadowInvalidation(const FAABB& Bounds);

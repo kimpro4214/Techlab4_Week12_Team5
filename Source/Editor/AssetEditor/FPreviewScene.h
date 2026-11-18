@@ -2,12 +2,14 @@
 
 #include "Core/NameTypes.h"
 #include "Math/Rotator.h"
+#include <memory>
 
 class UEngine;
 class UWorld;
 class UClass;
 class AActor;
 class UActorComponent;
+class UMaterial;
 
 struct FPreviewSceneOptions
 {
@@ -17,13 +19,14 @@ struct FPreviewSceneOptions
 	float SkyLightIntensity = 0.3f;
 	float DirectionalLightIntensity = 1.0f;
 	FRotator LightRotation = FRotator(45.0f, 30.0f, 0.0f);
+	bool bUseEditorSkySphere = false;
 };
 
 // 엔진보다 먼저 해제해야 한다. 월드는 씬마다 독립적으로 생성한다.
 class FPreviewScene
 {
 public:
-	FPreviewScene() = default;
+	FPreviewScene();
 	~FPreviewScene();
 	FPreviewScene(const FPreviewScene&) = delete;
 	FPreviewScene& operator=(const FPreviewScene&) = delete;
@@ -46,10 +49,12 @@ public:
 
 private:
 	bool CreateDefaultLighting(const FPreviewSceneOptions& Options);
+	void CreateEditorSkySphere();
 	void AdvanceSimulation(float DeltaTime);
 
 	UEngine* Engine = nullptr;
 	UWorld* World = nullptr;
+	std::unique_ptr<UMaterial> SkySphereMaterial;
 	bool bSimulate = false;
 	bool bPaused = false;
 	float TimeScale = 1.0f;
