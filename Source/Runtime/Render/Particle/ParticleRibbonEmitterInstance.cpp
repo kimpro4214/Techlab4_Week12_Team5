@@ -17,8 +17,14 @@ bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	for (int32 i = 0; i < ActiveParticles; ++i)
 		SortedSlots.Add(ParticleDataBlock.ParticleIndices[i]);		// SortedSlot에 일단 ParticleIndices를 다 담음
 
-	std::sort(SortedSlots.begin(), SortedSlots.end(),		
-		[this](int32 A, int32 B) { return SpawnOrders[A] > SpawnOrders[B]; });		// SpawnOrders를 저장할때 전체 indices 기준으로 담았으므로 그대로 비교가능, Spawn 순서대로 다시 index 정렬
+	// ParticleId는 생성 시 ParticleCounter++로 붙는 번호라 클수록 최신이다 → 내림차순 = 머리(최신) → 꼬리
+	// 칸이 재사용되면 PreSpawn 후 새 Id로 덮어써지므로 따로 관리하는 배열과 어긋날 일이 없다
+	const auto GetParticleId = [this](int32 Slot)
+	{
+		return reinterpret_cast<const FBaseParticle*>(ParticleDataBlock.ParticleData + Slot * ParticleStride)->ParticleId;
+	};
+	std::sort(SortedSlots.begin(), SortedSlots.end(),
+		[&GetParticleId](int32 A, int32 B) { return GetParticleId(A) > GetParticleId(B); });
 
 	if (SortedSlots.Num() < 2)
 		return false;
