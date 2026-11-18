@@ -47,6 +47,17 @@ void UParticleSystemComponent::SetPreviewEmitterFilter(int32 LODIndex, const UPa
 	PreviewSoloEmitter = SoloEmitter;
 }
 
+int32 UParticleSystemComponent::GetNumActiveParticles() const
+{
+	int32 Count = 0;
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		Count += Instance->ActiveParticles;
+	}
+
+	return Count;
+}
+
 void UParticleSystemComponent::InitializeSystem()
 {
 	ResetSystem();
@@ -132,6 +143,8 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 			}
 			Instance->Tick(DeltaTime);
 		}
+		// 모든 이미터의 Tick이 끝나 이번 프레임 충돌이 다 모인 뒤에 알린다
+		DispatchCollisionEvents();
 		UpdateComponentBounds();
 	}
 
@@ -163,6 +176,21 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 void UParticleSystemComponent::RefreshRenderData()
 {
 	SendRenderDynamicData();
+}
+
+void UParticleSystemComponent::DispatchCollisionEvents()
+{
+	// 1) 이미터마다 Tick 중에 쌓인 이번 프레임 충돌을 한곳에 모은다 (이미터는 다음 Tick 시작에 자기 목록을 비운다)
+	CollisionEvents.Reset();
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+		CollisionEvents.Append(Instance->GetCollisionEvents());
+
+	if (CollisionEvents.IsEmpty())
+		return;
+
+	// 2) 바깥에 알린다. 구독한 쪽이 없으면 아무 일도 하지 않는다
+	for (const FParticleCollisionEvent& Event : CollisionEvents)
+		OnParticleCollide.Broadcast(this, Event);
 }
 
 void UParticleSystemComponent::UpdateComponentBounds()
