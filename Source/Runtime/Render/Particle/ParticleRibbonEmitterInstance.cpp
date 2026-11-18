@@ -5,6 +5,7 @@
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleTypeDataRibbon.h"
 #include <algorithm>
+#include <cmath>
 
 FParticleRibbonEmitterInstance::FParticleRibbonEmitterInstance(UParticleModuleTypeDataRibbon* InRibbonTypeData)
 	: RibbonTypeData(InRibbonTypeData)
@@ -20,6 +21,16 @@ bool FParticleRibbonEmitterInstance::Init(UParticleEmitter* InTemplate, UParticl
 
 	// MaxActiveParticles는 부모 Init이 정하므로 그 뒤에 예약한다
 	SortedSlots.Reserve(MaxActiveParticles);
+
+	// 칸마다 마디의 탄생 거리. 아직 아무것도 기록하지 않은 칸은 쓰이지 않는 Id로 표시한다
+	SlotParticleIds.SetNum(MaxActiveParticles);
+	SlotBirthDistances.SetNum(MaxActiveParticles);
+	for (int32 i = 0; i < MaxActiveParticles; ++i)
+	{
+		SlotParticleIds[i]    = ~0u;
+		SlotBirthDistances[i] = 0.0f;
+	}
+	bHasHead = false;
 	return true;
 }
 
@@ -42,6 +53,32 @@ bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	std::sort(SortedSlots.begin(), SortedSlots.end(),
 		[&GetParticleId](int32 A, int32 B) { return GetParticleId(A) > GetParticleId(B); });
 
+	// 새로 태어난 마디에 누적 거리를 기록한다
+	// 오래된 것부터(Id 오름차순 = 배열 뒤에서부터) 처리해야 같은 프레임에 여러 개 태어나도 거리가 순서대로 쌓인다
+	// 한 번 기록한 거리는 바꾸지 않는다 → 머리가 움직이고 꼬리가 죽어도 마디의 U가 그대로라 무늬가 흐르지 않는다
+	for (int32 i = SortedSlots.Num() - 1; i >= 0; --i)
+	{
+		const int32 Slot = SortedSlots[i];
+		const FBaseParticle& Particle = *reinterpret_cast<const FBaseParticle*>(
+			ParticleDataBlock.ParticleData + Slot * ParticleStride);
+		if (SlotParticleIds[Slot] == Particle.ParticleId)
+			continue;   // 이미 기록한 마디
+
+		const FVector WorldPosition = SimulationToWorld.TransformPosition(Particle.Location);
+		float Distance = 0.0f;
+		if (bHasHead)
+		{
+			const FVector Delta = WorldPosition - LastHeadPosition;
+			Distance = LastHeadDistance + std::sqrt(Delta.Dot(Delta));
+		}
+
+		SlotParticleIds[Slot]    = Particle.ParticleId;
+		SlotBirthDistances[Slot] = Distance;
+		bHasHead         = true;
+		LastHeadPosition = WorldPosition;
+		LastHeadDistance = Distance;
+	}
+
 	// 점이 2개 미만이면 띠가 생기지 않는다
 	if (SortedSlots.Num() < 2)
 		return false;
@@ -61,8 +98,10 @@ bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 
 		FParticleStripPoint Point;
 		Point.Position = SimulationToWorld.TransformPosition(Particle.Location);   // 시뮬레이션 공간 → 월드
-		Point.Width    = Particle.Size.X;
+		// 위치는 SimulationToWorld로 스케일이 들어가지만 폭은 월드에서 펼치므로 스프라이트처럼 스케일을 따로 곱한다
+		Point.Width    = std::abs(Particle.Size.X * RibbonData.Scale.X);
 		Point.Color    = Particle.Color;
+		Point.Distance = SlotBirthDistances[Slot];
 		RibbonData.Points.Add(Point);
 	}
 	return true;

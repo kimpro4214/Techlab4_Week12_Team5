@@ -328,16 +328,38 @@ void ParticleStrip::AppendStrip(const TArray<FParticleStripPoint>& Points, const
 	if (Count < 2)
 		return;   // 점 0개·1개, 또는 시작점과 끝점이 같은 Beam
 
-	// 2) U 좌표용 누적 길이
+	// 2) U 좌표용 길이 방향 위치
+	//    점마다 Distance가 들어 있으면(리본) 그 값을 그대로 쓴다 → 무늬가 마디에 붙어서 흐르지 않는다
+	//    없으면(Beam) 점 사이 거리를 누적한다
+	bool bHasStoredDistance = true;
+	for (int32 i = 0; i < Count; ++i)
+	{
+		if (Points[Used[i]].Distance < 0.0f)
+		{
+			bHasStoredDistance = false;
+			break;
+		}
+	}
+
 	TArray<float> Distances;
 	Distances.SetNum(Count, false);
-	Distances[0] = 0.0f;
-	for (int32 i = 1; i < Count; ++i)
+	if (bHasStoredDistance)
 	{
-		const FVector Delta = Points[Used[i]].Position - Points[Used[i - 1]].Position;
-		Distances[i] = Distances[i - 1] + std::sqrt(Delta.Dot(Delta));
+		for (int32 i = 0; i < Count; ++i)
+			Distances[i] = Points[Used[i]].Distance;
 	}
-	const float TotalLength = Distances[Count - 1];
+	else
+	{
+		Distances[0] = 0.0f;
+		for (int32 i = 1; i < Count; ++i)
+		{
+			const FVector Delta = Points[Used[i]].Position - Points[Used[i - 1]].Position;
+			Distances[i] = Distances[i - 1] + std::sqrt(Delta.Dot(Delta));
+		}
+	}
+	// 0~1로 늘리는 경우의 기준. 저장된 거리는 첫 점이 0이 아니고 줄어드는 방향일 수도 있어 차이로 계산한다
+	const float StartDistance = Distances[0];
+	const float TotalLength   = Distances[Count - 1] - StartDistance;
 
 	// 3) 점마다 좌우 정점 2개
 	const uint32 BaseVertex = static_cast<uint32>(OutVertices.Num());
@@ -365,7 +387,7 @@ void ParticleStrip::AppendStrip(const TArray<FParticleStripPoint>& Points, const
 		const FVector HalfWidth = Side * (Point.Width * 0.5f);
 		const float U = UVTiling > 0.0f
 			? Distances[i] * UVTiling
-			: (TotalLength > 0.0f ? Distances[i] / TotalLength : 0.0f);
+			: (std::abs(TotalLength) > 1e-6f ? (Distances[i] - StartDistance) / TotalLength : 0.0f);
 		const FVector4 Color(Point.Color.R, Point.Color.G, Point.Color.B, Point.Color.A);
 
 		OutVertices.Add({ Point.Position - HalfWidth, FVector2(U, 0.0f), Color });

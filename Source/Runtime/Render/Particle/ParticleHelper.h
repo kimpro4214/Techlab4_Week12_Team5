@@ -70,6 +70,9 @@ struct FParticleStripPoint
 	FVector      Position = FVector::ZeroVector;   // 월드 좌표
 	float        Width    = 1.0f;                  // 이 점에서의 띠 폭
 	FLinearColor Color    = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	// 띠 길이 방향 위치(텍스처 U의 기준). 음수면 렌더가 점 사이 거리를 누적해서 계산한다
+	// 리본은 마디가 태어날 때의 거리를 넣어서, 머리가 움직여도 무늬가 마디에 붙어 있게 한다
+	float        Distance = -1.0f;
 };
 
 struct FDynamicBeamReplayData : public FDynamicEmitterReplayDataBase

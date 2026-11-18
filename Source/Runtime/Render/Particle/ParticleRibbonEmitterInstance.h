@@ -27,5 +27,13 @@ private:
 
 	TArray<int32> SortedSlots;   // 살아있는 파티클의 칸 번호를 생성 순서(최신 → 오래된)로 정렬한 임시 배열
 
+	// 마디가 태어날 때의 누적 거리 (텍스처 U가 꼬리로 흐르지 않게)
+	// 칸은 재사용되므로, 칸에 마지막으로 기록한 ParticleId와 다르면 새로 태어난 마디로 본다
+	TArray<uint32> SlotParticleIds;
+	TArray<float>  SlotBirthDistances;
+	bool    bHasHead = false;              // 아직 한 번도 마디를 기록하지 않았으면 false
+	FVector LastHeadPosition = FVector::ZeroVector;   // 가장 최근에 태어난 마디의 월드 위치
+	float   LastHeadDistance = 0.0f;       // 그 마디의 누적 거리
+
 	TUniquePtr<FDynamicRibbonEmitterData> DynamicData;
 };
