@@ -11,6 +11,8 @@
 #include "UObject/Property.h"
 #include "UObject/Struct.h"
 #include <cctype>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace AssetUtils
 {
@@ -130,10 +132,26 @@ namespace AssetUtils
 		}
 	}
 
+	using FObjectNamesByOuter = std::unordered_map<int32, std::unordered_set<FName, FNameHash>>;
+
+	static bool TrackObjectName(const FObjectData& Data, FObjectNamesByOuter& NamesByOuter, FString& OutError)
+	{
+		if (Data.OuterIndex < 0 || Data.Name == NAME_None ||
+			NamesByOuter[Data.OuterIndex].insert(Data.Name).second)
+		{
+			return true;
+		}
+
+		OutError = "Duplicate asset object name '" + Data.Name.ToString() +
+			"' under outer record " + std::to_string(Data.OuterIndex);
+		return false;
+	}
+
 	bool BuildObjectRecords(UAsset* Asset, TArray<FObjectData>& Records, FString& OutError)
 	{
 		TArray<UObject*> Objects;
 		Objects.Add(Asset);
+		FObjectNamesByOuter NamesByOuter;
 
 		// 속성을 저장하다 새 내부 객체를 만나면 Objects에 추가되므로 Num()도 함께 늘어난다.
 		int64 PayloadSize = 0;
@@ -145,6 +163,10 @@ namespace AssetUtils
 			Data.Name = Index == 0 ? NAME_None : Object->GetFName();
 			Data.OuterIndex = Index == 0 ? -1 : Objects.Find(Object->GetOuter());
 			Data.Schema = GetSchema(Object->GetClass());
+			if (!TrackObjectName(Data, NamesByOuter, OutError))
+			{
+				return false;
+			}
 
 			FMemoryWriter Writer(Data.Bytes);
 			FAssetArchive Archive(Writer, Objects);
@@ -242,11 +264,13 @@ namespace AssetUtils
 	bool ReadObjectRecords(FArchive& Archive, int32 Count, UClass* ExpectedClass,
 		TArray<FObjectData>& Records, FString& OutError)
 	{
+		FObjectNamesByOuter NamesByOuter;
 		for (int32 Index = 0; Index < Count; ++Index)
 		{
 			FObjectData Data;
 			SerializeObjectData(Archive, Data);
-			if (Archive.IsError() || !ValidateObjectRecord(Data, Index, ExpectedClass, OutError))
+			if (Archive.IsError() || !ValidateObjectRecord(Data, Index, ExpectedClass, OutError) ||
+				!TrackObjectName(Data, NamesByOuter, OutError))
 			{
 				return false;
 			}

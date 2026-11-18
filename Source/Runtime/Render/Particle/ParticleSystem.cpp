@@ -13,7 +13,9 @@
 #include "Render/Particle/ParticleModuleColorOverLife.h"
 #include "Render/Particle/ParticleModuleCollision.h"
 #include "Render/Particle/ParticleModuleSize.h"
+#include "Render/Particle/ParticleModuleTypeDataBase.h"
 #include "Asset/AssetManager.h"
+#include "Serialization/Archive.h"
 #include <cmath>
 
 namespace
@@ -111,6 +113,11 @@ namespace
 			return false;
 		}
 
+		if (const UParticleModuleTypeDataBase* TypeData = LOD->GetTypeDataModule())
+		{
+			if (!ValidateModule(TypeData, LOD, OutError)) return false;
+		}
+
 		for (const UParticleModule* Module : LOD->GetModules())
 		{
 			if (!ValidateModule(Module, LOD, OutError))
@@ -135,6 +142,11 @@ void UParticleSystem::AddEmitter(UParticleEmitter* InEmitter)
 		return;
 	}
 
+	if (!InEmitter->GetOuter() && StaticFindObjectFast(nullptr, this, InEmitter->GetFName()))
+	{
+		InEmitter->SetName(MakeUniqueObjectName(this, InEmitter->GetClass()));
+	}
+
 	InEmitter->SetOuter(this);
 	Emitters.Add(InEmitter);
 }
@@ -147,6 +159,57 @@ void UParticleSystem::RemoveEmitter(int32 Index)
 	Emitters.RemoveAt(Index);
 	DestroyOwnedObjects(Emitter);
 	delete Emitter;
+}
+
+void UParticleSystem::RemoveLODLevel(int32 Index)
+{
+	bool bRemoved = false;
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		if (!Emitter || Emitter->LODLevels.Num() <= 1 || !Emitter->LODLevels.IsValidIndex(Index))
+			continue;
+
+		UParticleLODLevel* LOD = Emitter->LODLevels[Index];
+		Emitter->LODLevels.RemoveAt(Index);
+		bRemoved = true;
+		Emitter->CacheEmitterModuleInfo();
+		DestroyOwnedObjects(LOD);
+		delete LOD;
+	}
+
+	// LOD 0을 삭제하면 기존 LOD 1이 새 기준 단계가 됩니다.
+	const int32 DistanceIndex = std::max(0, Index - 1);
+	if (bRemoved && LODDistances.IsValidIndex(DistanceIndex))
+		LODDistances.RemoveAt(DistanceIndex);
+}
+
+float UParticleSystem::GetLODDistance(int32 Index) const
+{
+	if (Index <= 0) return 0.0f;
+	if (LODDistances.IsValidIndex(Index - 1)) return LODDistances[Index - 1];
+
+	// 거리 배열이 없는 기존 에셋의 LOD 1 전환 거리를 유지합니다.
+	const int32 LastIndex = std::max(1, LODDistances.Num());
+	const float LastDistance = LODDistances.IsEmpty() ? LOD1Distance : LODDistances.Last();
+	return LastDistance + (Index - LastIndex) * 6.0f;
+}
+
+void UParticleSystem::SetLODDistance(int32 Index, float Distance)
+{
+	if (Index <= 0 || !std::isfinite(Distance)) return;
+
+	// 단계 순서를 유지하고, 아직 저장되지 않은 앞 단계의 거리를 채웁니다.
+	Distance = std::max(Distance, GetLODDistance(Index - 1));
+	if (LODDistances.IsValidIndex(Index))
+		Distance = std::min(Distance, LODDistances[Index]);
+	if (Distance == GetLODDistance(Index)) return;
+
+	while (LODDistances.Num() < Index)
+	{
+		const float DefaultDistance = GetLODDistance(LODDistances.Num() + 1);
+		LODDistances.Add(DefaultDistance);
+	}
+	LODDistances[Index - 1] = Distance;
 }
 
 bool UParticleSystem::RemoveModule(int32 EmitterIndex, int32 LODIndex, UParticleModule* Module)
@@ -166,11 +229,66 @@ bool UParticleSystem::RemoveModule(int32 EmitterIndex, int32 LODIndex, UParticle
 	return true;
 }
 
-void UParticleSystem::SwapEmitters(UParticleSystem& Other)
+bool UParticleSystem::SetEmitterTypeData(int32 EmitterIndex, int32 LODIndex, UParticleModuleTypeDataBase* Module)
+{
+	if (!Emitters.IsValidIndex(EmitterIndex) || !Emitters[EmitterIndex]) return false;
+
+	UParticleEmitter* Emitter = Emitters[EmitterIndex];
+	UParticleLODLevel* LOD = Emitter->GetLODLevel(LODIndex);
+	if (!LOD || (Module && Module->GetOuter() != LOD)) return false;
+
+	UParticleModuleTypeDataBase* Previous = LOD->GetTypeDataModule();
+	if (Previous == Module) return true;
+
+	LOD->SetTypeDataModule(Module);
+	Emitter->CacheEmitterModuleInfo(LODIndex);
+	if (Previous && Previous->GetOuter() == LOD)
+	{
+		DestroyOwnedObjects(Previous);
+		delete Previous;
+	}
+	return true;
+}
+
+void UParticleSystem::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	if (Ar.IsError() || !Ar.HasAnyPortFlags(EPropertyPortFlags::PPF_Asset)) return;
+
+	// 기존 속성 스키마를 유지하고, 거리 배열은 객체 레코드 끝에 선택적으로 기록합니다.
+	if (Ar.IsLoading())
+	{
+		LODDistances.Reset();
+		if (Ar.Tell() == Ar.TotalSize()) return;
+
+		int32 Count = 0;
+		Ar << Count;
+		const int64 Remaining = Ar.TotalSize() - Ar.Tell();
+		if (Ar.IsError() || Count < 0 || Count * static_cast<int64>(sizeof(float)) != Remaining)
+		{
+			Ar.SetError();
+			return;
+		}
+		LODDistances.SetNum(Count);
+	}
+	else
+	{
+		int32 Count = LODDistances.Num();
+		if (Count == 0) return;
+		Ar << Count;
+	}
+
+	for (float& Distance : LODDistances)
+		Ar << Distance;
+}
+
+void UParticleSystem::SwapParticleData(UParticleSystem& Other)
 {
 	if (this == &Other) return;
 
 	std::swap(Emitters, Other.Emitters);
+	std::swap(LODDistances, Other.LODDistances);
+	std::swap(LOD1Distance, Other.LOD1Distance);
 	for (UParticleEmitter* Emitter : Emitters)
 	{
 		Emitter->SetOuter(this);
@@ -184,6 +302,17 @@ void UParticleSystem::SwapEmitters(UParticleSystem& Other)
 bool UParticleSystem::ValidateAsset(FString& OutError) const
 {
 	OutError.clear();
+
+	float PreviousDistance = 0.0f;
+	for (float Distance : LODDistances)
+	{
+		if (!std::isfinite(Distance) || Distance < PreviousDistance)
+		{
+			OutError = "Particle LOD distances must be finite and in ascending order";
+			return false;
+		}
+		PreviousDistance = Distance;
+	}
 
 	for (const UParticleEmitter* Emitter : Emitters)
 	{
@@ -267,7 +396,7 @@ void UParticleSystem::AddDefaultEmitter()
 	LODLevel->AddModule(Size);
 	LODLevel->AddModule(NewObject<UParticleModuleCollision>());
 
-	UParticleEmitter* Emitter = NewObject<UParticleEmitter>();
+	UParticleEmitter* Emitter = NewObject<UParticleEmitter>(this);
 	Emitter->AddLODLevel(LODLevel);
 	UParticleLODLevel* FarLOD = Cast<UParticleLODLevel>(StaticDuplicateObject(LODLevel, Emitter, FName("LOD1")));
 	if (FarLOD)

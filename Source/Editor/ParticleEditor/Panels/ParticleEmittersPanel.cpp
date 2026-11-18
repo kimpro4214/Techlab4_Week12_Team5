@@ -50,7 +50,7 @@ void FParticleEmittersPanel::DrawEmitterName(int32 Index, UParticleEmitter& Emit
 	const FString Label = Editor.GetEmitterDisplayName(Index);
 	const ImVec2 TextPosition = ImGui::GetCursorScreenPos();
 	if (ImGui::Selectable("##EmitterNameLabel",
-		Editor.GetSelectedEmitterIndex() == Index && !Editor.GetSelectedModule(),
+		Editor.GetSelectedEmitterIndex() == Index && !Editor.GetSelectedModule() && !Editor.IsTypeDataSelected(),
 		ImGuiSelectableFlags_AllowDoubleClick))
 	{
 		Editor.SelectEmitter(Index);
@@ -186,6 +186,13 @@ void FParticleEmittersPanel::DrawContent()
 
 			DrawModule(LOD->GetRequiredModule(), "Required", false);
 			DrawModule(LOD->GetSpawnModule(), "Spawn", false);
+
+			const bool bTypeDataSelected = Editor.GetSelectedEmitterIndex() == Index && Editor.IsTypeDataSelected();
+			if (ImGui::Selectable("Type Data", bTypeDataSelected))
+			{
+				Editor.SelectTypeData(Index);
+			}
+
 			ImGui::Separator();
 			for (UParticleModule* Module : LOD->GetModules())
 			{

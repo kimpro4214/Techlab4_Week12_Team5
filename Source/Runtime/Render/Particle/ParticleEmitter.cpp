@@ -2,6 +2,7 @@
 #include "Core/HAL/UnrealMemory.h"
 #include "Render/Particle/ParticleData.h"
 #include "Render/Particle/ParticleEmitter.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Render/Particle/ParticleLODLevel.h"
 #include "Render/Particle/ParticleSpriteEmitterInstance.h"
 #include "Render/Particle/ParticleModuleTypeDataBase.h"
@@ -44,8 +45,11 @@ void UParticleEmitter::AddLODLevel(UParticleLODLevel* InLODLevel)
 
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
+	if (!Component)
+		return nullptr;
+
 	// TypeData 모듈이 있으면 그 종류(Mesh 등)의 인스턴스를, 없으면 Sprite를 만든다
-	UParticleLODLevel* LODLevel = GetLODLevel(0);
+	UParticleLODLevel* LODLevel = GetLODLevel(Component->GetEmitterLODIndex());
 	UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
 
 	FParticleEmitterInstance* Instance = TypeData ? TypeData->CreateInstance() : nullptr;

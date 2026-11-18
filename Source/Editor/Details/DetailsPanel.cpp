@@ -5,6 +5,7 @@
 #include "imgui_internal.h"
 #include "Editor/HitoriEd/EditorDragDrop.h"
 #include "Components/PrimitiveComponent.h"
+#include "Components/ParticleSystemComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -424,6 +425,49 @@ namespace
 				ImGui::PopID();
 			}
 			ImGui::EndCombo();
+		}
+	}
+
+	void DrawParticleSystemTemplate(UParticleSystemComponent* Component)
+	{
+		UParticleSystem* Current = Component->GetTemplate();
+		const FString DisplayName = Current ? GetAssetDisplayName(Current->GetPath()) : "None";
+
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo("##ParticleSystemTemplate", DisplayName.c_str()))
+		{
+			for (TObjectIterator<UParticleSystem> Asset; Asset; ++Asset)
+			{
+				const FString& Path = Asset->GetPath();
+				if (Path.empty() || UAssetManager::GetAssetByPath<UParticleSystem>(Path) != *Asset) continue;
+
+				const bool bSelected = Current == *Asset;
+				ImGui::PushID(Path.c_str());
+				if (ImGui::Selectable(GetAssetDisplayName(Path).c_str(), bSelected) && !bSelected)
+					Component->SetTemplate(*Asset);
+				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", Path.c_str());
+				if (bSelected) ImGui::SetItemDefaultFocus();
+				ImGui::PopID();
+			}
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::IsItemHovered() && Current)
+			ImGui::SetTooltip("%s", Current->GetPath().c_str());
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(EditorDragDrop::ParticleSystem);
+				Payload && Payload->DataSize > 0)
+			{
+				const FString Path(static_cast<const char*>(Payload->Data), Payload->DataSize);
+				FString Error;
+				UParticleSystem* Asset = UAssetManager::Get().LoadParticleSystem(Path, Error);
+				if (!Asset)
+					HTR_LOG(Error, "Cannot load particle '{}': {}", Path, Error);
+				else if (Asset != Current)
+					Component->SetTemplate(Asset);
+			}
+			ImGui::EndDragDropTarget();
 		}
 	}
 
@@ -961,6 +1005,11 @@ namespace
 			else if (Property.Class == USkeletalMesh::StaticClass())
 			{
 				DrawSkeletalMeshSlot(DirectOwner, reinterpret_cast<USkeletalMesh**>(ObjPtr));
+			}
+			else if (auto* ParticleComponent = Cast<UParticleSystemComponent>(DirectOwner);
+				ParticleComponent && Property.Name == "Template")
+			{
+				DrawParticleSystemTemplate(ParticleComponent);
 			}
 			if (!DirectOwner) bChanged |= *ObjPtr != PreviousValue;
 			break;

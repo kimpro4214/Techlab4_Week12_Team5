@@ -43,6 +43,7 @@ public:
 	bool IsLODCompatible(int32 Index) const;
 
 private:
+	friend class UParticleSystem;
 	FString EmitterName;
 
 	UPROPERTY()

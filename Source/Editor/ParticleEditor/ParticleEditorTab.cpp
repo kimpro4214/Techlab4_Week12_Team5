@@ -4,9 +4,54 @@
 #include "Panels/ParticleViewportPanel.h"
 #include "Panels/ParticleDetailsPanel.h"
 #include "Panels/ParticleEmittersPanel.h"
+#include "Render/Particle/ParticleSystem.h"
 
 namespace
 {
+enum class EPlaybackIcon
+{
+	Play,
+	Pause,
+	Restart,
+	Step
+};
+
+bool DrawPlaybackButton(const char* Id, const char* Tooltip, EPlaybackIcon Icon)
+{
+	const float Size = ImGui::GetFrameHeight();
+	const bool bPressed = ImGui::Button(Id, ImVec2(Size, Size));
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const float X = Min.x + Size * 0.5f;
+	const float Y = Min.y + Size * 0.5f;
+	const float R = Size * 0.23f;
+	const ImU32 Color = ImGui::GetColorU32(ImGuiCol_Text);
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	switch (Icon)
+	{
+	case EPlaybackIcon::Play:
+		DrawList->AddTriangleFilled({X - R, Y - R}, {X - R, Y + R}, {X + R, Y}, Color);
+		break;
+	case EPlaybackIcon::Pause:
+		DrawList->AddRectFilled({X - R, Y - R}, {X - R * 0.35f, Y + R}, Color);
+		DrawList->AddRectFilled({X + R * 0.35f, Y - R}, {X + R, Y + R}, Color);
+		break;
+	case EPlaybackIcon::Restart:
+		DrawList->PathArcTo({X, Y}, R, 0.0f, IM_PI * 1.5f);
+		DrawList->PathStroke(Color, ImDrawFlags_None, 1.5f);
+		DrawList->AddTriangleFilled({X, Y - R * 1.6f}, {X, Y - R * 0.4f}, {X + R, Y - R}, Color);
+		break;
+	case EPlaybackIcon::Step:
+		DrawList->AddTriangleFilled({X - R, Y - R}, {X - R, Y + R}, {X + R * 0.35f, Y}, Color);
+		DrawList->AddRectFilled({X + R * 0.65f, Y - R}, {X + R, Y + R}, Color);
+		break;
+	}
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("%s", Tooltip);
+	return bPressed;
+}
+
 class FParticleSettingsPanel : public FParticleEditorPanel
 {
 public:
@@ -19,24 +64,43 @@ protected:
 	void DrawContent() override
 	{
 		const bool bPaused = Editor.IsPaused();
-		if (ImGui::Button(bPaused ? "Play" : "Pause")) Editor.SetPaused(!bPaused);
+		if (DrawPlaybackButton("##PlayPause", bPaused ? "Play" : "Pause",
+			bPaused ? EPlaybackIcon::Play : EPlaybackIcon::Pause))
+			Editor.SetPaused(!bPaused);
 		ImGui::SameLine();
-		if (ImGui::Button("Restart")) Editor.Restart();
+		if (DrawPlaybackButton("##Restart", "Restart", EPlaybackIcon::Restart)) Editor.Restart();
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!Editor.IsPaused());
-		if (ImGui::Button("Step")) Editor.Step();
+		if (DrawPlaybackButton("##Step", "Step", EPlaybackIcon::Step)) Editor.Step();
 		ImGui::EndDisabled();
 
-		ImGui::SetNextItemWidth(100.0f);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-FLT_MIN);
 		float TimeScale = Editor.GetTimeScale();
-		if (ImGui::SliderFloat("Speed", &TimeScale, 0.1f, 4.0f, "%.1fx")) Editor.SetTimeScale(TimeScale);
+		if (ImGui::SliderFloat("##Speed", &TimeScale, 0.1f, 4.0f, "Speed %.1fx")) Editor.SetTimeScale(TimeScale);
 
+		ImGui::Separator();
 		bool bGrid = Editor.IsRenderGrid();
 		if (ImGui::Checkbox("Grid", &bGrid)) Editor.SetRenderGrid(bGrid);
 		ImGui::Text("Particles: %d", Editor.GetActiveParticleCount());
-
 		if (Editor.IsDirty()) ImGui::TextDisabled("Unsaved changes");
 		if (!Editor.GetLastError().empty()) ImGui::TextWrapped("%s", Editor.GetLastError().c_str());
+
+		if (UParticleSystem* System = Editor.GetSystem())
+		{
+			ImGui::SeparatorText("LOD Distances");
+			const int32 LODCount = Editor.GetLODLevelCount();
+			for (int32 Index = 0; Index < LODCount; ++Index)
+			{
+				const FString Label = "LOD " + std::to_string(Index);
+				float Distance = System->GetLODDistance(Index);
+				ImGui::SetNextItemWidth(100.0f);
+				ImGui::BeginDisabled(Index == 0);
+				if (ImGui::DragFloat(Label.c_str(), &Distance, 0.1f, 0.0f, 0.0f, "%.2f"))
+					System->SetLODDistance(Index, Distance);
+				ImGui::EndDisabled();
+			}
+		}
 	}
 };
 }
@@ -124,6 +188,21 @@ void FParticleEditorTab::DrawToolbar()
 			}
 		}
 		ImGui::EndCombo();
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+	ImGui::BeginDisabled(LODCount == 0);
+	if (ImGui::Button("Add LOD Level"))
+	{
+		ParticleEditor.AddLODLevel();
+	}
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(LODCount <= 1);
+	if (ImGui::Button("Delete Current LOD Level"))
+	{
+		ParticleEditor.DeleteCurrentLODLevel();
 	}
 	ImGui::EndDisabled();
 	ImGui::Unindent(Padding);

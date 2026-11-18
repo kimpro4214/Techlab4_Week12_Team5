@@ -4,12 +4,12 @@
 #include "UObject/Class.h"
 #include "Render/Particle/ParticleModuleRequired.h"
 #include "Render/Particle/ParticleModuleSpawn.h"
+#include "Render/Particle/ParticleModuleTypeDataBase.h"
 #include "ParticleLODLevel.generated.h"
 
 class UParticleModule;
 class UParticleModuleRequired;
 class UParticleModuleSpawn;
-class UParticleModuleTypeDataBase;
 
 
 // Emitter의 LOD 하나에 해당하는 모듈 묶음입니다.
@@ -50,6 +50,7 @@ private:
 	UParticleModuleRequired* RequiredModule = nullptr;
 	UPROPERTY()
 	UParticleModuleSpawn* SpawnModule = nullptr;
+	UPROPERTY()
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;   // nullptr이면 Sprite Emitter
 	UPROPERTY()
 	TArray<UParticleModule*>     Modules;                    // 에디터에 보이는 순서 그대로

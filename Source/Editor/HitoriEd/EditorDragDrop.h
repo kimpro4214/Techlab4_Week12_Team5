@@ -14,5 +14,8 @@ namespace EditorDragDrop
 	// 페이로드 내용: USkeletalMesh* 한 개
 	inline constexpr const char* SkeletalMesh = "ASSET_SKELETAL_MESH";
 
+	// 페이로드 내용: 널 종료 문자를 제외한 파티클 에셋 경로
+	inline constexpr const char* ParticleSystem = "ASSET_PARTICLE_SYSTEM";
+
 	inline constexpr const char* Component = "COMPONENT";
 }

@@ -66,11 +66,16 @@ public:
 	void SetSoloEmitter(const UParticleEmitter* Emitter);
 	const UParticleEmitter* GetSoloEmitter() const { return SoloEmitter; }
 	void AddModule(int32 EmitterIndex, UClass* ModuleClass);
+	void SetEmitterTypeData(int32 EmitterIndex, UClass* TypeDataClass);
 	void RemoveModule(int32 EmitterIndex, UParticleModule* Module);
 	void SelectLODLevel(int32 Index);
+	void AddLODLevel();
+	void DeleteCurrentLODLevel();
 	int32 GetSelectedLODLevel() const { return SelectedLODLevel; }
 	int32 GetLODLevelCount() const;
 	void SelectModule(int32 EmitterIndex, UParticleModule* Module);
+	void SelectTypeData(int32 EmitterIndex);
+	bool IsTypeDataSelected() const { return bTypeDataSelected; }
 	UParticleEmitter* GetSelectedEmitter() const;
 	UParticleModule* GetSelectedModule() const { return SelectedModule; }
 	int32 GetSelectedEmitterIndex() const { return SelectedEmitterIndex; }
@@ -123,6 +128,7 @@ private:
 	int32 SelectedLODLevel = 0;
 	int32 SelectedEmitterIndex = -1;
 	UParticleModule* SelectedModule = nullptr;
+	bool bTypeDataSelected = false;
 	const UParticleEmitter* SoloEmitter = nullptr;
 	bool bPreviewValid = true;
 

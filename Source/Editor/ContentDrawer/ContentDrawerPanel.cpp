@@ -1,6 +1,7 @@
 #include "EnginePCH.h"
 #include "Editor/ContentDrawer/ContentDrawerPanel.h"
 #include "Asset/AssetManager.h"
+#include "Asset/AssetUtils.h"
 #include "Text/Font.h"
 #include "Render/Mesh.h"
 #include "Render/SkeletalMesh.h"
@@ -128,6 +129,7 @@ void FContentDrawerPanel::OnRender()
 
 				std::string PathString = Path.generic_string();
 				std::string FilenameString = Path.filename().string();
+				const bool bIsParticle = !bIsDirectory && AssetUtils::GetAssetExtension(PathString) == ".particle";
 
 				ImGui::PushID(PathString.c_str()); // 각 위젯에 고유 ID 부여
 				UTexture2D* Thumbnail = nullptr;
@@ -187,6 +189,12 @@ void FContentDrawerPanel::OnRender()
 
 					ImGui::EndDragDropSource();
 				}
+				if (bIsParticle && ImGui::BeginDragDropSource())
+				{
+					ImGui::SetDragDropPayload(EditorDragDrop::ParticleSystem, PathString.data(), PathString.size());
+					ImGui::TextUnformatted(FilenameString.c_str());
+					ImGui::EndDragDropSource();
+				}
 				if (!bIsDirectory && (Path.extension() == ".fbx" || Path.extension() == ".FBX")
 					&& ImGui::BeginDragDropSource())
 				{
@@ -213,7 +221,7 @@ void FContentDrawerPanel::OnRender()
 					{
 						CurrentPath /= Path.filename(); // 하위 폴더로 이동
 					}
-					else if ((Path.extension() == ".particle" || Path.extension() == ".PARTICLE") && OnOpenParticle.IsBound())
+					else if (bIsParticle && OnOpenParticle.IsBound())
 					{
 						OnOpenParticle.Broadcast(PathString);
 					}

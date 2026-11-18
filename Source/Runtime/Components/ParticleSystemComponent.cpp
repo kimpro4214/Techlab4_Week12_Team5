@@ -104,7 +104,9 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	DeltaTime = std::min(DeltaTime, 0.1f);
 
 	const UWorld* World = GetWorld();
-	const ACameraActor* MainCamera = World ? World->GetMainCamera() : nullptr;
+	// 파티클 에디터에서는 상단에서 선택한 LOD로 시뮬레이션한다.
+	const ACameraActor* MainCamera = World && World->GetWorldType() != EWorldType::EditorPreview
+		? World->GetMainCamera() : nullptr;
 	const UCameraComponent* Camera = MainCamera ? MainCamera->GetCameraComponent() : nullptr;
 
 	const float CameraDistance = Camera ? (Camera->GetWorldLocation() - GetWorldLocation()).Length() : 0.0f;
@@ -113,17 +115,20 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleTick);
 		for (FParticleEmitterInstance* Instance : EmitterInstances)
 		{
-			if (Camera && Template && Instance->SpriteTemplate->GetLODLevel(1))
+			if (Camera && Template)
 			{
-				const float FarDistance = Template->GetLOD1Distance();
-				const float ReturnDistance = std::max(0.0f, FarDistance - 1.0f);
 				const int32 CurrentLOD = Instance->CurrentLODLevelIndex;
-
-				const float SwitchDistance = (CurrentLOD == 0) ? FarDistance : ReturnDistance;
-				const int32 DesiredLOD = (CameraDistance >= SwitchDistance) ? 1 : 0;
-
-				if (DesiredLOD != CurrentLOD)
-					Instance->SetCurrentLODIndex(DesiredLOD);
+				const int32 LODCount = Instance->SpriteTemplate->GetLODLevels().Num();
+				for (int32 Index = LODCount - 1; Index >= 0; --Index)
+				{
+					// 가까워지는 방향에 여유를 두어 경계에서 반복 전환되는 것을 줄입니다.
+					const float Distance = Template->GetLODDistance(Index);
+					const float Gap = Distance - Template->GetLODDistance(Index - 1);
+					const float Margin = std::clamp(Gap * 0.5f, 0.0f, 1.0f);
+					const float SwitchDistance = Index <= CurrentLOD ? Distance - Margin : Distance;
+					if (CameraDistance >= SwitchDistance && (Index == CurrentLOD || Instance->SetCurrentLODIndex(Index)))
+						break;
+				}
 			}
 			Instance->Tick(DeltaTime);
 		}

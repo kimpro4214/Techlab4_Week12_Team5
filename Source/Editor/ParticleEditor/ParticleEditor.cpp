@@ -2,12 +2,19 @@
 #include "Editor/ParticleEditor/ParticleEditor.h"
 #include "Editor/ParticleEditor/ParticleEditorTab.h"
 #include "Asset/AssetSerializer.h"
+#include "Asset/AssetManager.h"
 #include "Core/FileUtils.h"
 #include "UObject/UObjectIterator.h"
 #include "Components/ParticleSystemComponent.h"
 #include "Editor/Settings/SettingsPanel.h"
 #include "Engine/World.h"
 #include "Render/Particle/ParticleSystem.h"
+#include "Render/Particle/ParticleModuleTypeDataBase.h"
+#include "Render/Particle/ParticleModuleTypeDataBeam.h"
+#include "Render/Particle/ParticleModuleTypeDataRibbon.h"
+#include "UObject/UObjectGlobals.h"
+
+#include <unordered_set>
 
 FParticleEditor::FParticleEditor(UEngine* InEngine, FEditorManager& InManager, const FAssetEditorKey& InKey,
 	UParticleSystem* InSystem, const FEditorSettings* InSettings, FPreviewRenderer InRenderer)
@@ -122,7 +129,7 @@ bool FParticleEditor::Save()
 
 	// 실행 인스턴스가 이전 모듈을 참조하지 않도록 먼저 해제합니다.
 	for (UParticleSystemComponent* Component : Components) Component->ResetSystem();
-	SourceSystem->SwapEmitters(*SavedSystem);
+	SourceSystem->SwapParticleData(*SavedSystem);
 	for (UParticleSystemComponent* Component : Components) Component->Activate(true);
 
 	SavedSnapshot = std::move(Snapshot);
@@ -171,15 +178,31 @@ void FParticleEditor::SelectEmitter(int32 Index)
 {
 	SelectedEmitterIndex = System && System->GetEmitters().IsValidIndex(Index) ? Index : -1;
 	SelectedModule = nullptr;
+	bTypeDataSelected = false;
 }
 
 void FParticleEditor::AddEmitter()
 {
 	if (!System) return;
 
+	const int32 NewIndex = System->GetEmitters().Num();
+	std::unordered_set<FString> ExistingNames;
+	for (int32 Index = 0; Index < NewIndex; ++Index)
+	{
+		ExistingNames.insert(GetEmitterDisplayName(Index));
+	}
+
+	int32 NameIndex = NewIndex;
+	FString Name = GetEmitterDisplayName(NameIndex);
+	while (ExistingNames.contains(Name))
+	{
+		Name = GetEmitterDisplayName(++NameIndex);
+	}
+
 	System->AddDefaultEmitter();
+	System->GetEmitters()[NewIndex]->SetEmitterName(Name);
 	SelectedLODLevel = 0;
-	SelectEmitter(System->GetEmitters().Num() - 1);
+	SelectEmitter(NewIndex);
 	RefreshSystem();
 }
 
@@ -200,6 +223,16 @@ void FParticleEditor::RemoveEmitter(int32 Index)
 {
 	if (!System || !System->GetEmitters().IsValidIndex(Index)) return;
 
+	// 인덱스가 바뀌는 기존 이미터에 삭제 전 표시 이름을 저장합니다.
+	for (int32 NextIndex = Index + 1; NextIndex < System->GetEmitters().Num(); ++NextIndex)
+	{
+		UParticleEmitter* Emitter = System->GetEmitters()[NextIndex];
+		if (Emitter && Emitter->GetEmitterName().empty())
+		{
+			Emitter->SetEmitterName(GetEmitterDisplayName(NextIndex));
+		}
+	}
+
 	if (SoloEmitter == System->GetEmitters()[Index])
 	{
 		SoloEmitter = nullptr;
@@ -211,6 +244,7 @@ void FParticleEditor::RemoveEmitter(int32 Index)
 	{
 		SelectedLODLevel = 0;
 		SelectedModule = nullptr;
+		bTypeDataSelected = false;
 	}
 
 	if (SelectedEmitterIndex == Index)
@@ -251,6 +285,9 @@ void FParticleEditor::AddModule(int32 EmitterIndex, UClass* ModuleClass)
 {
 	UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex);
 	if (!LOD || !ModuleClass || !ModuleClass->IsChildOf(UParticleModule::StaticClass())) return;
+	if (ModuleClass->IsChildOf(UParticleModuleTypeDataBase::StaticClass()) ||
+		ModuleClass->IsChildOf(UParticleModuleRequired::StaticClass()) ||
+		ModuleClass->IsChildOf(UParticleModuleSpawn::StaticClass())) return;
 
 	if (UParticleModule* Module = NewObject<UParticleModule>(LOD, ModuleClass))
 	{
@@ -258,6 +295,49 @@ void FParticleEditor::AddModule(int32 EmitterIndex, UClass* ModuleClass)
 		SelectModule(EmitterIndex, Module);
 		RefreshSystem();
 	}
+}
+
+void FParticleEditor::SetEmitterTypeData(int32 EmitterIndex, UClass* TypeDataClass)
+{
+	UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex);
+	if (!LOD) return;
+
+	UParticleModuleTypeDataBase* Previous = LOD->GetTypeDataModule();
+	if ((Previous ? Previous->GetClass() : nullptr) == TypeDataClass) return;
+
+	UParticleModuleTypeDataBase* Module = nullptr;
+	if (TypeDataClass)
+	{
+		if (!TypeDataClass->IsChildOf(UParticleModuleTypeDataBase::StaticClass())) return;
+
+		Module = NewObject<UParticleModuleTypeDataBase>(LOD, TypeDataClass);
+		if (!Module) return;
+	}
+
+	// 기존 프리뷰 인스턴스가 참조하는 TypeData를 교체하기 전에 인스턴스를 해제합니다.
+	if (ParticleComponent) ParticleComponent->ResetSystem();
+	System->SetEmitterTypeData(EmitterIndex, SelectedLODLevel, Module);
+
+	const bool bUsesStrip = Cast<UParticleModuleTypeDataBeam>(Module) ||
+		Cast<UParticleModuleTypeDataRibbon>(Module);
+	if (UParticleModuleRequired* Required = LOD->GetRequiredModule())
+	{
+		const UMaterial* Material = Required->GetMaterial();
+		const bool bHasStripMaterial = Material && (Material->PSOType == EPSOType::ParticleStrip_Additive ||
+			Material->PSOType == EPSOType::ParticleStrip_AlphaBlend);
+		const bool bHasMeshMaterial = Material && Material->PSOType == EPSOType::ParticleMesh;
+		if (bUsesStrip != bHasStripMaterial || (!Module && bHasMeshMaterial))
+		{
+			const char* DefaultMaterial = bUsesStrip ? "ParticleStripMaterial" : "ParticleSpriteMaterial";
+			if (UMaterial* Replacement = UAssetManager::GetAssetByPath<UMaterial>(DefaultMaterial))
+			{
+				Required->SetMaterial(Replacement);
+			}
+		}
+	}
+
+	SelectTypeData(EmitterIndex);
+	RefreshSystem();
 }
 
 void FParticleEditor::RemoveModule(int32 EmitterIndex, UParticleModule* Module)
@@ -289,6 +369,48 @@ int32 FParticleEditor::GetLODLevelCount() const
 	return Count;
 }
 
+void FParticleEditor::AddLODLevel()
+{
+	const int32 NewLODIndex = GetLODLevelCount();
+	if (NewLODIndex == 0)
+		return;
+
+	for (UParticleEmitter* Emitter : System->GetEmitters())
+	{
+		if (!Emitter || Emitter->GetLODLevels().IsEmpty())
+			continue;
+
+		const int32 SourceIndex = std::min(SelectedLODLevel, Emitter->GetLODLevels().Num() - 1);
+		const UParticleLODLevel* Source = Emitter->GetLODLevel(SourceIndex);
+
+		// LOD 개수가 다른 이미터도 새 LOD를 같은 인덱스에 추가한다.
+		while (Emitter->GetLODLevels().Num() <= NewLODIndex)
+		{
+			UParticleLODLevel* Copy = Cast<UParticleLODLevel>(StaticDuplicateObject(Source, Emitter));
+			if (!Copy)
+				break;
+
+			Emitter->AddLODLevel(Copy);
+		}
+	}
+
+	SelectLODLevel(NewLODIndex);
+}
+
+void FParticleEditor::DeleteCurrentLODLevel()
+{
+	const int32 LODCount = GetLODLevelCount();
+	if (LODCount <= 1)
+		return;
+
+	if (ParticleComponent) ParticleComponent->ResetSystem();
+	SelectedModule = nullptr;
+	bTypeDataSelected = false;
+	System->RemoveLODLevel(SelectedLODLevel);
+	SelectedLODLevel = std::min(SelectedLODLevel, GetLODLevelCount() - 1);
+	RefreshSystem();
+}
+
 void FParticleEditor::SelectLODLevel(int32 Index)
 {
 	if (Index < 0 || (Index != 0 && Index >= GetLODLevelCount()) || Index == SelectedLODLevel)
@@ -298,7 +420,19 @@ void FParticleEditor::SelectLODLevel(int32 Index)
 
 	SelectedLODLevel = Index;
 	SelectedModule = nullptr;
+	bTypeDataSelected = false;
 	RefreshSystem();
+}
+
+void FParticleEditor::SelectTypeData(int32 EmitterIndex)
+{
+	SelectEmitter(EmitterIndex);
+	if (const UParticleLODLevel* LOD = GetEmitterLOD(EmitterIndex))
+	{
+		// Sprite는 모듈 객체가 없어도 Type Data 슬롯을 선택할 수 있습니다.
+		bTypeDataSelected = true;
+		SelectedModule = LOD->GetTypeDataModule();
+	}
 }
 
 void FParticleEditor::SelectModule(int32 EmitterIndex, UParticleModule* Module)
