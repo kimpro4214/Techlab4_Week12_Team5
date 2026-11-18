@@ -5,11 +5,12 @@
 #include "Collision/HitResult.h"
 #include "Collision/Ray.h"
 #include "Engine/World.h"
+#include <algorithm>
 
 namespace
 {
 	// 충돌 시작 위치가 블로킹 박스 안이면 호출자가 입자를 제거한다.
-	bool ResolveParticleCollision(FParticleEmitterInstance& Owner, FBaseParticle& Particle, float MoveTime)
+	bool ResolveParticleCollision(FParticleEmitterInstance& Owner, FBaseParticle& Particle, float MoveTime, float DampingFactor)
 	{
 		const UParticleSystemComponent* Component = Owner.Component;
 		UWorld* World = Component ? Component->GetWorld() : nullptr;
@@ -43,7 +44,7 @@ namespace
 		if (Hit.bStartPentrating)
 			return true;
 
-		constexpr float Damping = 0.6f;
+		const float Damping = std::clamp(DampingFactor, 0.0f, 1.0f);
 		constexpr float SurfaceOffset = 0.001f;
 
 		const auto Reflect = [&Hit](const FVector& Velocity)
@@ -68,7 +69,7 @@ namespace
 
 void UParticleModuleCollision::Spawn(const FSpawnContext& Context)
 {
-	if (ResolveParticleCollision(Context.Owner, *Context.ParticleBase, Context.SpawnTime))
+	if (ResolveParticleCollision(Context.Owner, *Context.ParticleBase, Context.SpawnTime, DampingFactor))
 		Context.ParticleBase->RelativeTime = 1.0f;
 }
 
@@ -76,7 +77,7 @@ void UParticleModuleCollision::Update(const FUpdateContext& Context)
 {
 	FParticleEmitterInstance* Owner = &Context.Owner;
 	BEGIN_UPDATE_LOOP
-		if (ResolveParticleCollision(*Owner, Particle, Context.DeltaTime))
+		if (ResolveParticleCollision(*Owner, Particle, Context.DeltaTime, DampingFactor))
 			Owner->KillParticle(i);
 	END_UPDATE_LOOP
 }

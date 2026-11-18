@@ -3,6 +3,7 @@
 
 #include "Asset/Asset.h"
 #include "Core/FileUtils.h"
+#include "Render/Particle/ParticleModuleCollision.h"
 #include "Serialization/AssetArchive.h"
 #include "Serialization/MemoryReader.h"
 #include "Serialization/MemoryWriter.h"
@@ -80,7 +81,7 @@ namespace AssetUtils
 		}
 	}
 
-	uint64 GetSchema(UClass* Class)
+	uint64 GetSchema(UClass* Class, const FProperty* MissingProperty)
 	{
 		// 바이트를 기록하는 순서대로 검사해야 속성 추가·삭제·순서 변경을 감지할 수 있다.
 		uint64 Hash = 14695981039346656037ull;
@@ -89,7 +90,7 @@ namespace AssetUtils
 			HashText(Hash, Class->Name);
 			for (const FProperty& Property : Class->GetProperties())
 			{
-				if (!Property.HasAnyFlags(CPF_Transient))
+				if (&Property != MissingProperty && !Property.HasAnyFlags(CPF_Transient))
 				{
 					HashProperty(Hash, Property);
 				}
@@ -216,8 +217,16 @@ namespace AssetUtils
 
 		if (Data.Schema != GetSchema(Data.Class))
 		{
-			OutError = "Asset property schema has changed: " + Data.ClassName;
-			return false;
+			const FProperty* Damping = Data.Class == UParticleModuleCollision::StaticClass()
+				? Data.Class->FindProperty("DampingFactor") : nullptr;
+			if (!Damping || Data.Schema != GetSchema(Data.Class, Damping))
+			{
+				OutError = "Asset property schema has changed: " + Data.ClassName;
+				return false;
+			}
+
+			// 기존 Collision 모듈은 첫 필드인 DampingFactor가 없으므로 생성자 기본값을 사용한다.
+			Data.Bytes.Insert(0, 0);
 		}
 
 		if (Index == 0)
