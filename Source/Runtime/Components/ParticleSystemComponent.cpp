@@ -175,6 +175,12 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 void UParticleSystemComponent::RefreshRenderData()
 {
+	// 프리뷰가 일시정지되어 있어도 이동한 원점을 렌더링에 반영한다.
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		Instance->UpdateTransforms();
+	}
+
 	SendRenderDynamicData();
 }
 

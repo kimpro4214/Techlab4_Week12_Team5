@@ -143,7 +143,7 @@ void FParticleDetailsPanel::DrawContent()
 					UObject* Reference = *reinterpret_cast<UObject**>(reinterpret_cast<uint8*>(Module) + Property.Offset);
 					if (const auto* Curve = Cast<UCurveFloat>(Reference))
 					{
-						ImGui::TextDisabled("%s: %d keys (read-only)", Property.Name.c_str(), Curve->GetKeys().Num());
+						ImGui::TextDisabled("%s: %d keys (Curve Editor)", Property.Name.c_str(), Curve->GetKeys().Num());
 					}
 					else
 					{

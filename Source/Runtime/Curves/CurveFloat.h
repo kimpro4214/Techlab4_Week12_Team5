@@ -5,12 +5,13 @@
 #include "CurveFloat.generated.h"
 
 // 두 키 사이의 값을 계산할 보간 방식을 선택합니다.
-// Constant는 값 유지, Linear는 직선, Cubic은 접선을 이용한 곡선을 의미합니다.
+// Cubic은 편집한 접선을, Spline은 이웃 키에서 계산한 접선을 사용합니다.
 enum class ECurveInterpMode : uint8
 {
     Constant,
     Linear,
     Cubic,
+    Spline,
 };
 
 // 커브의 한 키에 대한 시간·값·보간 방식·접선을 담습니다.
@@ -90,8 +91,8 @@ private:
     // Time 기준 stable_sort로 순서를 유지합니다.
     void SortKeys();
 
-    // Constant는 왼쪽 값, Linear는 직선, Cubic은 Hermite 기저와 접선을 사용합니다.
-    float EvalSegment(const FFloatCurveKey& LeftKey, const FFloatCurveKey& RightKey, float InTime) const;
+    float EvalSegment(int32 LeftIndex, float InTime) const;
+    float GetSplineTangent(int32 KeyIndex) const;
 
     // 현재 리플렉션에 구조체 배열 지원이 없으므로 Serialize에서 명시적으로 저장한다.
     TArray<FFloatCurveKey> Keys;

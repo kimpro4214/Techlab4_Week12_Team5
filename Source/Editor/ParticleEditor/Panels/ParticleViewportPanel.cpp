@@ -47,9 +47,26 @@ void FParticleViewportPanel::DrawContent()
 	// ImGui가 생성하는 HWND에 직접 WndProc을 연결하고 FInputSystem에 전달시켜야함
 
 	const ImGuiIO& IO = ImGui::GetIO();
+	const bool bInputBlocked = IO.WantTextInput || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup);
+	const bool bCameraCaptured = ImGui::IsItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Right);
+	const bool bGizmoDragging = Editor.GetOriginGizmo().IsUsing();
+	if (bFocused && !bInputBlocked && (bGizmoDragging || (bHovered && !bCameraCaptured)))
+	{
+		// 이미지를 늘려 그리는 프레임에도 렌더 타깃 기준 좌표로 축을 선택합니다.
+		const FVector2 LocalMouse(
+			(IO.MousePos.x - Origin.x) * Client->GetWidth() / Size.x,
+			(IO.MousePos.y - Origin.y) * Client->GetHeight() / Size.y);
+		Editor.UpdateOriginGizmo(LocalMouse, bGizmoDragging
+			? ImGui::IsMouseDown(ImGuiMouseButton_Left) : ImGui::IsMouseClicked(ImGuiMouseButton_Left));
+	}
+	else
+	{
+		Editor.EndOriginGizmoDrag();
+	}
+
 	FViewportCameraInput Input
 	{
-		.bCaptured		= bFocused && !ImGui::GetIO().WantTextInput && ImGui::IsItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Right),
+		.bCaptured		= bFocused && bCameraCaptured,
 		.bAllowWheel	= bHovered,
 		.bForward		= ImGui::IsKeyDown(ImGuiKey_W),
 		.bBackward		= ImGui::IsKeyDown(ImGuiKey_S),
@@ -64,7 +81,7 @@ void FParticleViewportPanel::DrawContent()
 		.Wheel			= IO.MouseWheel * 120.0f,
 	};
 
-	if (IO.WantTextInput || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) Input = {};
+	if (bInputBlocked || Editor.GetOriginGizmo().IsUsing()) Input = {};
 
 	// 렌더 타깃 변경은 Editor의 다음 Render에서 수행합니다.
 	uint32 Width = static_cast<uint32>(Size.x);
