@@ -8,6 +8,7 @@
 #include "Render/Particle/ParticleModuleSpawn.h"
 #include "Render/Particle/ParticleDynamicData.h"
 #include "Engine/ParticleSystemSceneProxy.h"
+#include "Render/Particle/ParticleStats.h"
 #include "Render/Particle/ParticleModuleLifetime.h"
 #include "Render/Particle/ParticleModuleLocation.h"
 #include "Render/Particle/ParticleModuleVelocity.h"
@@ -145,10 +146,14 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	// 로딩 직후처럼 프레임이 크게 튀면 한꺼번에 쏟아지지 않도록 제한
 	DeltaTime = std::min(DeltaTime, 0.1f);
 
-	for (FParticleEmitterInstance* Instance : EmitterInstances)
-		Instance->Tick(DeltaTime);
+	{
+		SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleTick);
+		for (FParticleEmitterInstance* Instance : EmitterInstances)
+			Instance->Tick(DeltaTime);
+		UpdateComponentBounds();
+	}
 
-	UpdateComponentBounds();
+	SCOPE_CYCLE_COUNTER(ParticleStats::STAT_ParticleRenderData);
 	SendRenderDynamicData();
 }
 

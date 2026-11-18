@@ -15,6 +15,7 @@
 #include <format>
 
 #include "Core/Stats/EditorStats.h"
+#include "Render/Particle/ParticleStats.h"
 
 namespace {
 constexpr float SplitterThickness = 6.0f;
@@ -529,6 +530,31 @@ const FRenderStats& Stats = RenderData.RenderStats;
 		Lines.Add({ std::format("  Receivers {} ", Stats.DecalReceivers), ValueColor });
 		Lines.Add({ std::format("  Draw Calls {} ", Stats.DecalDrawCalls), ValueColor });
 		Lines.Add({ std::format("  Pass Time {:.2f} ms", Stats.DecalPassTimeMs), ValueColor });
+	}
+
+	if (FStatOverlay::IsEnabled(EStatFlags::Particles))
+	{
+		// 개수는 이 뷰에서 실제로 그린 것만 센다. 컬링되거나 Show Flag로 꺼지면 0이 된다
+		Lines.Add({ "Particles", TitleColor });
+		Lines.Add({ std::format("  Systems {}  Emitters {}", Stats.ParticleSystems, Stats.ParticleEmitters), ValueColor });
+		Lines.Add({ std::format("  Rendered Particles {}", Stats.ParticlesRendered), ValueColor });
+		Lines.Add({ std::format("  Draw Calls {}", Stats.ParticleDrawCalls), ValueColor });
+		Lines.Add({ std::format("  Triangles {}", Stats.ParticleTriangles), ValueColor });
+
+		// CPU 시간은 모든 뷰를 합친 값이다
+		const TStatId ParticleTimes[] = {
+			ParticleStats::STAT_ParticleTick,
+			ParticleStats::STAT_ParticleRenderData,
+			ParticleStats::STAT_ParticleSubmit
+		};
+		for (TStatId StatId : ParticleTimes)
+		{
+			const FCycleStatData* Data = FStatRegistry::Find(StatId);
+			const bool bHasSamples = Data && Data->CallCount > 0;
+			Lines.Add({ bHasSamples
+				? std::format("  {} {:.3f} ms", StatId.GetName(), Data->GetLastMs())
+				: std::format("  {} --", StatId.GetName()), ValueColor });
+		}
 	}
 
 	if (Lines.Num() == 0 && ProfileLines.Num() == 0)

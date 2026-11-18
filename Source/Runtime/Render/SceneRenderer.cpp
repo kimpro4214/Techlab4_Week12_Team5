@@ -419,6 +419,8 @@ void FSceneRenderer::InitViews(FRenderer* Renderer, const FSceneRenderOptions& O
 
 	// 월드 프리미티브 수집 및 절두체 컬링
 	CachedViewContext.bShowSkeletalMesh = Options.bShowSkeletalMesh;
+	CachedViewContext.bShowParticles = Options.bShowParticles;
+	CachedViewContext.Stats = &RenderData.RenderStats;   // 동적 프리미티브(파티클)가 자기 통계를 더한다
 	GatherRenderPackets(World->GetScene(), RenderData, CachedViewContext, &View.Frustum, Renderer);
 	RenderData.AmbientLight = World->GetScene().GetSkyAmbientLight(View.bGameView);
 

@@ -64,6 +64,7 @@ struct FEditorSettings
 	bool bShowCameraOverlay = true;
 	bool bShowDecal = true;
 	bool bShowSkeletalMesh = true;
+	bool bShowParticles = true;   // 표시만 끈다. 시뮬레이션은 계속 돈다
 
 	inline uint32 GetDirectionalShadowMapSize() const { return DirectionalShadowMapSizePerLevels[DirectionalShadowMapSizeLevel]; }
 	inline uint32 GetPointShadowMapSize() const { return PointShadowMapSizePerLevels[PointShadowMapSizeLevel]; }

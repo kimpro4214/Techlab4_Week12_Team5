@@ -9,6 +9,7 @@
 #include <bit>
 
 class FPrimitiveSceneProxy;
+struct FRenderStats;
 inline constexpr uint32 InvalidObjectSlot = ~0u;
 
 struct FRenderPacket
@@ -49,6 +50,9 @@ struct FViewContext
 	bool bOrthographic = false;
 	bool bGameView = false;
 	bool bShowSkeletalMesh = true;
+	bool bShowParticles = true;
+	// 이 뷰의 렌더 통계. 있으면 동적 프리미티브(파티클)가 Gather 중에 자기 몫을 더한다
+	FRenderStats* Stats = nullptr;
 	float CameraDepth = 0.0f;
 	FMatrix ViewProjection = FMatrix::Identity;
 	void Prepare()

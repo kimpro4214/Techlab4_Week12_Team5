@@ -1255,6 +1255,7 @@ void UEditorEngine::BuildSceneRenderOptions(FGameViewportClient* ViewClient, FSc
 	Options.bShowCameraOverlay = S.bShowCameraOverlay;
 	Options.bShowDecal = S.bShowDecal;
 	Options.bShowSkeletalMesh = S.bShowSkeletalMesh;
+	Options.bShowParticles = S.bShowParticles;
 }
 
 void UEditorEngine::BuildSceneRenderOptions(FEditorViewportClient* ViewClient, bool IsPIE, FSceneRenderOptions& Options)
@@ -1281,6 +1282,7 @@ void UEditorEngine::BuildSceneRenderOptions(FEditorViewportClient* ViewClient, b
 	Options.bShowCameraOverlay = S.bShowCameraOverlay;
 	Options.bShowDecal = S.bShowDecal;
 	Options.bShowSkeletalMesh = S.bShowSkeletalMesh;
+	Options.bShowParticles = S.bShowParticles;
 
 	Options.bDrawPrimitives = IsPIE || SettingsPanel->GetSettings().bDrawPrimitives;
 	Options.bEnableFog = ViewClient->GetViewportMode() == EViewportMode::Solid;

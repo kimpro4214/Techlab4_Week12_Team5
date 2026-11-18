@@ -46,6 +46,13 @@ struct FRenderStats
 	uint32 DecalDrawCalls = 0;
 	float DecalPassTimeMs = 0.0f;
 
+	// 이 뷰에서 실제로 그린 것만 센다 (컬링·Show Flag로 빠진 것은 제외)
+	uint32 ParticleSystems = 0;     // 그린 파티클 컴포넌트 수
+	uint32 ParticleEmitters = 0;    // 패킷을 하나 이상 낸 이미터 수
+	uint32 ParticlesRendered = 0;   // 그린 파티클(스프라이트·메시 인스턴스) 수
+	uint32 ParticleDrawCalls = 0;
+	uint64 ParticleTriangles = 0;
+
 	void Reset() { *this = FRenderStats(); }
 };
 
