@@ -117,6 +117,7 @@ public:
 	void DispatchHit(UPrimitiveComponent* OtherComp);
 
 protected:
+	virtual void OnRegister() override;
 	virtual void OnUnregister() override;
 	TArray<FOverlapInfo> OverlapInfos;
 

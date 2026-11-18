@@ -234,6 +234,8 @@ void UWorld::ClearWorld()
 	// 그대로 두면 지워진 컴포넌트를 가리키는 프록시가 FScene에 남아 다음 프레임에 터진다.
 	Scene.RemoveAllLights();
 	Scene.RemoveAllPrimitives();
+	BlockingSweepBVH.Clear();
+	MarkBlockingSweepDirty(true);
 	HTR_LOG(Info, "{} : ", PersistentLevel->GetActorNum());
 }
 
@@ -580,26 +582,52 @@ bool UWorld::DestroyActor(AActor* Actor)
 	return true;
 }
 
+void UWorld::MarkBlockingSweepDirty(bool bComponentsChanged)
+{
+	bBlockingSweepComponentsChanged |= bComponentsChanged;
+	bBlockingSweepBoundsDirty = true;
+}
+
+void UWorld::UpdateBlockingSweepBVH()
+{
+	if (bBlockingSweepComponentsChanged)
+	{
+		TArray<UPrimitiveComponent*> Components;
+		for (TObjectIterator<UPrimitiveComponent> It; It; ++It)
+		{
+			UPrimitiveComponent* Component = *It;
+			if (Component->IsRegistered() && Component->GetWorld() == this)
+				Components.Add(Component);
+		}
+		BlockingSweepBVH.Build(std::span(Components.GetData(), Components.Num()));
+		bBlockingSweepComponentsChanged = false;
+	}
+	else if (bBlockingSweepBoundsDirty)
+	{
+		BlockingSweepBVH.Refit();
+	}
+	bBlockingSweepBoundsDirty = false;
+}
+
 // 다른 World의 객체를 제외하고 Component 교차 중 최근접 결과를 선택한다.
 bool UWorld::SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, FHitResult& OutHit, AActor* IgnoreActor,
 	bool bBlockingOnly)
 {
 	OutHit = FHitResult(1.0f);
 	if (MaxDistance <= 0.0f || !std::isfinite(MaxDistance) || Radius < 0.0f || !std::isfinite(Radius)) return false;
-	Scene.UpdateAllTransforms();
 	float NearestT = MaxDistance;
 	const FVector Extent(Radius, Radius, Radius);
 	if (bBlockingOnly)
 	{
-		// 도형은 렌더 프록시가 없으므로 직접 검사한다. 표시 여부는 충돌 여부와 별개다.
-		// 기존 메시 Sweep과 같은 확장 AABB 방식이며, 바닥/트리거는 bBlockComponent=false로 둔다.
-		for (TObjectIterator<UPrimitiveComponent> It; It; ++It)
+		UpdateBlockingSweepBVH();
+		const FVector End = WorldRay.PointAt(MaxDistance);
+		FBox SweepBounds(WorldRay.Origin - Extent, WorldRay.Origin + Extent);
+		SweepBounds.Expand(FBox(End - Extent, End + Extent));
+		const auto TestComponent = [&](UPrimitiveComponent* Component)
 		{
-			UPrimitiveComponent* Component = *It;
 			AActor* Owner = Component->GetOwner();
-			if (!Component->IsRegistered() || Component->GetWorld() != this || !Component->bBlockComponent ||
-				!Owner || Owner == IgnoreActor || !Owner->GetActorEnableCollision()) continue;
-			if (!Cast<UShapeComponent>(Component) && !Component->GetMeshData()) continue;
+			if (!Component->bBlockComponent || !Owner || Owner == IgnoreActor || !Owner->GetActorEnableCollision()) return;
+			if (!Cast<UShapeComponent>(Component) && !Component->GetMeshData()) return;
 
 			const FBox Bounds = Component->CalcBounds();
 			const FVector Min = Bounds.Min - Extent, Max = Bounds.Max + Extent;
@@ -625,7 +653,7 @@ bool UWorld::SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, 
 				Exit = std::min(Exit, Far);
 				if (Enter > Exit) { bIntersects = false; break; }
 			}
-			if (!bIntersects) continue;
+			if (!bIntersects) return;
 			NearestT = Enter;
 			OutHit.bBlockingHit = true;
 			OutHit.bStartPentrating = Enter == 0.0f;
@@ -635,9 +663,11 @@ bool UWorld::SweepSingle(const FRay& WorldRay, float MaxDistance, float Radius, 
 			OutHit.Location = WorldRay.PointAt(Enter);
 			OutHit.ImpactPoint = OutHit.Location - Normal * Radius;
 			OutHit.Normal = OutHit.ImpactNormal = Normal;
-		}
+		};
+		BlockingSweepBVH.Query([&](const FBox& Bounds) { return SweepBounds.Intersects(Bounds); }, TestComponent);
 		return OutHit.bBlockingHit;
 	}
+	Scene.UpdateAllTransforms();
 	const FPreparedRay PreparedRay(WorldRay);
 	Scene.BVH.TraceClosest(
 		[&](const FBox& Bounds, float& OutEnterT)

@@ -230,14 +230,6 @@ void UParticleSystemComponent::SendRenderDynamicData()
 	}
 }
 
-int32 UParticleSystemComponent::GetNumActiveParticles() const
-{
-	int32 Total = 0;
-	for (const FParticleEmitterInstance* Instance : EmitterInstances)
-		Total += Instance->ActiveParticles;
-	return Total;
-}
-
 FBox UParticleSystemComponent::CalcLocalBounds() const
 {
 	return LocalBounds;

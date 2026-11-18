@@ -49,9 +49,16 @@ void UPrimitiveComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
+void UPrimitiveComponent::OnRegister()
+{
+	Super::OnRegister();
+	GetWorld()->MarkBlockingSweepDirty(true);
+}
+
 void UPrimitiveComponent::OnUnregister()
 {
 	Super::OnUnregister();
+	GetWorld()->MarkBlockingSweepDirty(true);
 	// 삭제/등록 해제된 도형을 상대의 OverlapInfos에 남기지 않는다.
 	while (!OverlapInfos.IsEmpty())
 	{
@@ -86,6 +93,8 @@ bool UPrimitiveComponent::LineTraceComponentLocal(const FRay& LocalRay, float& O
 
 void UPrimitiveComponent::OnTransformDirty()
 {
+	if (UWorld* World = GetWorld())
+		World->MarkBlockingSweepDirty();
 	if (SceneProxy)
 		SceneProxy->GetScene()->MarkDirty(SceneProxy);
 }
@@ -97,6 +106,9 @@ bool UPrimitiveComponent::MoveComponent(const FVector& Delta, const FRotator& Ne
 
 void UPrimitiveComponent::PostEditChangeProperty(const FProperty& Property)
 {
+	if (UWorld* World = GetWorld())
+		World->MarkBlockingSweepDirty();
+
 	if (Property.Name == "bCastShadow" ||
 		Property.Name == "bReceiveShadow" ||
 		Property.Name == "bReceivesDecals")

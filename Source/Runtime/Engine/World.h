@@ -125,6 +125,10 @@ public:
 	void SetCinematicTimeDilation(float InDilation) { CinematicTimeDilation = InDilation; }
 
 private:
+	friend class UPrimitiveComponent;
+	void MarkBlockingSweepDirty(bool bComponentsChanged = false);
+	void UpdateBlockingSweepBVH();
+
 	EWorldType WorldType = EWorldType::None;
 
 	struct alignas(64) FGatherChunk
@@ -157,6 +161,12 @@ private:
 	TArray<ULevel*> Levels;
 
 	FScene Scene;
+	// 렌더 프록시가 없는 도형도 Sweep 후보에 포함한다.
+	TBVH<UPrimitiveComponent*> BlockingSweepBVH{
+		[](UPrimitiveComponent* const& Component) { return Component->CalcBounds(); }
+	};
+	bool bBlockingSweepComponentsChanged = true;
+	bool bBlockingSweepBoundsDirty = false;
 
 	// GatherRenderPackets가 매 프레임 채우는 컬링 결과. 용량을 재사용한다.
 	TArray<FPrimitiveSceneProxy*> VisibleProxies;
