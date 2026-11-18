@@ -123,9 +123,12 @@ bool FParticleEditor::Save()
 		if (Component->GetTemplate() == SourceSystem) Components.Add(*Component);
 	}
 
-	if (!FFileUtils::WriteAllBytesAtomic(GetKey().AssetPath, Snapshot, LastError))
+	// 파일을 교체할 때도 공유 원본의 경로 표기를 유지합니다.
+	const FString& SourcePath = SourceSystem->GetPath();
+	const FString& SavePath = SourcePath.empty() ? GetKey().AssetPath : SourcePath;
+	if (!FFileUtils::WriteAllBytesAtomic(SavePath, Snapshot, LastError))
 	{
-		HTR_LOG(Error, "Cannot save particle '{}': {}", GetKey().AssetPath, LastError);
+		HTR_LOG(Error, "Cannot save particle '{}': {}", SavePath, LastError);
 		return false;
 	}
 

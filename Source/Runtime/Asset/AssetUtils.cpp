@@ -11,6 +11,7 @@
 #include "UObject/Property.h"
 #include "UObject/Struct.h"
 #include <cctype>
+#include <filesystem>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -18,8 +19,32 @@ namespace AssetUtils
 {
 	FString MakeAssetKey(const FString& Path)
 	{
-		// 등록·조회용 키를 생성하는 정책은 파일 입출력과 별도로 관리한다.
-		return FFileUtils::NormalizePath(Path);
+		const FString Normalized = FFileUtils::NormalizePath(Path);
+		if (GetAssetExtension(Normalized) != ".particle")
+		{
+			return Normalized;
+		}
+
+		// 에디터의 소문자 절대 경로도 디스크의 실제 표기로 변환해 같은 파티클 키를 사용한다.
+		namespace fs = std::filesystem;
+		std::error_code Error;
+		const fs::path ProjectRoot = fs::canonical(".", Error);
+		if (Error)
+		{
+			return Normalized;
+		}
+
+		const fs::path AssetPath(std::u8string(Normalized.begin(), Normalized.end()));
+		const fs::path FilePath = fs::weakly_canonical(ProjectRoot / AssetPath, Error);
+		if (Error)
+		{
+			return Normalized;
+		}
+
+		const fs::path RelativePath = FilePath.lexically_relative(ProjectRoot);
+		const bool bInProject = !RelativePath.empty() && *RelativePath.begin() != "..";
+		const std::u8string Key = (bInProject ? RelativePath : FilePath).generic_u8string();
+		return FString(Key.begin(), Key.end());
 	}
 
 	FString GetAssetExtension(const FString& Path)

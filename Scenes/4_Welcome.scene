@@ -1,910 +1,1430 @@
 {
-    "Version":  4,
-    "World":  {
-                  "PersistentLevel":  {
-                                          "Actors":  [
-                                                         {
-                                                             "Class":  "ASkyLightActor",
-                                                             "Name":  "SkyLight",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "USkyLightComponent",
-                                                                                    "Name":  "USkyLightComponent",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Intensity":  0.06,
-                                                                                                       "LightColor":  4287670527,
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "ADirectionalLightActor",
-                                                             "Name":  "MoonLight",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UDirectionalLightComponent",
-                                                                                    "Name":  "UDirectionalLightComponent",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Intensity":  0.3,
-                                                                                                       "LightColor":  4287670527,
-                                                                                                       "bCastShadows":  true,
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  10
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  50,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  20
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "APointLightActor",
-                                                             "Name":  "ZeusGlow",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -1.8,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  2.6
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UPointLightComponent",
-                                                                                    "Name":  "UPointLightComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Intensity":  0,
-                                                                                                       "AttenuationRadius":  7,
-                                                                                                       "LightColor":  4294914112,
-                                                                                                       "bCastShadows":  false,
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AStaticMeshActor",
-                                                             "Name":  "Zeus",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  3,
-                                                                                                                                       "Y":  3,
-                                                                                                                                       "Z":  3
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UStaticMeshComponent",
-                                                                                    "Name":  "UStaticMeshComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "OverrideMaterials":  [
-
-                                                                                                          ],
-                                                                                    "Properties":  {
-                                                                                                       "StaticMesh":  "Models/T1-Zeus/T1-Zeus.obj",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "ACameraActor",
-                                                             "Name":  "CamMain",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "UCameraComponent",
-                                                                                    "Name":  "CameraComponent",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  -16,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  17
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  -14,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Bolt_1",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  8,
-                                                                                                                                          "Y":  -6,
-                                                                                                                                          "Z":  -500
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Lightning.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Bolt_2",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  10,
-                                                                                                                                          "Y":  4.5,
-                                                                                                                                          "Z":  -500
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Lightning.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Bolt_3",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  6,
-                                                                                                                                          "Y":  -1.5,
-                                                                                                                                          "Z":  -500
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Lightning.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Bolt_4",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  9,
-                                                                                                                                          "Y":  7,
-                                                                                                                                          "Z":  -500
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Lightning.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Bolt_5",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  1.2,
-                                                                                                                                          "Y":  0.3,
-                                                                                                                                          "Z":  -500
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Lightning.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Stroke_T",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  2,
-                                                                                                                                          "Y":  -3.5,
-                                                                                                                                          "Z":  11.9825
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Ribbon.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Stroke_W1",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  2,
-                                                                                                                                          "Y":  -2.4675000000000002,
-                                                                                                                                          "Z":  11.237
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Ribbon.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Stroke_W2",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  2,
-                                                                                                                                          "Y":  -1.9005,
-                                                                                                                                          "Z":  10.785499999999999
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Ribbon.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Stroke_W3",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  2,
-                                                                                                                                          "Y":  -1.33,
-                                                                                                                                          "Z":  10.3445
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Ribbon.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "AParticleSystemActor",
-                                                             "Name":  "Stroke_1",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  2,
-                                                                                                                                          "Y":  1.8725,
-                                                                                                                                          "Z":  11.3875
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                },
-                                                                                {
-                                                                                    "Class":  "UParticleSystemComponent",
-                                                                                    "Name":  "ParticleSystemComponent",
-                                                                                    "Parent":  "DefaultSceneRoot",
-                                                                                    "Properties":  {
-                                                                                                       "Template":  "Assets/Particles/T1_Ribbon.particle",
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-
-                                                                            }
-                                                         },
-                                                         {
-                                                             "Class":  "ALevelSequenceActor",
-                                                             "Name":  "Cinematic",
-                                                             "Components":  [
-                                                                                {
-                                                                                    "Class":  "USceneComponent",
-                                                                                    "Name":  "DefaultSceneRoot",
-                                                                                    "Parent":  "",
-                                                                                    "Properties":  {
-                                                                                                       "Transform":  {
-                                                                                                                         "Location":  {
-                                                                                                                                          "X":  0,
-                                                                                                                                          "Y":  0,
-                                                                                                                                          "Z":  0
-                                                                                                                                      },
-                                                                                                                         "Rotation":  {
-                                                                                                                                          "Pitch":  0,
-                                                                                                                                          "Roll":  0,
-                                                                                                                                          "Yaw":  0
-                                                                                                                                      },
-                                                                                                                         "Scale":  {
-                                                                                                                                       "X":  1,
-                                                                                                                                       "Y":  1,
-                                                                                                                                       "Z":  1
-                                                                                                                                   }
-                                                                                                                     }
-                                                                                                   }
-                                                                                }
-                                                                            ],
-                                                             "Properties":  {
-                                                                                "LevelSequenceAsset":  "Assets/Sequences/T1Zeus.sequence",
-                                                                                "LoopCount":  0,
-                                                                                "PlayRate":  1,
-                                                                                "ScriptPath":  "Scripts/t1_zeus_cinematic.lua",
-                                                                                "StartTime":  0,
-                                                                                "bAutoPlay":  true,
-                                                                                "bDisableCameraCuts":  false,
-                                                                                "bPauseAtEnd":  true,
-                                                                                "bRestoreState":  false
-                                                                            }
-                                                         }
-                                                     ],
-                                          "Properties":  {
-
-                                                         }
-                                      },
-                  "Properties":  {
-
-                                 }
-              }
+    "Version": 4,
+    "World": {
+        "PersistentLevel": {
+            "Actors": [
+                {
+                    "Class": "ASkyLightActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "USkyLightComponent",
+                            "Name": "USkyLightComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "Intensity": 0.05999999865889549,
+                                "LightColor": 4287670527,
+                                "ShadowBias": 0.5,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowSharpen": 0.0,
+                                "ShadowSlopeBias": 0.5,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bCastShadows": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UBillboardComponent",
+                            "Material": {
+                                "Base": "BillboardMaterial",
+                                "Instance": {
+                                    "BaseColor": {
+                                        "W": 1.0,
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "BlendState": "AlphaBlend",
+                                    "FlipNormalY": false,
+                                    "PSOType": 14,
+                                    "Properties": {},
+                                    "SamplerState": "LinearClamp",
+                                    "Shininess": 32.0,
+                                    "SpecularColor": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "Textures": [
+                                        "Assets/Icons/Sky.png"
+                                    ],
+                                    "UVScrollSpeed": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                }
+                            },
+                            "Name": "UBillboardComponent",
+                            "Parent": "USkyLightComponent",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": true,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "SkyLight",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "ADirectionalLightActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UDirectionalLightComponent",
+                            "Name": "UDirectionalLightComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "AngularRadiusDegrees": 3.0,
+                                "CascadeDistributionExponent": 3.0,
+                                "CascadeTransitionFraction": 0.10000000149011612,
+                                "DynamicShadowCascades": 4,
+                                "DynamicShadowDistanceMovableLight": 1000.0,
+                                "Intensity": 0.30000001192092896,
+                                "LightColor": 4287670527,
+                                "ShadowBias": 0.5,
+                                "ShadowDistanceFadeoutFraction": 0.10000000149011612,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowSharpen": 0.0,
+                                "ShadowSlopeBias": 0.5,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 50.0,
+                                        "Z": 10.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 50.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 20.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bCastShadows": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UBillboardComponent",
+                            "Material": {
+                                "Base": "BillboardMaterial",
+                                "Instance": {
+                                    "BaseColor": {
+                                        "W": 1.0,
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "BlendState": "AlphaBlend",
+                                    "FlipNormalY": false,
+                                    "PSOType": 14,
+                                    "Properties": {},
+                                    "SamplerState": "LinearClamp",
+                                    "Shininess": 32.0,
+                                    "SpecularColor": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "Textures": [
+                                        "Assets/Icons/Directional.png"
+                                    ],
+                                    "UVScrollSpeed": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                }
+                            },
+                            "Name": "UBillboardComponent",
+                            "Parent": "UDirectionalLightComponent",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": true,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UArrowComponent",
+                            "OverrideMaterials": [
+                                {
+                                    "Asset": "EditorArrowMaterial"
+                                }
+                            ],
+                            "Parent": "UDirectionalLightComponent",
+                            "Properties": {
+                                "StaticMesh": "Arrow",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 90.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 0.30000001192092896,
+                                        "Y": 0.30000001192092896,
+                                        "Z": 0.5
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "MoonLight",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "APointLightActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": -1.7999999523162842,
+                                        "Y": 0.0,
+                                        "Z": 2.5999999046325684
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UPointLightComponent",
+                            "Name": "UPointLightComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "AttenuationRadius": 7.0,
+                                "Intensity": 0.0,
+                                "LightColor": 4294914112,
+                                "LightFalloffExponent": 1.0,
+                                "ShadowBias": 0.5,
+                                "ShadowResolutionScale": 1.0,
+                                "ShadowSharpen": 0.0,
+                                "ShadowSlopeBias": 0.5,
+                                "SourceRadius": 0.019999999552965164,
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bCastShadows": false,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UBillboardComponent",
+                            "Material": {
+                                "Base": "BillboardMaterial",
+                                "Instance": {
+                                    "BaseColor": {
+                                        "W": 1.0,
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "BlendState": "AlphaBlend",
+                                    "FlipNormalY": false,
+                                    "PSOType": 14,
+                                    "Properties": {},
+                                    "SamplerState": "LinearClamp",
+                                    "Shininess": 32.0,
+                                    "SpecularColor": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    },
+                                    "Textures": [
+                                        "Assets/Icons/Point.png"
+                                    ],
+                                    "UVScrollSpeed": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                }
+                            },
+                            "Name": "UBillboardComponent",
+                            "Parent": "UPointLightComponent",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": true,
+                                "bReceiveShadow": false,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "ZeusGlow",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AStaticMeshActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 3.0,
+                                        "Y": 3.0,
+                                        "Z": 3.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UStaticMeshComponent",
+                            "Name": "UStaticMeshComponent",
+                            "OverrideMaterials": [],
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "StaticMesh": "Models/T1-Zeus/T1-Zeus.obj",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": true,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Zeus",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "ACameraActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UCameraComponent",
+                            "Name": "CameraComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": -16.0,
+                                        "Y": 0.0,
+                                        "Z": 17.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": -14.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bAutoActivateForPlayer": false,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "CamMain",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 8.0,
+                                        "Y": -6.0,
+                                        "Z": -500.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Lightning.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Bolt_1",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 10.0,
+                                        "Y": 4.5,
+                                        "Z": -500.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Lightning.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Bolt_2",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 6.0,
+                                        "Y": -1.5,
+                                        "Z": -500.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Lightning.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Bolt_3",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 9.0,
+                                        "Y": 7.0,
+                                        "Z": -500.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Lightning.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Bolt_4",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 1.2000000476837158,
+                                        "Y": 0.30000001192092896,
+                                        "Z": -500.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Lightning.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Bolt_5",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.0,
+                                        "Y": -3.5,
+                                        "Z": 11.982500076293945
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Ribbon.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Stroke_T",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.0,
+                                        "Y": -2.4674999713897705,
+                                        "Z": 11.237000465393066
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Ribbon.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Stroke_W1",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.0,
+                                        "Y": -1.9005000591278076,
+                                        "Z": 10.785499572753906
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Ribbon.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Stroke_W2",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.0,
+                                        "Y": -1.3300000429153442,
+                                        "Z": 10.344499588012695
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Ribbon.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Stroke_W3",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "AParticleSystemActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 2.0,
+                                        "Y": 1.872499942779541,
+                                        "Z": 11.387499809265137
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "UParticleSystemComponent",
+                            "Name": "ParticleSystemComponent",
+                            "Parent": "DefaultSceneRoot",
+                            "Properties": {
+                                "Template": "Assets/Particles/T1_Ribbon.particle",
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bBlockComponent": false,
+                                "bCastShadow": false,
+                                "bGenerateOverlapEvents": true,
+                                "bHiddenInGame": false,
+                                "bReceiveShadow": true,
+                                "bReceivesDecals": true,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Stroke_1",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                },
+                {
+                    "Class": "ALevelSequenceActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "Cinematic",
+                    "Properties": {
+                        "LevelSequenceAsset": "Assets/Sequences/T1Zeus.sequence",
+                        "LoopCount": 0,
+                        "PlayRate": 1.0,
+                        "ScriptPath": "Scripts/t1_zeus_cinematic.lua",
+                        "StartTime": 0.0,
+                        "bActorEnableCollision": true,
+                        "bAutoPlay": true,
+                        "bDisableCameraCuts": false,
+                        "bPauseAtEnd": true,
+                        "bRestoreState": false
+                    }
+                },
+                {
+                    "Class": "ASkySphereActor",
+                    "Components": [
+                        {
+                            "Class": "USceneComponent",
+                            "Name": "DefaultSceneRoot",
+                            "Parent": "",
+                            "Properties": {
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        },
+                        {
+                            "Class": "USkySphereComponent",
+                            "Name": "SkySphereComponent",
+                            "Parent": "",
+                            "Properties": {
+                                "BackgroundColor": 4278190080,
+                                "BackgroundMaterial": {
+                                    "Base": "DefaultMaterial",
+                                    "Instance": {
+                                        "BaseColor": {
+                                            "W": 1.0,
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "BlendState": "Opaque",
+                                        "FlipNormalY": false,
+                                        "PSOType": 0,
+                                        "Properties": {},
+                                        "SamplerState": "LinearClamp",
+                                        "Shininess": 32.0,
+                                        "SpecularColor": {
+                                            "X": 1.0,
+                                            "Y": 1.0,
+                                            "Z": 1.0
+                                        },
+                                        "Textures": [
+                                            "Assets/SkySphere/Thunder.png",
+                                            "FlatNormalTexture"
+                                        ],
+                                        "UVScrollSpeed": [
+                                            0.0,
+                                            0.0
+                                        ]
+                                    }
+                                },
+                                "Transform": {
+                                    "Location": {
+                                        "X": 0.0,
+                                        "Y": 0.0,
+                                        "Z": 0.0
+                                    },
+                                    "Rotation": {
+                                        "Pitch": 0.0,
+                                        "Roll": 0.0,
+                                        "Yaw": 0.0
+                                    },
+                                    "Scale": {
+                                        "X": 1.0,
+                                        "Y": 1.0,
+                                        "Z": 1.0
+                                    }
+                                },
+                                "bAutoActivate": true,
+                                "bHiddenInGame": false,
+                                "bVisible": true
+                            }
+                        }
+                    ],
+                    "Name": "ASkySphereActor_0",
+                    "Properties": {
+                        "ScriptPath": "",
+                        "bActorEnableCollision": true
+                    }
+                }
+            ],
+            "Properties": {}
+        },
+        "Properties": {}
+    }
 }
