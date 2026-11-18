@@ -79,10 +79,10 @@ namespace
 
 	bool ValidateLODSettings(const UParticleLODLevel* LOD, const UParticleEmitter* Emitter, FString& OutError)
 	{
-		if (!LOD || LOD->GetOuter() != Emitter || !LOD->GetRequiredModule() ||
-			!LOD->GetSpawnModule() || LOD->GetTypeDataModule())
+		// TypeData(Mesh/Beam/Ribbon)는 이제 지원하므로 거부하지 않는다. 비어 있으면 Sprite 이미터
+		if (!LOD || LOD->GetOuter() != Emitter || !LOD->GetRequiredModule() || !LOD->GetSpawnModule())
 		{
-			OutError = "Particle LOD requires Required/Spawn modules; only sprite emitters are supported";
+			OutError = "Particle LOD requires Required/Spawn modules";
 			return false;
 		}
 

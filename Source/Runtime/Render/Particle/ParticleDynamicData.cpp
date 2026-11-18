@@ -451,3 +451,8 @@ void FDynamicBeamEmitterData::Submit(FRenderQueue& RenderQueue, const FViewConte
 {
 	SubmitStrips(RenderQueue, View, &Source.Points, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
 }
+
+void FDynamicRibbonEmitterData::Submit(FRenderQueue& RenderQueue, const FViewContext& View)
+{
+	SubmitStrips(RenderQueue, View, &Source.Points, 1, Source.Material, Source.UVTiling, Source.EmitterWorldOrigin);
+}

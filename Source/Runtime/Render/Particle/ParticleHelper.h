@@ -80,6 +80,15 @@ struct FDynamicBeamReplayData : public FDynamicEmitterReplayDataBase
 	float UVTiling = 0.0f;
 };
 
+// Ribbon: 파티클 하나 = 띠 위의 점 하나. 생성 순서대로 이어 궤적을 만든다
+struct FDynamicRibbonReplayData : public FDynamicEmitterReplayDataBase
+{
+	TArray<FParticleStripPoint> Points;   // 머리(최신) → 꼬리(오래된) 순서, 월드 좌표
+	UMaterial* Material = nullptr;
+	// 0보다 크면 길이 1당 텍스처 반복 횟수, 0 이하면 전체 길이에 텍스처 하나를 늘린다
+	float UVTiling = 0.0f;
+};
+
 // inline 함수 안의 static이라 여러 .cpp에서 include 해도 생성기는 하나만 존재하낟
 inline float ParticleRandom()
 {
